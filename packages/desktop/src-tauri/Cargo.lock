@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "claude-code-provider-gateway-desktop"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "hex",
