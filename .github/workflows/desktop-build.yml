@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  pull_request:
-    paths:
-      - "packages/daemon/**"
-      - "packages/panel/**"
-      - "packages/desktop/**"
-      - ".github/workflows/desktop-build.yml"
   workflow_dispatch:
 
 permissions:
