@@ -49,7 +49,7 @@ CCPG gives you the missing control layer:
 - Use Copilot or OpenAI Account auth from a desktop UI.
 - See what Claude Code is actually sending in the background.
 
-Everything runs locally. There is no hosted CCPG service, no telemetry, no account system, and no gateway markup. The app is MIT licensed and intended to be free forever.
+Everything runs locally. There is no hosted CCPG service, no telemetry, no account system, and no gateway markup. The app is MIT licensed, open source, and designed to run locally.
 
 ## TL;DR
 
@@ -193,23 +193,21 @@ Source development needs Node.js, npm workspaces, Bun, Rust, and Tauri system de
 
 ## Install
 
-Public installers ship with the v0.1.0 release.
+Download the latest desktop build from:
 
-Once available, download the latest desktop build from:
-
-[GitHub Releases](https://github.com/danielalves96/claude-code-provider-gateway/releases/latest)
+[GitHub Releases](https://github.com/danielalves96/claude-code-provider-gateway/releases)
 
 Then:
 
 1. Open the app.
 2. Add or log into at least one provider.
 3. Test the provider connection.
-4. Install the `ccpg` shell command from **Dashboard -> Shell Setup**.
+4. Install the `ccpg` shell command from Dashboard -> Shell Setup.
 5. Relaunch your shell.
 6. Start Claude Code through CCPG.
 
 ```bash
-ccpg --DeepSeek
+ccpg --DeepSeek # Or other configured provider
 ```
 
 Any arguments after the provider flag are passed to Claude Code:
