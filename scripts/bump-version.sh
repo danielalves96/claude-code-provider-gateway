@@ -36,6 +36,9 @@ fi
 
 echo "Bumping to $TAG..."
 
+# ── capture old version before bump ──────────────────────────────────────
+OLD_VERSION="$(node -p "require('./package.json').version")"
+
 # ── update package.json files ────────────────────────────────────────────
 npm version "$VERSION" --no-git-tag-version --workspaces --include-workspace-root
 
@@ -48,18 +51,12 @@ mv /tmp/_tauri.conf.json "$TAURI_CONF"
 sed -i "0,/^version = /s/^version = \"[^\"]*\"/version = \"$VERSION\"/" \
   packages/desktop/src-tauri/Cargo.toml
 
-# ── commit + tag ──────────────────────────────────────────────────────────
-git add \
-  package.json \
-  packages/daemon/package.json \
-  packages/desktop/package.json \
-  packages/panel/package.json \
-  packages/desktop/src-tauri/tauri.conf.json \
-  packages/desktop/src-tauri/Cargo.toml
-
-git commit -m "chore: release $TAG"
-git tag "$TAG"
+# ── update README.md version references (unstaged) ───────────────────────
+OLD_VERSION_ESC="${OLD_VERSION//./\\.}"
+sed -i "s/${OLD_VERSION_ESC}/${VERSION}/g" README.md
+echo "Updated README.md: $OLD_VERSION → $VERSION (unstaged)"
 
 echo ""
-echo "Done. To publish:"
+echo "Done. Review changes, then:"
+echo "  git add -p && git commit -m \"chore: release $TAG\" && git tag $TAG"
 echo "  git push && git push origin $TAG"

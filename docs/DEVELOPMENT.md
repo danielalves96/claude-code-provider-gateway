@@ -6,7 +6,7 @@ CCPG is distributed as a desktop app. npm, Bun, Rust, and Tauri are development/
 
 ## Prerequisites
 
-- **Node.js** >= 18 (CI uses Node 24)
+- **Node.js** >= 24
 - **npm** with workspaces
 - **Bun** >= 1.3.14 (for daemon binary compilation)
 - **Rust toolchain** (required for desktop development/builds)

@@ -6,7 +6,7 @@
 
 Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, llama.cpp, or Anthropic itself, while keeping the Claude Code workflow intact.
 
-[![Version](https://img.shields.io/badge/v0.1.2-early_release-111827?style=for-the-badge)](#status)
+[![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
 [![Providers](https://img.shields.io/badge/providers-10-2563eb?style=for-the-badge)](#supported-providers)
@@ -80,7 +80,7 @@ ccpg --all
 
 CCPG is an early release, feedback is welcome, and it is already usable for testing.
 
-v0.1.2 is available now with desktop installers for macOS, Linux, and Windows.
+v0.1 is available now with desktop installers for macOS, Linux, and Windows.
 Expect rough edges, but the core flow is ready:
 
 install app → add provider → test connection → run Claude Code through CCPG.
@@ -105,6 +105,7 @@ The next documentation step is a separate official docs site repository. Until t
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot uses Device Flow. Tokens refresh automatically.
+- **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
 - **Request history** - see model, provider, prompt, response preview, input tokens, latency, errors, and session totals.
 - **Encrypted secrets** - API keys, OAuth tokens, and gateway auth token are split out of config and stored with AES-256-GCM.
