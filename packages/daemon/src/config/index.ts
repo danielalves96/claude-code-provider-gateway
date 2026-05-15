@@ -86,6 +86,11 @@ export function buildDefaultConfig(): Config {
       enabled: false,
       url: '',
     },
+    tokenSavers: {
+      rtkEnabled: false,
+      cavemanEnabled: false,
+      cavemanLevel: 'lite',
+    },
     activeProvider: 'nvidia_nim',
     modelMode: 'single',
   }

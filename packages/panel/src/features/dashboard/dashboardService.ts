@@ -3,6 +3,7 @@ import type {
   GatewayStatus,
   InstallResponse,
   LaunchCommands,
+  QuickLaunch,
   ShellName,
   ShellSetup,
   StatsResponse,
@@ -12,6 +13,7 @@ export const dashboardService = {
   getStatus: () => http.get<GatewayStatus>("/status"),
   getStats: () => http.get<StatsResponse>("/stats"),
   getLaunchCommands: () => http.get<LaunchCommands>("/launch-commands"),
+  getQuickLaunch: () => http.get<QuickLaunch>("/quick-launch"),
   getShellSetup: () => http.get<ShellSetup>("/shell-setup"),
   installShellSetup: (shells: ShellName[]) =>
     http.post<InstallResponse>("/shell-setup/install", { shells }),

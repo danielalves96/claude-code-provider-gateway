@@ -58,6 +58,7 @@ claude-code-provider-gateway/
 │   │   │   │   ├── native-claude-routing.ts  # Passthrough routing logic
 │   │   │   │   ├── prompt-serializer.ts  # Request → human-readable text for session log
 │   │   │   │   └── stream-result.ts      # Stream wrapping + response capture helpers
+│   │   │   ├── token-savers/             # RTK compression + Caveman prompt injection
 │   │   │   └── providers/               # LLM provider implementations
 │   │   │       ├── copilot.ts            # GitHub Copilot (dual-transport)
 │   │   │       ├── copilot-chat-stream.ts  # OpenAI Chat stream → Anthropic SSE
@@ -135,15 +136,20 @@ In `all` mode, provider-discovered models are exposed to Claude Code with a gate
 **services/message-service.ts** — core orchestration:
 1. Receives Anthropic-format request
 2. Resolves the target provider via `model-router.ts`
-3. Counts input tokens (`js-tiktoken`)
-4. Calls `provider.streamResponse()` with the configured request
-5. Tracks session statistics
+3. Applies enabled token savers to a cloned request
+4. Counts input tokens after compression (`js-tiktoken`)
+5. Calls `provider.streamResponse()` with the configured request
+6. Tracks session statistics
 
 **services/native-claude-routing.ts** — decides whether a request should bypass the active provider and fall through to native Anthropic passthrough. Applied when the requested model is a hardcoded Claude tier name and no primary model has been established yet for this session.
 
 **services/prompt-serializer.ts** — converts `MessagesRequest` to a truncated human-readable string stored in the session request log. The first request in a session captures up to 80 KB of system prompt; subsequent requests cap at 4 KB.
 
 **services/stream-result.ts** — wraps provider `ReadableStream<string>` into the `MessageServiceResult` union. `streamResultWithCapture()` tees the stream and writes the truncated response text back to the session log entry when the stream completes or is cancelled.
+
+**token-savers/rtk.ts** — compresses large `tool_result` text blocks before provider dispatch. It auto-detects common developer-output shapes such as grep/rg results, find output, git diff/status, ls/tree output, numbered file dumps, and repetitive logs. It skips small payloads, oversized raw blobs, and `tool_result` blocks marked as errors. Compression is best-effort: if a filter fails or makes the payload larger, the original text is preserved.
+
+**token-savers/caveman.ts** — injects terse-response guidance into the Anthropic `system` field when enabled. The levels are `lite`, `full`, and `ultra`. Caveman targets output verbosity; it does not reduce input tokens.
 
 ### 3. Provider Layer (`packages/daemon/src/proxy/providers/`)
 
@@ -249,6 +255,7 @@ secret.key (32-byte hex master key) or CC_GATEWAY_MASTER_KEY env var
 - **Paths** (`paths.ts`) — centralized functions for all config directory paths: `getConfigDir()`, `getConfigPath()`, `getPidPath()`, `getLogPath()`, `getSecretsPath()`, `getMasterKeyPath()`, `getCurrentSessionPath()`, `getSessionArchivePath()`. Handles the Windows `%APPDATA%` path on Win32.
 - **Schema** (`schema.ts`) — TypeScript types, provider defaults (base URLs, labels), CLI flag mappings
 - **Validation** (`validation.ts`) — runtime normalization with default merging
+- **Token savers** (`Config.tokenSavers`) — non-secret toggles for RTK compression and Caveman level
 - **Secret splitting** (`secrets/config-splitter.ts`) — extracts API keys, OAuth tokens, and auth token from config JSON into encrypted store
 - **Encrypted store** (`secrets/encrypted-file-store.ts`) — AES-256-GCM with random IV per write
 - **Master key** (`secrets/master-key.ts`) — resolution order: env var → stored file → generate new
@@ -285,8 +292,9 @@ Hono-based REST API for the web panel. The panel module is composed of:
 **`middleware/auth.ts`** — `requirePanelAccess` middleware:
 - Allows requests from Tauri webview origins (`tauri://localhost`, `https://tauri.localhost`) and the Vite dev server in non-production mode
 - CORS headers are set for allowed origins
-- Sensitive endpoints (config write, session clear, shutdown, shell install, OAuth flows, launch commands) require a valid `Authorization: Bearer <token>` or `x-api-key` header even from loopback
+- Sensitive endpoints (config write, session clear, shutdown, shell install, OAuth flows, launch commands with auth tokens) require a valid `Authorization: Bearer <token>` or `x-api-key` header even from loopback
 - Requests from cross-site browser origins without a valid token are rejected with 403
+- `GET /api/quick-launch` is intentionally token-free because it returns only non-sensitive `ccpg` shortcuts for the dashboard.
 
 **`routes/`** — one file per route group:
 
@@ -296,7 +304,7 @@ Hono-based REST API for the web panel. The panel module is composed of:
 | `config-routes.ts` | `GET /api/config`, `PUT /api/config` |
 | `provider-routes.ts` | `GET /api/providers`, `POST /api/providers/:id/test`, `GET /api/models/:providerId`, `GET /api/routing/options` |
 | `session-routes.ts` | `GET /api/sessions`, `DELETE /api/sessions`, `POST /api/launch/end`, `POST /api/launch/heartbeat`, `POST /api/launch/attach` |
-| `shell-routes.ts` | `GET /api/launch-commands`, `GET /api/launch-command`, `GET /api/shell-setup`, `GET /api/shell-setup/snippet/:shell`, `POST /api/shell-setup/install`, `POST /api/launch/prepare` |
+| `shell-routes.ts` | `GET /api/quick-launch`, `GET /api/launch-commands`, `GET /api/launch-command`, `GET /api/shell-setup`, `GET /api/shell-setup/snippet/:shell`, `POST /api/shell-setup/install`, `POST /api/launch/prepare` |
 | `oauth-routes.ts` | `POST /api/providers/openai_account/oauth/start`, `GET /api/providers/openai_account/oauth/status/:state`, `POST /api/providers/openai_account/oauth/logout`, `POST /api/providers/copilot/oauth/start`, `GET /api/providers/copilot/oauth/status/:flowId`, `POST /api/providers/copilot/oauth/logout` |
 | `static-routes.ts` | React SPA static file serving |
 
@@ -310,7 +318,7 @@ React 19 SPA built with Vite 6 + Ant Design 5 + Zustand 5.
 - **Providers** — toggle providers, edit API keys, OAuth login, test connections, add extra models
 - **Routing** — tier-based model routing UI
 - **History** — session archive with per-request drill-down
-- **Settings** — daemon configuration
+- **Settings** — daemon configuration, outbound proxy, web tools, and token savers
 
 ### 9. Desktop Shell (`packages/desktop/`)
 

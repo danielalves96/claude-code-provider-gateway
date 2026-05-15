@@ -28,7 +28,10 @@ export class PanelRuntime {
   readonly oauthFlows = new Map<string, OAuthFlow>()
   readonly copilotFlows = new Map<string, CopilotFlow>()
 
-  constructor(initialConfig: Config) {
+  constructor(
+    initialConfig: Config,
+    private readonly persistConfig: (config: Config) => void = saveConfig,
+  ) {
     this.config = initialConfig
     this.registry = new ProviderRegistry(initialConfig)
   }
@@ -43,7 +46,7 @@ export class PanelRuntime {
   }
 
   saveAndUpdateConfig(config: Config): void {
-    saveConfig(config)
+    this.persistConfig(config)
     this.updateConfig(config)
   }
 

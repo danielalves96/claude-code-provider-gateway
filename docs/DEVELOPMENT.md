@@ -174,6 +174,35 @@ src/proxy/services/message-service.test.ts
 
 The daemon has the broadest test suite. The desktop crate also has focused Rust unit tests for pure policy code. The panel package does not have a dedicated test suite yet.
 
+### Token saver development
+
+Token savers live in `packages/daemon/src/proxy/token-savers/` and are applied by `MessageService` before provider dispatch.
+
+| Module | Responsibility |
+|---|---|
+| `rtk.ts` | Compress large `tool_result` text blocks with auto-detected filters. |
+| `caveman.ts` | Inject terse-response guidance into the Anthropic `system` prompt. |
+
+RTK should only mutate safe tool-result payloads. Preserve errored tool results, skip tiny payloads, and keep the original text whenever compression fails or expands the content. Caveman should remain a config-driven system prompt injection; it should not touch message content.
+
+Useful checks:
+
+```bash
+cd packages/daemon
+node --import tsx --test src/proxy/token-savers/token-savers.test.ts
+npm run typecheck
+```
+
+Manual validation path:
+
+1. Start the app with `npm run dev:desk`.
+2. Enable **Settings -> Token Savers -> RTK compression**.
+3. Launch Claude Code through `ccpg --<provider>`.
+4. Ask Claude Code to run a command with large output, such as `rg` or `git diff`.
+5. Check daemon logs for an `rtk` line showing bytes saved.
+
+Caveman can be validated with a normal chat request after enabling **Caveman mode**. The session prompt should include the injected terse-response guidance, and responses should become shorter according to the selected level.
+
 ## Build Pipeline
 
 ### Production build

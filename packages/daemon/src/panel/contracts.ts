@@ -4,6 +4,7 @@ import type {
   SessionRecord,
   SessionRequestLogEntry,
   SessionModelStat,
+  TokenSaverStats,
 } from '../runtime/sessions.js'
 
 export type GatewayStatusResponse = {
@@ -44,6 +45,8 @@ export type LaunchCommandsResponse = {
   all: string
   perProvider: Array<{ id: string; label: string; cli: string }>
 }
+
+export type QuickLaunchResponse = Pick<LaunchCommandsResponse, 'all' | 'perProvider'>
 
 export type ShellName = 'zsh' | 'bash' | 'fish' | 'powershell'
 
@@ -129,7 +132,7 @@ export type RoutingOption = {
 }
 
 export type PanelConfigResponse = Config
-export type SettingsConfigResponse = Pick<Config, 'server' | 'webTools' | 'proxy'>
+export type SettingsConfigResponse = Pick<Config, 'server' | 'webTools' | 'proxy' | 'tokenSavers'>
 export type RoutingConfigResponse = Pick<Config, 'routing' | 'thinking'>
 
 export type SessionsResponse = {
@@ -141,4 +144,5 @@ export type {
   SessionRecord,
   SessionRequestLogEntry,
   SessionModelStat,
+  TokenSaverStats,
 }

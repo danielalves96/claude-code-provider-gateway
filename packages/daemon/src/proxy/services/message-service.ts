@@ -23,6 +23,9 @@ import { tryOptimize } from "../optimizations.js";
 import type { ProxyRuntime } from "../runtime.js";
 import { serializePrompt } from "./prompt-serializer.js";
 import { streamResult, streamResultWithCapture } from "./stream-result.js";
+import { injectCaveman } from "../token-savers/caveman.js";
+import { cloneMessagesRequest, compressMessages, formatRtkLog } from "../token-savers/rtk.js";
+import type { TokenSaverStats } from "../../runtime/session-types.js";
 export { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 import { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 
@@ -131,8 +134,8 @@ export class MessageService {
       };
     }
 
-    const inputTokens = countRequestTokens(req);
-    const providerReq = { ...req, model: providerModel };
+    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers({ ...cloneMessagesRequest(req), model: providerModel });
+    const inputTokens = countRequestTokens(providerReq);
     const result = await provider.streamResponse(providerReq, inputTokens);
     const latency = Date.now() - started;
 
@@ -172,7 +175,7 @@ export class MessageService {
       `→ ${providerId}/${providerModel} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(req, isFirstSessionRequest());
+    const prompt = serializePrompt(providerReq, isFirstSessionRequest());
     const logEntryId = recordSessionRequest({
       requestedModel: req.model,
       providerId,
@@ -182,6 +185,7 @@ export class MessageService {
       status: "ok",
       error: null,
       prompt,
+      tokenSavers: tokenSaverStats,
     });
     return streamResultWithCapture(result.stream, logEntryId);
   }
@@ -190,8 +194,9 @@ export class MessageService {
     req: MessagesRequest,
     started: number,
   ): Promise<MessageServiceResult> {
-    const inputTokens = countRequestTokens(req);
-    const result = await streamAnthropicNative(req, req.model, undefined);
+    const { req: nativeReq, stats: tokenSaverStats } = this.applyTokenSavers(cloneMessagesRequest(req));
+    const inputTokens = countRequestTokens(nativeReq);
+    const result = await streamAnthropicNative(nativeReq, nativeReq.model, undefined);
     const latency = Date.now() - started;
     // Synthetic stats key so the dashboard can show native Claude usage separately
     // from configured third-party providers.
@@ -233,7 +238,7 @@ export class MessageService {
       `→ ${providerId}/${req.model} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(req, isFirstSessionRequest());
+    const prompt = serializePrompt(nativeReq, isFirstSessionRequest());
     const logEntryId = recordSessionRequest({
       requestedModel: req.model,
       providerId,
@@ -243,7 +248,36 @@ export class MessageService {
       status: "ok",
       error: null,
       prompt,
+      tokenSavers: tokenSaverStats,
     });
     return streamResultWithCapture(result.stream, logEntryId);
+  }
+
+  countTokens(req: MessagesRequest): number {
+    const { req: transformed } = this.applyTokenSavers(cloneMessagesRequest(req));
+    return countRequestTokens(transformed);
+  }
+
+  private applyTokenSavers(req: MessagesRequest): { req: MessagesRequest; stats: TokenSaverStats | undefined } {
+    const { tokenSavers } = this.runtime.currentConfig();
+    const rtkStats = compressMessages(req, tokenSavers.rtkEnabled);
+    const rtkLine = formatRtkLog(rtkStats);
+    if (rtkLine) logger.info("rtk", rtkLine);
+
+    injectCaveman(req, tokenSavers.cavemanEnabled, tokenSavers.cavemanLevel);
+    if (tokenSavers.cavemanEnabled) {
+      logger.info("caveman", `system prompt injected (${tokenSavers.cavemanLevel})`);
+    }
+
+    if (!rtkStats && !tokenSavers.cavemanEnabled) return { req, stats: undefined };
+
+    const stats: TokenSaverStats = {
+      rtkBytesBefore: rtkStats?.bytesBefore ?? 0,
+      rtkBytesAfter: rtkStats?.bytesAfter ?? 0,
+      rtkHits: rtkStats?.hits.length ?? 0,
+      rtkFilters: rtkStats ? Array.from(new Set(rtkStats.hits.map(hit => hit.filter))) : [],
+      cavemanLevel: tokenSavers.cavemanEnabled ? tokenSavers.cavemanLevel : null,
+    };
+    return { req, stats };
   }
 }

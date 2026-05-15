@@ -34,6 +34,15 @@ export interface SessionRequestLogEntry {
   error: string | null
   prompt?: string
   response?: string
+  tokenSavers?: TokenSaverStats
+}
+
+export interface TokenSaverStats {
+  rtkBytesBefore: number
+  rtkBytesAfter: number
+  rtkHits: number
+  rtkFilters: string[]
+  cavemanLevel: 'lite' | 'full' | 'ultra' | null
 }
 
 export interface SessionRecord {

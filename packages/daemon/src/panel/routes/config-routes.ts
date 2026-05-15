@@ -30,6 +30,7 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.routing) Object.assign(merged.routing, update.routing)
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
+    if (update.tokenSavers) Object.assign(merged.tokenSavers, update.tokenSavers)
     if (update.proxy) {
       if (update.proxy.url !== undefined) {
         const urlError = validateProxyUrl(update.proxy.url)

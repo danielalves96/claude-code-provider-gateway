@@ -40,6 +40,7 @@ export interface ProviderConfig {
 }
 
 export type ModelMode = 'single' | 'all'
+export type CavemanLevel = 'lite' | 'full' | 'ultra'
 
 export interface RoutingRule {
   enabled: boolean
@@ -70,6 +71,11 @@ export interface Config {
   proxy: {
     enabled: boolean
     url: string
+  }
+  tokenSavers: {
+    rtkEnabled: boolean
+    cavemanEnabled: boolean
+    cavemanLevel: CavemanLevel
   }
   activeProvider: ProviderId
   modelMode: ModelMode

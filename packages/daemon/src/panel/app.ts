@@ -10,9 +10,13 @@ import { registerStaticRoutes } from './routes/static-routes.js'
 import { registerStatusRoutes } from './routes/status-routes.js'
 import { PanelRuntime } from './runtime.js'
 
-export function createPanelApp(initialConfig: Config) {
+export type PanelAppOptions = {
+  saveConfig?: (config: Config) => void
+}
+
+export function createPanelApp(initialConfig: Config, options: PanelAppOptions = {}) {
   const app = new Hono()
-  const runtime = new PanelRuntime(initialConfig)
+  const runtime = new PanelRuntime(initialConfig, options.saveConfig)
 
   app.use('/api/*', requirePanelAccess(runtime))
 

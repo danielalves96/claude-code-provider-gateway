@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Form } from "antd";
 import { useSaveFeedback } from "../../../shared/hooks/useSaveFeedback.js";
 import { settingsService } from "../settingsService.js";
-import type { ServerConfig, WebToolsConfig, ProxyConfig } from "../types.js";
+import type { ServerConfig, WebToolsConfig, ProxyConfig, TokenSaversConfig } from "../types.js";
 
 const DEFAULT_WEB_TOOLS: WebToolsConfig = {
   enabled: true,
@@ -14,11 +14,18 @@ const DEFAULT_PROXY: ProxyConfig = {
   url: "",
 };
 
+const DEFAULT_TOKEN_SAVERS: TokenSaversConfig = {
+  rtkEnabled: false,
+  cavemanEnabled: false,
+  cavemanLevel: "lite",
+};
+
 export function useSettings() {
   const [serverForm] = Form.useForm<ServerConfig>();
   const [serverConfig, setServerConfig] = useState<ServerConfig | null>(null);
   const [webTools, setWebTools] = useState<WebToolsConfig>(DEFAULT_WEB_TOOLS);
   const [proxy, setProxy] = useState<ProxyConfig>(DEFAULT_PROXY);
+  const [tokenSavers, setTokenSavers] = useState<TokenSaversConfig>(DEFAULT_TOKEN_SAVERS);
   const [loaded, setLoaded] = useState(false);
   const { saving, saved, wrap } = useSaveFeedback();
 
@@ -30,6 +37,7 @@ export function useSettings() {
         serverForm.setFieldsValue(c.server);
         setWebTools(c.webTools);
         setProxy(c.proxy);
+        setTokenSavers(c.tokenSavers);
       })
       .finally(() => setLoaded(true));
   }, [serverForm]);
@@ -40,9 +48,12 @@ export function useSettings() {
   const updateProxy = (patch: Partial<ProxyConfig>) =>
     setProxy((p) => ({ ...p, ...patch }));
 
+  const updateTokenSavers = (patch: Partial<TokenSaversConfig>) =>
+    setTokenSavers((t) => ({ ...t, ...patch }));
+
   const save = () => {
     const nextServer = serverForm.getFieldsValue();
-    return wrap(() => settingsService.save(nextServer, webTools, proxy)).then(() => {
+    return wrap(() => settingsService.save(nextServer, webTools, proxy, tokenSavers)).then(() => {
       setServerConfig((current) => ({ ...(current ?? serverForm.getFieldsValue(true)), ...nextServer }));
     });
   };
@@ -53,6 +64,8 @@ export function useSettings() {
     updateWebTools,
     proxy,
     updateProxy,
+    tokenSavers,
+    updateTokenSavers,
     loaded,
     saving,
     saved,

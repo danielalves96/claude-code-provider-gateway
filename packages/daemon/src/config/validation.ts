@@ -1,8 +1,9 @@
-import type { Config, ModelMode, ProviderConfig, ProviderId, RoutingRule } from './schema.js'
+import type { CavemanLevel, Config, ModelMode, ProviderConfig, ProviderId, RoutingRule } from './schema.js'
 import { PROVIDER_IDS } from './schema.js'
 
 const PROVIDER_ID_SET = new Set<string>(PROVIDER_IDS)
 const MODEL_MODES = new Set<ModelMode>(['single', 'all'])
+const CAVEMAN_LEVELS = new Set<CavemanLevel>(['lite', 'full', 'ultra'])
 
 export function normalizeConfig(config: Config, defaults: Config): Config {
   return {
@@ -34,6 +35,11 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
     proxy: {
       enabled: booleanOrDefault(config.proxy?.enabled, defaults.proxy.enabled),
       url: stringOrDefault(config.proxy?.url, defaults.proxy.url) || '',
+    },
+    tokenSavers: {
+      rtkEnabled: booleanOrDefault(config.tokenSavers?.rtkEnabled, defaults.tokenSavers.rtkEnabled),
+      cavemanEnabled: booleanOrDefault(config.tokenSavers?.cavemanEnabled, defaults.tokenSavers.cavemanEnabled),
+      cavemanLevel: cavemanLevelOrDefault(config.tokenSavers?.cavemanLevel, defaults.tokenSavers.cavemanLevel),
     },
     activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
@@ -152,4 +158,10 @@ function providerIdOrDefault(value: unknown, fallback: ProviderId): ProviderId {
 
 function modelModeOrDefault(value: unknown, fallback: ModelMode): ModelMode {
   return typeof value === 'string' && MODEL_MODES.has(value as ModelMode) ? value as ModelMode : fallback
+}
+
+function cavemanLevelOrDefault(value: unknown, fallback: CavemanLevel): CavemanLevel {
+  return typeof value === 'string' && CAVEMAN_LEVELS.has(value as CavemanLevel)
+    ? value as CavemanLevel
+    : fallback
 }

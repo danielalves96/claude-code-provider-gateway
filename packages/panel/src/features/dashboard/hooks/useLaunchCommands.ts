@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { dashboardService } from "../dashboardService.js";
-import type { LaunchCommands, LaunchItem } from "../types.js";
+import type { LaunchItem, QuickLaunch } from "../types.js";
 
 export function useLaunchCommands() {
-  const [launch, setLaunch] = useState<LaunchCommands | null>(null);
+  const [launch, setLaunch] = useState<QuickLaunch | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    dashboardService.getLaunchCommands().then(setLaunch).catch(() => {});
+    dashboardService
+      .getQuickLaunch()
+      .then((value) => {
+        setLaunch(value);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err : new Error("Quick Launch failed"));
+      });
   }, []);
 
   const items: LaunchItem[] = useMemo(() => {
@@ -22,5 +31,5 @@ export function useLaunchCommands() {
     ];
   }, [launch]);
 
-  return { launch, items };
+  return { launch, items, error };
 }
