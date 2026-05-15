@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { dashboardService } from "../dashboard/dashboardService.js";
 import { usePolling } from "../../shared/hooks/usePolling.js";
+import { dashboardService } from "../dashboard/dashboardService.js";
 import type { GatewayStatus } from "../dashboard/types.js";
 
 export type DaemonState = "running" | "offline" | "unknown";

@@ -9,7 +9,13 @@
     "dev:desk": "bash -lc 'source \"$HOME/.cargo/env\" 2>/dev/null || true; CC_GATEWAY_EXTERNAL_DAEMON=1 VITE_CC_GATEWAY_EXTERNAL_DAEMON=1 concurrently --kill-others --names daemon,desktop --prefix-colors cyan,green \"bun run dev:daemon\" \"cd packages/desktop && bun run dev\"'",
     "dev:daemon": "nodemon --exec tsx packages/daemon/src/index.ts --ext ts --watch packages/daemon/src",
     "dev:panel": "vite packages/panel",
-    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "quality": "biome check .",
+    "quality:fix": "biome check --write .",
+    "quality:ci": "biome ci .",
     "test": "npm test --workspace @claude-code-provider-gateway/daemon",
     "typecheck": "npm run typecheck -w @claude-code-provider-gateway/daemon && npm run typecheck -w @claude-code-provider-gateway/panel"
   },
@@ -23,6 +29,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "2.4.15",
     "@tauri-apps/cli": "^2.11.1",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.14",

@@ -38,6 +38,7 @@ This starts the desktop app, panel dev server, and hot-reload daemon. See [docs/
 
 ## Pull Request Checklist
 
+- Run `npm run quality:ci`.
 - Run `npm test`.
 - Run `npm run build` when touching daemon, panel, types, or shared build config.
 - Update docs when changing setup, provider behavior, routing, storage, or release behavior.
@@ -48,6 +49,7 @@ This starts the desktop app, panel dev server, and hot-reload daemon. See [docs/
 
 ## Code Style
 
+- **Biome** - centralized formatter, linter, and import organizer via `biome.jsonc`
 - **TypeScript** - strict mode, ES2022 target
 - **ES Modules** - relative imports must include `.js`
 - **Errors** - throw `Error` objects, not strings
@@ -56,10 +58,10 @@ This starts the desktop app, panel dev server, and hot-reload daemon. See [docs/
 
 ```typescript
 // Correct
-import { loadConfig } from './config/index.js'
+import { loadConfig } from "./config/index.js";
 
 // Incorrect
-import { loadConfig } from './config/index'
+import { loadConfig } from "./config/index";
 ```
 
 ## Testing

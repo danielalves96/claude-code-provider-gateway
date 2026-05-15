@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Button, Flex, Input, Space, Typography } from "antd";
 import { DeleteOutlined, EditOutlined, KeyOutlined } from "@ant-design/icons";
+import { Button, Flex, Input, Space, Typography } from "antd";
+import { useState } from "react";
 
 const { Text } = Typography;
 
@@ -57,11 +57,7 @@ export function ApiKeySection({
               setDraft("");
             }}
           />
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={onRequestRemove}
-          />
+          <Button danger icon={<DeleteOutlined />} onClick={onRequestRemove} />
         </Space>
       ) : (
         <Space.Compact style={{ width: "100%", maxWidth: 480 }}>
@@ -76,11 +72,7 @@ export function ApiKeySection({
               if (e.key === "Escape" && editing) close();
             }}
           />
-          <Button
-            type="primary"
-            disabled={!draft.trim()}
-            onClick={submit}
-          >
+          <Button type="primary" disabled={!draft.trim()} onClick={submit}>
             Save
           </Button>
           {editing && <Button onClick={close}>Cancel</Button>}

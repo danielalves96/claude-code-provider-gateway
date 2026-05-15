@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { providersService } from "../providersService.js";
-import { mergeModelLists } from "../utils.js";
 import type { ProviderInfo, TestResult } from "../types.js";
+import { mergeModelLists } from "../utils.js";
 
 export function useProviders() {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
@@ -86,15 +86,10 @@ export function useProviders() {
     [refresh],
   );
 
-  const setDisabledModels = useCallback(
-    async (id: string, disabledModels: string[]) => {
-      await providersService.setDisabledModels(id, disabledModels);
-      setProviders((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)),
-      );
-    },
-    [],
-  );
+  const setDisabledModels = useCallback(async (id: string, disabledModels: string[]) => {
+    await providersService.setDisabledModels(id, disabledModels);
+    setProviders((prev) => prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)));
+  }, []);
 
   return {
     providers,

@@ -1,21 +1,6 @@
-import {
-  Badge,
-  Button,
-  Card,
-  Divider,
-  Flex,
-  Space,
-  Switch,
-  Tag,
-  Typography,
-  theme,
-} from "antd";
+import { Badge, Button, Card, Divider, Flex, Space, Switch, Tag, Typography, theme } from "antd";
 import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
-import type {
-  CopilotFlow,
-  ProviderInfo,
-  TestResult,
-} from "../types.js";
+import type { CopilotFlow, ProviderInfo, TestResult } from "../types.js";
 import { ApiKeySection } from "./ApiKeySection.js";
 import { BaseUrlSection } from "./BaseUrlSection.js";
 import { ExtraModelsSection } from "./ExtraModelsSection.js";
@@ -61,8 +46,7 @@ export function ProviderCard({
   const { token } = theme.useToken();
   const isLocal = LOCAL_PROVIDERS.has(p.id);
   const isOAuth = OAUTH_PROVIDERS.has(p.id);
-  const canTest =
-    p.enabled && (isLocal || (isOAuth ? p.oauth?.loggedIn : p.hasKey));
+  const canTest = p.enabled && (isLocal || (isOAuth ? p.oauth?.loggedIn : p.hasKey));
   const ready = isLocal ? true : isOAuth ? p.oauth?.loggedIn === true : p.hasKey;
 
   return (
@@ -80,17 +64,10 @@ export function ProviderCard({
       title={<CardTitle provider={p} result={testResult} />}
       extra={
         <Space>
-          <Button
-            loading={testing}
-            disabled={!canTest}
-            onClick={() => handlers.onTest(p.id)}
-          >
+          <Button loading={testing} disabled={!canTest} onClick={() => handlers.onTest(p.id)}>
             Test
           </Button>
-          <Switch
-            checked={p.enabled}
-            onChange={() => handlers.onToggleEnabled(p.id, p.enabled)}
-          />
+          <Switch checked={p.enabled} onChange={() => handlers.onToggleEnabled(p.id, p.enabled)} />
         </Space>
       }
     >
@@ -142,9 +119,7 @@ export function ProviderCard({
               providerId={p.id}
               disabledModels={p.disabledModels ?? []}
               ready={!!ready}
-              onDisabledModelsChange={(disabled) =>
-                handlers.onDisabledModelsChange(p.id, disabled)
-              }
+              onDisabledModelsChange={(disabled) => handlers.onDisabledModelsChange(p.id, disabled)}
             />
           </>
         )}
@@ -153,13 +128,7 @@ export function ProviderCard({
   );
 }
 
-function CardTitle({
-  provider: p,
-  result,
-}: {
-  provider: ProviderInfo;
-  result?: TestResult;
-}) {
+function CardTitle({ provider: p, result }: { provider: ProviderInfo; result?: TestResult }) {
   return (
     <Space>
       {p.enabled && <Badge status="processing" />}

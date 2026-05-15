@@ -1,8 +1,8 @@
+import type { RoutingRule, RoutingTier } from "../../../../daemon/src/config/schema.js";
 import type {
   RoutingConfigResponse,
   RoutingOption,
 } from "../../../../daemon/src/panel/contracts.js";
-import type { RoutingRule, RoutingTier } from "../../../../daemon/src/config/schema.js";
 
 export type Tier = RoutingTier;
 

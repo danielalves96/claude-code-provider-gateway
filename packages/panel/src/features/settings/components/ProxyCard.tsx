@@ -1,5 +1,5 @@
-import { Card, Divider, Flex, Input, Space, Switch, Typography, theme } from "antd";
 import { GlobalOutlined } from "@ant-design/icons";
+import { Card, Divider, Flex, Input, Space, Switch, Typography, theme } from "antd";
 import type { ProxyConfig } from "../types.js";
 
 const { Text } = Typography;
@@ -28,10 +28,7 @@ export function ProxyCard({ value, onChange }: ProxyCardProps) {
               Route OpenAI OAuth and external provider requests through a proxy
             </Text>
           </Flex>
-          <Switch
-            checked={value.enabled}
-            onChange={(v) => onChange({ enabled: v })}
-          />
+          <Switch checked={value.enabled} onChange={(v) => onChange({ enabled: v })} />
         </Flex>
 
         <Divider style={{ margin: 0 }} />

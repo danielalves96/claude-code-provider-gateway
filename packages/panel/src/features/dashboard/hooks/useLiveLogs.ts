@@ -13,8 +13,7 @@ export function useLiveLogs() {
 
   useSSE<LogEvent>(
     "/api/logs",
-    ({ line }) =>
-      setLogs((prev) => [...prev.slice(-(MAX_LINES - 1)), line]),
+    ({ line }) => setLogs((prev) => [...prev.slice(-(MAX_LINES - 1)), line]),
     { paused },
   );
 

@@ -1,6 +1,6 @@
-import { Flex, Space, Table, Tag, Tooltip, Typography, theme } from "antd";
-import type { TableColumnsType } from "antd";
 import { CaretRightOutlined } from "@ant-design/icons";
+import type { TableColumnsType } from "antd";
+import { Flex, Space, Table, Tag, Tooltip, Typography, theme } from "antd";
 import { formatNumber, formatTime } from "../format.js";
 import { providerLabel } from "../labels.js";
 import type { RequestLogEntry } from "../types.js";
@@ -61,10 +61,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       width: 80,
       align: "right",
       render: (v: number) => (
-        <Text
-          type="secondary"
-          style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}
-        >
+        <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
           {formatNumber(v)}
         </Text>
       ),
@@ -76,10 +73,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       width: 80,
       align: "right",
       render: (v: number) => (
-        <Text
-          type="secondary"
-          style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}
-        >
+        <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
           {v}ms
         </Text>
       ),
@@ -90,10 +84,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "s",
       width: 70,
       render: (v: string) => (
-        <Tag
-          color={v === "ok" ? "success" : "error"}
-          style={{ fontFamily: "monospace" }}
-        >
+        <Tag color={v === "ok" ? "success" : "error"} style={{ fontFamily: "monospace" }}>
           {v}
         </Tag>
       ),
@@ -104,27 +95,40 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       width: 160,
       render: (_, e) => {
         const ts = e.tokenSavers;
-        if (!ts) return <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>—</Text>;
+        if (!ts)
+          return (
+            <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+              —
+            </Text>
+          );
         const saved = ts.rtkBytesBefore - ts.rtkBytesAfter;
         const pct = ts.rtkBytesBefore > 0 ? ((saved / ts.rtkBytesBefore) * 100).toFixed(0) : "0";
         return (
           <Space size={4} wrap>
             {ts.rtkHits > 0 && (
               <Tooltip title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}>
-                <Tag color="geekblue" style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}>
+                <Tag
+                  color="geekblue"
+                  style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}
+                >
                   RTK -{pct}%
                 </Tag>
               </Tooltip>
             )}
             {ts.cavemanLevel && (
               <Tooltip title={`Caveman ${ts.cavemanLevel} injected into system prompt`}>
-                <Tag color="orange" style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}>
+                <Tag
+                  color="orange"
+                  style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}
+                >
                   CAVE {ts.cavemanLevel}
                 </Tag>
               </Tooltip>
             )}
             {ts.rtkHits === 0 && !ts.cavemanLevel && (
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>—</Text>
+              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                —
+              </Text>
             )}
           </Space>
         );
@@ -135,10 +139,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "has_resp",
       width: 90,
       render: (_, e) => (
-        <Tag
-          color={e.response ? "success" : "error"}
-          style={{ fontFamily: "monospace" }}
-        >
+        <Tag color={e.response ? "success" : "error"} style={{ fontFamily: "monospace" }}>
           {e.response ? "yes" : "no"}
         </Tag>
       ),
@@ -148,13 +149,9 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "has_user",
       width: 95,
       render: (_, e) => {
-        const hasUser =
-          !!e.prompt && e.prompt.toLowerCase().includes("[user]");
+        const hasUser = !!e.prompt && e.prompt.toLowerCase().includes("[user]");
         return (
-          <Tag
-            color={hasUser ? "success" : "error"}
-            style={{ fontFamily: "monospace" }}
-          >
+          <Tag color={hasUser ? "success" : "error"} style={{ fontFamily: "monospace" }}>
             {hasUser ? "yes" : "no"}
           </Tag>
         );

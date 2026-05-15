@@ -10,8 +10,14 @@ export function useGatewayStatus() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
 
   const refresh = useCallback(() => {
-    dashboardService.getStatus().then(setStatus).catch(() => {});
-    dashboardService.getStats().then(setStats).catch(() => {});
+    dashboardService
+      .getStatus()
+      .then(setStatus)
+      .catch(() => {});
+    dashboardService
+      .getStats()
+      .then(setStats)
+      .catch(() => {});
   }, []);
 
   usePolling(refresh, POLL_INTERVAL_MS);

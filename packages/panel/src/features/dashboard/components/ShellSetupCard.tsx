@@ -1,31 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  App,
-  Button,
-  Card,
-  Empty,
-  Flex,
-  Space,
-  Tag,
-  Tooltip,
-  Typography,
-  theme,
-} from "antd";
 import {
   CheckCircleFilled,
   CopyOutlined,
   DownloadOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
+import { App, Button, Card, Empty, Flex, Space, Tag, Tooltip, Typography, theme } from "antd";
+import { useEffect, useMemo, useState } from "react";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
 import { dashboardService } from "../dashboardService.js";
-import type {
-  InstallResult,
-  LaunchItem,
-  ShellInfo,
-  ShellName,
-  ShellSetup,
-} from "../types.js";
+import type { InstallResult, LaunchItem, ShellInfo, ShellName, ShellSetup } from "../types.js";
 
 const { Text, Paragraph } = Typography;
 
@@ -69,8 +52,8 @@ export function ShellSetupCard({
     }
   };
 
-  const allInstalled = setup.shells.every(s => s.installed || !s.rcExists);
-  const installableShells = setup.shells.filter(s => !s.installed);
+  const allInstalled = setup.shells.every((s) => s.installed || !s.rcExists);
+  const installableShells = setup.shells.filter((s) => !s.installed);
 
   return (
     <Card
@@ -83,7 +66,7 @@ export function ShellSetupCard({
               Dismiss configuration message
             </Button>
           )}
-          <Button type="text" size="small" onClick={() => setOpen(v => !v)}>
+          <Button type="text" size="small" onClick={() => setOpen((v) => !v)}>
             {open ? "Hide" : "Configure"}
           </Button>
         </Space>
@@ -96,7 +79,7 @@ export function ShellSetupCard({
       {open && (
         <Flex vertical gap={token.paddingMD}>
           <Flex wrap gap={token.paddingXS} align="center">
-            {setup.shells.map(shell => (
+            {setup.shells.map((shell) => (
               <ShellInstallButton
                 key={shell.name}
                 shell={shell}
@@ -113,7 +96,7 @@ export function ShellSetupCard({
                 disabled={installingShell !== null && installingShell !== "all"}
                 onClick={() =>
                   handleInstall(
-                    installableShells.map(s => s.name),
+                    installableShells.map((s) => s.name),
                     "all",
                   )
                 }
@@ -123,12 +106,7 @@ export function ShellSetupCard({
             )}
           </Flex>
 
-          <ManualOneLiner
-            setup={setup}
-            panelPort={panelPort}
-            copiedKey={copiedKey}
-            onCopy={copy}
-          />
+          <ManualOneLiner setup={setup} panelPort={panelPort} copiedKey={copiedKey} onCopy={copy} />
         </Flex>
       )}
     </Card>
@@ -151,7 +129,7 @@ export function QuickLaunchCard({ items, error }: QuickLaunchCardProps) {
 }
 
 function HeaderSummary({ shells }: { shells: ShellInfo[] }) {
-  const installed = shells.filter(s => s.installed);
+  const installed = shells.filter((s) => s.installed);
   if (installed.length === 0) {
     return <Tag>Not installed</Tag>;
   }
@@ -159,7 +137,7 @@ function HeaderSummary({ shells }: { shells: ShellInfo[] }) {
     <Space size={4}>
       <CheckCircleFilled style={{ color: "#52c41a" }} />
       <Text type="secondary">
-        Installed in {installed.map(s => SHELL_DISPLAY_NAMES[s.name]).join(", ")}
+        Installed in {installed.map((s) => SHELL_DISPLAY_NAMES[s.name]).join(", ")}
       </Text>
     </Space>
   );
@@ -203,7 +181,7 @@ function AvailableProviders({
         Available in your terminal:
       </Text>
       <Flex wrap gap={token.paddingXS}>
-        {items.map(item => (
+        {items.map((item) => (
           <Tooltip
             key={item.id}
             title={copiedKey === item.id ? "Copied!" : `Click to copy: ${item.cmd}`}
@@ -282,7 +260,7 @@ function ManualOneLiner({
   const [pickedShell, setPickedShell] = useState<ShellName>(
     setup.currentShell ?? setup.shells[0]?.name ?? "bash",
   );
-  const pickedInfo = setup.shells.find(s => s.name === pickedShell);
+  const pickedInfo = setup.shells.find((s) => s.name === pickedShell);
 
   const oneLiner = useMemo(() => {
     if (pickedShell === "powershell") {
@@ -298,7 +276,7 @@ function ManualOneLiner({
           Or paste this in any terminal:
         </Text>
         <Space size={4}>
-          {setup.shells.map(s => (
+          {setup.shells.map((s) => (
             <Tag
               key={s.name}
               color={pickedShell === s.name ? "blue" : undefined}
@@ -349,23 +327,23 @@ function announceResults(
   results: InstallResult[],
   message: ReturnType<typeof App.useApp>["message"],
 ): void {
-  const installed = results.filter(r => r.status === "installed");
-  const updated = results.filter(r => r.status === "updated");
-  const already = results.filter(r => r.status === "already-installed");
-  const errors = results.filter(r => r.status === "error");
+  const installed = results.filter((r) => r.status === "installed");
+  const updated = results.filter((r) => r.status === "updated");
+  const already = results.filter((r) => r.status === "already-installed");
+  const errors = results.filter((r) => r.status === "error");
 
   if (installed.length > 0) {
     message.success(
-      `Added to ${installed.map(r => r.shell).join(", ")} — open a new terminal to use it`,
+      `Added to ${installed.map((r) => r.shell).join(", ")} — open a new terminal to use it`,
     );
   }
   if (updated.length > 0) {
     message.success(
-      `Updated ${updated.map(r => r.shell).join(", ")} — open a new terminal to pick up the new snippet`,
+      `Updated ${updated.map((r) => r.shell).join(", ")} — open a new terminal to pick up the new snippet`,
     );
   }
   if (already.length > 0 && installed.length === 0 && updated.length === 0) {
-    message.info(`Already up to date in ${already.map(r => r.shell).join(", ")}`);
+    message.info(`Already up to date in ${already.map((r) => r.shell).join(", ")}`);
   }
   for (const e of errors) {
     message.error(`${e.shell}: ${e.error ?? "unknown error"}`);

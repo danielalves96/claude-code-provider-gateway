@@ -1,7 +1,5 @@
-import type {
-  SettingsConfigResponse,
-} from "../../../../daemon/src/panel/contracts.js";
 import type { Config } from "../../../../daemon/src/config/schema.js";
+import type { SettingsConfigResponse } from "../../../../daemon/src/panel/contracts.js";
 
 export type ServerConfig = Partial<Config["server"]>;
 export type WebToolsConfig = Config["webTools"];

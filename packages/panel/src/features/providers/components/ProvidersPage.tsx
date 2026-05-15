@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
 import { Col, Flex, Row, theme } from "antd";
+import { useCallback, useState } from "react";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { useOAuth } from "../hooks/useOAuth.js";
 import { useProviders } from "../hooks/useProviders.js";
@@ -33,8 +33,7 @@ export default function ProvidersPage() {
     onSaveKey: providersApi.saveKey,
     onRequestReplaceKey: (providerId, newValue) =>
       setConfirm({ kind: "replace-key", providerId, newValue }),
-    onRequestRemoveKey: (providerId) =>
-      setConfirm({ kind: "remove-key", providerId }),
+    onRequestRemoveKey: (providerId) => setConfirm({ kind: "remove-key", providerId }),
     onRequestChangeUrl: (providerId, newValue) =>
       setConfirm({ kind: "change-url", providerId, newValue }),
     onAddModel: providersApi.addModel,

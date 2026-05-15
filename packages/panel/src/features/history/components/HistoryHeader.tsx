@@ -1,5 +1,5 @@
-import { Button, Flex, Space, Typography } from "antd";
 import { DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Flex, Space, Typography } from "antd";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 
 const { Text } = Typography;
@@ -34,12 +34,7 @@ export function HistoryHeader({
         <Button icon={<ReloadOutlined />} onClick={onRefresh}>
           Refresh
         </Button>
-        <Button
-          danger
-          icon={<DeleteOutlined />}
-          disabled={!canClear}
-          onClick={onRequestClear}
-        >
+        <Button danger icon={<DeleteOutlined />} disabled={!canClear} onClick={onRequestClear}>
           Clear history
         </Button>
       </Space>

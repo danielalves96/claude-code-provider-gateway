@@ -1,12 +1,12 @@
 import { Alert, Col, Flex, Row, theme } from "antd";
-import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { LoadingState } from "../../../shared/components/LoadingState.js";
+import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { SaveButton } from "../../../shared/components/SaveButton.js";
 import { useSettings } from "../hooks/useSettings.js";
-import { ServerCard } from "./ServerCard.js";
-import { WebToolsCard } from "./WebToolsCard.js";
 import { ProxyCard } from "./ProxyCard.js";
+import { ServerCard } from "./ServerCard.js";
 import { TokenSaversCard } from "./TokenSaversCard.js";
+import { WebToolsCard } from "./WebToolsCard.js";
 
 export default function SettingsPage() {
   const { token } = theme.useToken();
@@ -52,12 +52,7 @@ export default function SettingsPage() {
       />
 
       <Flex>
-        <SaveButton
-          onClick={save}
-          saving={saving}
-          saved={saved}
-          label="Save settings"
-        />
+        <SaveButton onClick={save} saving={saving} saved={saved} label="Save settings" />
       </Flex>
     </Flex>
   );

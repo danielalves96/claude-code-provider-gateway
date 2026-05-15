@@ -1,8 +1,8 @@
-import { Badge, Button, Flex, Space, Typography, theme } from "antd";
 import { CheckOutlined } from "@ant-design/icons";
+import { Badge, Button, Flex, Space, Typography, theme } from "antd";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
-import type { CopilotFlow } from "../types.js";
 import { openExternal } from "../../../shared/openExternal.js";
+import type { CopilotFlow } from "../types.js";
 
 const { Text, Link } = Typography;
 
@@ -52,7 +52,10 @@ export function CopilotDevicePrompt({ flow, onCancel }: CopilotDevicePromptProps
         Step 2 — Approve access on{" "}
         <Link
           href={flow.verificationUri}
-          onClick={(e) => { e.preventDefault(); openExternal(flow.verificationUri); }}
+          onClick={(e) => {
+            e.preventDefault();
+            openExternal(flow.verificationUri);
+          }}
         >
           {flow.verificationUri}
         </Link>

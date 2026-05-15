@@ -1,25 +1,9 @@
+import { CaretDownOutlined, CaretRightOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Checkbox, Col, Flex, Input, Row, Space, Spin, Tag, Typography, theme } from "antd";
 import { useMemo, useState } from "react";
-import {
-  Button,
-  Checkbox,
-  Col,
-  Flex,
-  Input,
-  Row,
-  Space,
-  Spin,
-  Tag,
-  Typography,
-  theme,
-} from "antd";
-import {
-  CaretDownOutlined,
-  CaretRightOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
 import { useProviderModels } from "../hooks/useProviderModels.js";
-import { stripModelPrefix } from "../utils.js";
 import type { ModelInfo } from "../types.js";
+import { stripModelPrefix } from "../utils.js";
 
 const { Text } = Typography;
 
@@ -49,9 +33,7 @@ export function ModelSelector({
   const visible = useMemo(() => {
     if (!models) return [];
     if (!query) return models;
-    return models.filter((m) =>
-      stripModelPrefix(m.display_name).toLowerCase().includes(query),
-    );
+    return models.filter((m) => stripModelPrefix(m.display_name).toLowerCase().includes(query));
   }, [models, query]);
 
   const allDisabled = total > 0 && disabledSet.size === total;
@@ -70,9 +52,7 @@ export function ModelSelector({
   };
 
   const toggleAll = () => {
-    onDisabledModelsChange(
-      disabledSet.size === 0 ? (models ?? []).map((m) => m.id) : [],
-    );
+    onDisabledModelsChange(disabledSet.size === 0 ? (models ?? []).map((m) => m.id) : []);
   };
 
   return (
@@ -103,9 +83,7 @@ export function ModelSelector({
             </Space>
           )}
 
-          {!loading && models?.length === 0 && (
-            <Text type="secondary">No models found</Text>
-          )}
+          {!loading && models?.length === 0 && <Text type="secondary">No models found</Text>}
 
           {!loading && models && models.length > 0 && (
             <ModelGrid
@@ -185,10 +163,7 @@ function ModelGrid({
         }}
       >
         {visible.length === 0 ? (
-          <Text
-            type="secondary"
-            style={{ padding: `${token.paddingXS}px ${token.paddingSM}px` }}
-          >
+          <Text type="secondary" style={{ padding: `${token.paddingXS}px ${token.paddingSM}px` }}>
             No models match "{search}"
           </Text>
         ) : (
@@ -226,10 +201,7 @@ function ModelRow({ model, active, onChange }: ModelRowProps) {
         cursor: "pointer",
       }}
     >
-      <Checkbox
-        checked={active}
-        onChange={(e) => onChange(e.target.checked)}
-      />
+      <Checkbox checked={active} onChange={(e) => onChange(e.target.checked)} />
       <Text
         style={{
           fontSize: token.fontSizeSM,

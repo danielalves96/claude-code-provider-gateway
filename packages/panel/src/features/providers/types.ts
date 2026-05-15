@@ -2,18 +2,13 @@ import type {
   CopilotOAuthStartResponse,
   ModelInfo,
   OAuthInfo,
-  OpenAIAccountOAuthStartResponse,
   OAuthStatusResponse,
+  OpenAIAccountOAuthStartResponse,
   ProviderInfo,
   ProviderTestResult,
 } from "../../../../daemon/src/panel/contracts.js";
 
-export type {
-  ModelInfo,
-  OAuthInfo,
-  OAuthStatusResponse,
-  ProviderInfo,
-};
+export type { ModelInfo, OAuthInfo, OAuthStatusResponse, ProviderInfo };
 
 export type TestResult = ProviderTestResult;
 

@@ -1,6 +1,6 @@
-import { Badge, Card, Space, Table, Typography, theme } from "antd";
-import type { TableColumnsType } from "antd";
 import { CaretRightOutlined } from "@ant-design/icons";
+import type { TableColumnsType } from "antd";
+import { Badge, Card, Space, Table, Typography, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import { commandFor, formatDate, topModel } from "../format.js";
 import { providerLabel } from "../labels.js";
@@ -15,11 +15,7 @@ interface SessionsTableProps {
   onToggleExpanded: (id: string, expanded: boolean) => void;
 }
 
-export function SessionsTable({
-  sessions,
-  expandedKeys,
-  onToggleExpanded,
-}: SessionsTableProps) {
+export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: SessionsTableProps) {
   const { token } = theme.useToken();
 
   const columns: TableColumnsType<Session> = [
@@ -30,11 +26,7 @@ export function SessionsTable({
       render: (_, s) => (
         <Badge
           status={
-            s.status === "running"
-              ? "processing"
-              : s.status === "crashed"
-                ? "error"
-                : "default"
+            s.status === "running" ? "processing" : s.status === "crashed" ? "error" : "default"
           }
           text={s.status}
         />
@@ -46,15 +38,11 @@ export function SessionsTable({
       ellipsis: true,
       render: (_, s) => (
         <Space direction="vertical" size={2}>
-          <Text
-            style={{ fontFamily: "monospace", color: token.colorSuccessText }}
-          >
+          <Text style={{ fontFamily: "monospace", color: token.colorSuccessText }}>
             {commandFor(s)}
           </Text>
           <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-            {s.modelMode === "all"
-              ? "all-providers"
-              : `single: ${providerLabel(s.activeProvider)}`}
+            {s.modelMode === "all" ? "all-providers" : `single: ${providerLabel(s.activeProvider)}`}
           </Text>
         </Space>
       ),
@@ -91,9 +79,7 @@ export function SessionsTable({
       key: "duration",
       width: 90,
       render: (_, s) => (
-        <Text style={{ fontFamily: "monospace" }}>
-          {formatUptime(s.durationMs)}
-        </Text>
+        <Text style={{ fontFamily: "monospace" }}>{formatUptime(s.durationMs)}</Text>
       ),
     },
     {
@@ -148,8 +134,7 @@ export function SessionsTable({
         })}
         expandable={{
           expandedRowKeys: expandedKeys,
-          onExpand: (expanded, record) =>
-            onToggleExpanded(record.id, expanded),
+          onExpand: (expanded, record) => onToggleExpanded(record.id, expanded),
           expandedRowRender: (record) => <SessionDetails session={record} />,
           expandIcon: ({ expanded, onExpand, record }) => (
             <CaretRightOutlined

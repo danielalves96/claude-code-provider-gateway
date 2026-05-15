@@ -1,8 +1,8 @@
-import { Card, Col, Empty, Row, Space, Tag, Typography, theme } from "antd";
 import { ThunderboltOutlined } from "@ant-design/icons";
+import { Card, Col, Empty, Row, Space, Tag, Typography, theme } from "antd";
 import { Link as RouterLink } from "react-router-dom";
-import { ProviderStatCard } from "./ProviderStatCard.js";
 import type { StatsResponse } from "../types.js";
+import { ProviderStatCard } from "./ProviderStatCard.js";
 
 const { Text } = Typography;
 
@@ -20,17 +20,12 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
         <Space>
           <ThunderboltOutlined style={{ color: token.colorPrimary }} />
           <span>Current Session — Enabled Providers</span>
-          {stats && (
-            <Tag color={count > 0 ? "processing" : "default"}>
-              {count} enabled
-            </Tag>
-          )}
+          {stats && <Tag color={count > 0 ? "processing" : "default"}>{count} enabled</Tag>}
         </Space>
       }
       extra={
         <Text type="secondary">
-          Stats reset on daemon restart ·{" "}
-          <ThemedLink to="/history">History</ThemedLink>
+          Stats reset on daemon restart · <ThemedLink to="/history">History</ThemedLink>
         </Text>
       }
     >
@@ -39,8 +34,7 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <Text type="secondary">
-              No providers enabled.{" "}
-              <ThemedLink to="/providers">Configure providers</ThemedLink>
+              No providers enabled. <ThemedLink to="/providers">Configure providers</ThemedLink>
             </Text>
           }
         />

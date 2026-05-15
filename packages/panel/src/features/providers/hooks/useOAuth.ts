@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { openExternal } from "../../../shared/openExternal.js";
 import { DEVICE_FLOW_PROVIDERS } from "../constants.js";
 import { providersService } from "../providersService.js";
 import type { CopilotFlow } from "../types.js";
-import { openExternal } from "../../../shared/openExternal.js";
 
 const BROWSER_FLOW_TIMEOUT_MS = 5 * 60 * 1000;
 const BROWSER_FLOW_POLL_MS = 1200;
@@ -34,13 +34,7 @@ export function useOAuth({ onSuccess }: UseOAuthOptions) {
   }, [clearPoll]);
 
   const pollUntilDone = useCallback(
-    (
-      id: string,
-      key: string,
-      deadline: number,
-      intervalMs: number,
-      onResolved: () => void,
-    ) => {
+    (id: string, key: string, deadline: number, intervalMs: number, onResolved: () => void) => {
       clearPoll();
       pollRef.current = window.setInterval(async () => {
         try {
@@ -56,8 +50,7 @@ export function useOAuth({ onSuccess }: UseOAuthOptions) {
             clearPoll();
             onResolved();
             setError(
-              result.error ??
-                (expired ? "Device code expired" : "Login failed or timed out"),
+              result.error ?? (expired ? "Device code expired" : "Login failed or timed out"),
             );
           }
         } catch {
@@ -111,8 +104,7 @@ export function useOAuth({ onSuccess }: UseOAuthOptions) {
   );
 
   const start = useCallback(
-    (id: string) =>
-      DEVICE_FLOW_PROVIDERS.has(id) ? startDeviceFlow(id) : startBrowserFlow(id),
+    (id: string) => (DEVICE_FLOW_PROVIDERS.has(id) ? startDeviceFlow(id) : startBrowserFlow(id)),
     [startDeviceFlow, startBrowserFlow],
   );
 

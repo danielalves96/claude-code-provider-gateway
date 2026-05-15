@@ -1,5 +1,11 @@
 import { http } from "../../shared/api/http.js";
-import type { SettingsConfig, ServerConfig, WebToolsConfig, ProxyConfig, TokenSaversConfig } from "./types.js";
+import type {
+  ProxyConfig,
+  ServerConfig,
+  SettingsConfig,
+  TokenSaversConfig,
+  WebToolsConfig,
+} from "./types.js";
 
 export const settingsService = {
   get: () => http.get<SettingsConfig>("/config"),
@@ -8,6 +14,5 @@ export const settingsService = {
     webTools: WebToolsConfig,
     proxy: ProxyConfig,
     tokenSavers: TokenSaversConfig,
-  ) =>
-    http.put<unknown>("/config", { server, webTools, proxy, tokenSavers }),
+  ) => http.put<unknown>("/config", { server, webTools, proxy, tokenSavers }),
 };

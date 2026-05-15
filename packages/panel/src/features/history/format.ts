@@ -24,9 +24,5 @@ export function topModel(session: Session): string | null {
   const models = Object.entries(session.modelStats ?? {}).sort(
     ([, a], [, b]) => b.requests - a.requests,
   );
-  return (
-    models[0]?.[0] ??
-    [...(session.requestLog ?? [])].reverse()[0]?.requestedModel ??
-    null
-  );
+  return models[0]?.[0] ?? [...(session.requestLog ?? [])].reverse()[0]?.requestedModel ?? null;
 }

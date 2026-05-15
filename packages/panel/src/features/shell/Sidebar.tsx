@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Layout, Menu, Flex, theme, Tooltip, Typography } from "antd";
 import { GithubOutlined } from "@ant-design/icons";
+import { Flex, Layout, Menu, Tooltip, Typography, theme } from "antd";
+import { useState } from "react";
 
 const { Text } = Typography;
+
 import { useLocation, useNavigate } from "react-router-dom";
-import { NAV_ITEMS, selectedKeyFromPath } from "./navItems.js";
 import { openExternal } from "../../shared/openExternal.js";
+import { NAV_ITEMS, selectedKeyFromPath } from "./navItems.js";
 
 const { Sider } = Layout;
 
@@ -53,7 +54,10 @@ function GitHubButton({ collapsed }: { collapsed: boolean }) {
   const link = (
     <a
       href={GITHUB_URL}
-      onClick={(e) => { e.preventDefault(); openExternal(GITHUB_URL); }}
+      onClick={(e) => {
+        e.preventDefault();
+        openExternal(GITHUB_URL);
+      }}
       style={{
         display: "flex",
         alignItems: "center",

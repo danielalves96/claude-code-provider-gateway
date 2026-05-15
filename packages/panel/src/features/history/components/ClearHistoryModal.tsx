@@ -9,12 +9,7 @@ interface ClearHistoryModalProps {
   onConfirm: () => void;
 }
 
-export function ClearHistoryModal({
-  open,
-  loading,
-  onCancel,
-  onConfirm,
-}: ClearHistoryModalProps) {
+export function ClearHistoryModal({ open, loading, onCancel, onConfirm }: ClearHistoryModalProps) {
   return (
     <Modal
       open={open}
@@ -24,22 +19,14 @@ export function ClearHistoryModal({
         <Button key="cancel" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>,
-        <Button
-          key="ok"
-          type="primary"
-          danger
-          loading={loading}
-          onClick={onConfirm}
-          autoFocus
-        >
+        <Button key="ok" type="primary" danger loading={loading} onClick={onConfirm} autoFocus>
           Clear history
         </Button>,
       ]}
       width={440}
     >
       <Text type="secondary">
-        Removes completed and crashed sessions. The currently running session is
-        kept.
+        Removes completed and crashed sessions. The currently running session is kept.
       </Text>
     </Modal>
   );

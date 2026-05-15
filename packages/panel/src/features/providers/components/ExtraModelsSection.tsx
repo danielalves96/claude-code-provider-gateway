@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Button, Flex, Input, Space, Tag, Typography } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
+import { Button, Flex, Input, Space, Tag, Typography } from "antd";
+import { useState } from "react";
 
 const { Text } = Typography;
 
@@ -10,11 +10,7 @@ interface ExtraModelsSectionProps {
   onRemove: (model: string) => void;
 }
 
-export function ExtraModelsSection({
-  models,
-  onAdd,
-  onRemove,
-}: ExtraModelsSectionProps) {
+export function ExtraModelsSection({ models, onAdd, onRemove }: ExtraModelsSectionProps) {
   const [draft, setDraft] = useState("");
   const trimmed = draft.trim();
   const alreadyAdded = models.includes(trimmed);

@@ -1,4 +1,3 @@
-import type { MenuProps } from "antd";
 import {
   ApiOutlined,
   DashboardOutlined,
@@ -6,6 +5,7 @@ import {
   HistoryOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
+import type { MenuProps } from "antd";
 
 export type NavItem = NonNullable<MenuProps["items"]>[number];
 

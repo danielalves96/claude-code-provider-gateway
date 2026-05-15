@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import react from "@vitejs/plugin-react";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { defineConfig } from "vite";
 
-const { version } = JSON.parse(
-  readFileSync(resolve(__dirname, '../../package.json'), 'utf-8')
-) as { version: string }
+const { version } = JSON.parse(readFileSync(resolve(__dirname, "../../package.json"), "utf-8")) as {
+  version: string;
+};
 
 export default defineConfig({
   plugins: [react()],
@@ -13,7 +13,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version),
   },
   build: {
-    outDir: '../../packages/daemon/dist/static',
+    outDir: "../../packages/daemon/dist/static",
     emptyOutDir: true,
   },
   server: {
@@ -21,7 +21,7 @@ export default defineConfig({
     proxy: {
       // 127.0.0.1 explicitly: on Linux with default /etc/hosts, `localhost`
       // can resolve to ::1 (IPv6) while the daemon binds IPv4 only.
-      '/api': 'http://127.0.0.1:6767',
+      "/api": "http://127.0.0.1:6767",
     },
   },
-})
+});

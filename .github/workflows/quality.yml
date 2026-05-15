@@ -10,6 +10,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tsconfig.json"
+      - "biome.jsonc"
       - ".github/workflows/quality.yml"
   workflow_dispatch:
 
@@ -20,6 +21,23 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  biome:
+    name: Biome format and lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting, lint, and imports
+        run: npm run quality:ci -- --reporter=github --diagnostic-level=error
+
   typescript:
     name: TypeScript build and daemon tests
     runs-on: ubuntu-22.04

@@ -6,11 +6,7 @@ interface UseSSEOptions {
   withCredentials?: boolean;
 }
 
-export function useSSE<T>(
-  path: string,
-  onMessage: (data: T) => void,
-  options: UseSSEOptions = {},
-) {
+export function useSSE<T>(path: string, onMessage: (data: T) => void, options: UseSSEOptions = {}) {
   const { paused = false, withCredentials = false } = options;
   const handler = useRef(onMessage);
   handler.current = onMessage;

@@ -1,8 +1,8 @@
 import { Flex, Typography, theme } from "antd";
+import type { Session } from "../types.js";
 import { ModelsUsedTable } from "./ModelsUsedTable.js";
 import { RequestLogTable } from "./RequestLogTable.js";
 import { SessionMetadataCards } from "./SessionMetadataCards.js";
-import type { Session } from "../types.js";
 
 const { Text } = Typography;
 const RECENT_REQUEST_LIMIT = 40;
@@ -17,9 +17,7 @@ export function SessionDetails({ session }: SessionDetailsProps) {
   const usedModels = Object.entries(session.modelStats ?? {}).sort(
     ([, a], [, b]) => b.requests - a.requests,
   );
-  const requestLog = [...(session.requestLog ?? [])]
-    .reverse()
-    .slice(0, RECENT_REQUEST_LIMIT);
+  const requestLog = [...(session.requestLog ?? [])].reverse().slice(0, RECENT_REQUEST_LIMIT);
 
   return (
     <Flex
@@ -33,10 +31,7 @@ export function SessionDetails({ session }: SessionDetailsProps) {
       {usedModels.length > 0 && <ModelsUsedTable rows={usedModels} />}
       {requestLog.length > 0 && <RequestLogTable entries={requestLog} />}
 
-      <Text
-        type="secondary"
-        style={{ fontFamily: "monospace", fontSize: token.fontSizeSM - 1 }}
-      >
+      <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM - 1 }}>
         session id: {session.id}
       </Text>
     </Flex>
