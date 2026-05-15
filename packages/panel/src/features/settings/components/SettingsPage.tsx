@@ -6,6 +6,7 @@ import { useSettings } from "../hooks/useSettings.js";
 import { ServerCard } from "./ServerCard.js";
 import { WebToolsCard } from "./WebToolsCard.js";
 import { ProxyCard } from "./ProxyCard.js";
+import { TokenSaversCard } from "./TokenSaversCard.js";
 
 export default function SettingsPage() {
   const { token } = theme.useToken();
@@ -15,6 +16,8 @@ export default function SettingsPage() {
     updateWebTools,
     proxy,
     updateProxy,
+    tokenSavers,
+    updateTokenSavers,
     loaded,
     saving,
     saved,
@@ -36,6 +39,9 @@ export default function SettingsPage() {
         </Col>
         <Col xs={24} lg={12}>
           <ProxyCard value={proxy} onChange={updateProxy} />
+        </Col>
+        <Col xs={24} lg={12}>
+          <TokenSaversCard value={tokenSavers} onChange={updateTokenSavers} />
         </Col>
       </Row>
 

@@ -15,7 +15,7 @@ const DISMISSED_SHELL_SETUP_KEY = "cc-provider-gtw:shell-setup-dismissed";
 export default function DashboardPage() {
   const { token } = theme.useToken();
   const { status, stats } = useGatewayStatus();
-  const { items } = useLaunchCommands();
+  const { items, error: launchError } = useLaunchCommands();
   const { setup, refresh } = useShellSetup();
   const { logs, paused, togglePaused, clear } = useLiveLogs();
   const [setupDismissed, setSetupDismissed] = useState(
@@ -47,7 +47,7 @@ export default function DashboardPage() {
       <StatusOverview status={status} />
       <EnabledProvidersCard stats={stats} />
       {!hasTerminalConfigured && shellSetupCard}
-      <QuickLaunchCard items={items} />
+      <QuickLaunchCard items={items} error={launchError} />
       {hasTerminalConfigured && shellSetupCard}
       <LiveLogsPanel
         logs={logs}

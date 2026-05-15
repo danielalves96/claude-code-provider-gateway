@@ -137,14 +137,15 @@ export function ShellSetupCard({
 
 interface QuickLaunchCardProps {
   items: LaunchItem[];
+  error?: Error | null;
 }
 
-export function QuickLaunchCard({ items }: QuickLaunchCardProps) {
+export function QuickLaunchCard({ items, error }: QuickLaunchCardProps) {
   const { copiedKey, copy } = useCopyToClipboard();
 
   return (
     <Card title="Quick Launch">
-      <AvailableProviders items={items} onCopy={copy} copiedKey={copiedKey} />
+      <AvailableProviders items={items} error={error} onCopy={copy} copiedKey={copiedKey} />
     </Card>
   );
 }
@@ -166,14 +167,26 @@ function HeaderSummary({ shells }: { shells: ShellInfo[] }) {
 
 function AvailableProviders({
   items,
+  error,
   copiedKey,
   onCopy,
 }: {
   items: LaunchItem[];
+  error?: Error | null;
   copiedKey: string | null;
   onCopy: (key: string, value: string) => void;
 }) {
   const { token } = theme.useToken();
+  if (error) {
+    return (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={`Quick Launch unavailable: ${error.message}`}
+        style={{ margin: 0 }}
+      />
+    );
+  }
+
   if (items.length === 0) {
     return (
       <Empty

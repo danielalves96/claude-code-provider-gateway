@@ -99,6 +99,38 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       ),
     },
     {
+      title: "Savers",
+      key: "tokenSavers",
+      width: 160,
+      render: (_, e) => {
+        const ts = e.tokenSavers;
+        if (!ts) return <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>—</Text>;
+        const saved = ts.rtkBytesBefore - ts.rtkBytesAfter;
+        const pct = ts.rtkBytesBefore > 0 ? ((saved / ts.rtkBytesBefore) * 100).toFixed(0) : "0";
+        return (
+          <Space size={4} wrap>
+            {ts.rtkHits > 0 && (
+              <Tooltip title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}>
+                <Tag color="geekblue" style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}>
+                  RTK -{pct}%
+                </Tag>
+              </Tooltip>
+            )}
+            {ts.cavemanLevel && (
+              <Tooltip title={`Caveman ${ts.cavemanLevel} injected into system prompt`}>
+                <Tag color="orange" style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}>
+                  CAVE {ts.cavemanLevel}
+                </Tag>
+              </Tooltip>
+            )}
+            {ts.rtkHits === 0 && !ts.cavemanLevel && (
+              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>—</Text>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
       title: "Response",
       key: "has_resp",
       width: 90,

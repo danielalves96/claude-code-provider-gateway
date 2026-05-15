@@ -2,11 +2,16 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildDefaultConfig } from '../config/index.js'
 import { createPanelApp } from './app.js'
+import type { Config } from '../config/schema.js'
+
+function testPanelApp(config: Config) {
+  return createPanelApp(config, { saveConfig: () => {} })
+}
 
 test('panel API rejects browser requests from untrusted origins', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/launch-commands', {
     headers: {
@@ -25,7 +30,7 @@ test('panel API allows trusted Tauri origins in production', async () => {
   try {
     const config = buildDefaultConfig()
     config.server.authToken = 'secret'
-    const app = createPanelApp(config)
+    const app = testPanelApp(config)
 
     const response = await app.request('/api/status', {
       headers: { Origin: 'https://tauri.localhost' },
@@ -45,7 +50,7 @@ test('panel API allows vite dev origin only outside production', async () => {
   try {
     const config = buildDefaultConfig()
     config.server.authToken = 'secret'
-    const app = createPanelApp(config)
+    const app = testPanelApp(config)
 
     const response = await app.request('/api/status', {
       headers: { Origin: 'http://localhost:5173' },
@@ -65,7 +70,7 @@ test('panel API rejects vite dev origin in production', async () => {
   try {
     const config = buildDefaultConfig()
     config.server.authToken = 'secret'
-    const app = createPanelApp(config)
+    const app = testPanelApp(config)
 
     const response = await app.request('/api/status', {
       headers: { Origin: 'http://localhost:5173' },
@@ -81,7 +86,7 @@ test('panel API rejects vite dev origin in production', async () => {
 test('panel API accepts gateway token as explicit local bypass', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/status', {
     headers: {
@@ -96,7 +101,7 @@ test('panel API accepts gateway token as explicit local bypass', async () => {
 test('panel API keeps local curl-style reads working without Origin', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/status')
 
@@ -108,7 +113,7 @@ test('panel API keeps local curl-style reads working without Origin', async () =
 test('panel API requires token for sensitive local requests without Origin', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/launch-commands')
 
@@ -116,10 +121,31 @@ test('panel API requires token for sensitive local requests without Origin', asy
   assert.deepEqual(await response.json(), { error: 'Authentication required' })
 })
 
+test('panel API exposes token-free quick launch commands without Origin', async () => {
+  const config = buildDefaultConfig()
+  config.server.authToken = 'secret'
+  config.providers.openrouter.enabled = true
+  const app = testPanelApp(config)
+
+  const response = await app.request('/api/quick-launch')
+
+  assert.equal(response.status, 200)
+  const body = await response.json() as {
+    all?: string
+    manual?: string
+    perProvider?: Array<{ id: string; cli: string }>
+  }
+  assert.equal(body.all, 'ccpg --all')
+  assert.equal(body.manual, undefined)
+  assert.deepEqual(body.perProvider, [
+    { id: 'openrouter', label: 'OpenRouter', cli: 'ccpg --OpenRouter' },
+  ])
+})
+
 test('panel API allows sensitive local requests with gateway token', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/launch-commands', {
     headers: { Authorization: 'Bearer secret' },
@@ -133,7 +159,7 @@ test('panel API allows sensitive local requests with gateway token', async () =>
 test('panel API rejects sensitive local requests with wrong gateway token', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/control/shutdown', {
     method: 'POST',
@@ -146,7 +172,7 @@ test('panel API rejects sensitive local requests with wrong gateway token', asyn
 test('panel API rejects unknown shell names before installing snippets', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/shell-setup/install', {
     method: 'POST',
@@ -164,7 +190,7 @@ test('panel API rejects unknown shell names before installing snippets', async (
 test('PUT /api/config persists proxy settings and returns them on GET', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const putResponse = await app.request('/api/config', {
     method: 'PUT',
@@ -184,10 +210,48 @@ test('PUT /api/config persists proxy settings and returns them on GET', async ()
   assert.equal(body.proxy?.url, 'http://127.0.0.1:7890')
 })
 
+test('PUT /api/config persists token saver settings and returns them on GET', async () => {
+  const config = buildDefaultConfig()
+  config.server.authToken = 'secret'
+  const app = testPanelApp(config)
+
+  const putResponse = await app.request('/api/config', {
+    method: 'PUT',
+    headers: {
+      Authorization: 'Bearer secret',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      tokenSavers: {
+        rtkEnabled: true,
+        cavemanEnabled: true,
+        cavemanLevel: 'full',
+      },
+    }),
+  })
+  assert.equal(putResponse.status, 200)
+
+  const getResponse = await app.request('/api/config', {
+    headers: { Authorization: 'Bearer secret' },
+  })
+  const body = await getResponse.json() as {
+    tokenSavers?: {
+      rtkEnabled: boolean
+      cavemanEnabled: boolean
+      cavemanLevel: string
+    }
+  }
+  assert.deepEqual(body.tokenSavers, {
+    rtkEnabled: true,
+    cavemanEnabled: true,
+    cavemanLevel: 'full',
+  })
+})
+
 test('PUT /api/config rejects invalid proxy URL when enabled', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/config', {
     method: 'PUT',
@@ -205,7 +269,7 @@ test('PUT /api/config rejects invalid proxy URL when enabled', async () => {
 test('PUT /api/config rejects proxy URL with embedded credentials even when disabled', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   for (const enabled of [true, false]) {
     const response = await app.request('/api/config', {
@@ -225,7 +289,7 @@ test('PUT /api/config rejects proxy URL with embedded credentials even when disa
 test('PUT /api/config rejects enabling proxy when existing URL is empty', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const response = await app.request('/api/config', {
     method: 'PUT',
@@ -242,7 +306,7 @@ test('PUT /api/config disabling proxy clears the enabled flag', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
   config.proxy = { enabled: true, url: 'http://127.0.0.1:7890' }
-  const app = createPanelApp(config)
+  const app = testPanelApp(config)
 
   const putResponse = await app.request('/api/config', {
     method: 'PUT',

@@ -11,6 +11,7 @@ import { prepareLaunch } from '../launch-prepare.js'
 import type {
   InstallShellSetupResponse,
   LaunchCommandsResponse,
+  QuickLaunchResponse,
 } from '../contracts.js'
 import type { PanelRuntime } from '../runtime.js'
 
@@ -18,18 +19,19 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
   app.get('/api/launch-commands', c => {
     const config = runtime.currentConfig()
     const env = `ANTHROPIC_AUTH_TOKEN=${config.server.authToken} ANTHROPIC_BASE_URL=http://localhost:${config.server.proxyPort} CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1 claude`
-    const enabled = (Object.entries(config.providers) as [ProviderId, typeof config.providers[ProviderId]][])
-      .filter(([, pc]) => pc.enabled)
-      .map(([id]) => ({
-        id,
-        label: PROVIDER_LABELS[id] ?? id,
-        cli: `ccpg ${flagFor(id) ?? `--${id}`}`,
-      }))
     const response = {
       manual: env,
       all: 'ccpg --all',
-      perProvider: enabled,
+      perProvider: buildQuickLaunchProviders(config),
     } satisfies LaunchCommandsResponse
+    return c.json(response)
+  })
+
+  app.get('/api/quick-launch', c => {
+    const response = {
+      all: 'ccpg --all',
+      perProvider: buildQuickLaunchProviders(runtime.currentConfig()),
+    } satisfies QuickLaunchResponse
     return c.json(response)
   })
 
@@ -91,6 +93,16 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
     ].join(' ')
     return c.json({ command: cmd })
   })
+}
+
+function buildQuickLaunchProviders(config: ReturnType<PanelRuntime['currentConfig']>) {
+  return (Object.entries(config.providers) as [ProviderId, typeof config.providers[ProviderId]][])
+    .filter(([, pc]) => pc.enabled)
+    .map(([id]) => ({
+      id,
+      label: PROVIDER_LABELS[id] ?? id,
+      cli: `ccpg ${flagFor(id) ?? `--${id}`}`,
+    }))
 }
 
 function flagFor(id: ProviderId): string | null {

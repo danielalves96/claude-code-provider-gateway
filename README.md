@@ -105,6 +105,7 @@ The next documentation step is a separate official docs site repository. Until t
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot uses Device Flow. Tokens refresh automatically.
+- **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
 - **Request history** - see model, provider, prompt, response preview, input tokens, latency, errors, and session totals.
@@ -130,6 +131,19 @@ CCPG logs each request Claude Code sends through the gateway, including backgrou
 </p>
 
 This is useful for debugging cost, understanding why a model behaved a certain way, and seeing background housekeeping calls that otherwise feel invisible.
+
+## Token Savers
+
+CCPG includes two optional local token-saving features in **Settings -> Token Savers**:
+
+| Feature | What it does | Best for |
+|---|---|---|
+| RTK compression | Compacts large `tool_result` payloads before the request reaches the provider. | Big `rg`, `git diff`, `git status`, `find`, `ls`, `tree`, numbered file dumps, and repetitive logs. |
+| Caveman mode | Injects terse-response guidance into the system prompt. | Reducing response verbosity and output tokens. |
+
+RTK does not change normal chat messages or errored tool results. If a request has no large tool output, there may be nothing to compress. When RTK does compress something, the daemon log records a line with bytes saved and the filter used.
+
+Caveman is different: it does not reduce input tokens. It asks the model to answer more tersely, with levels `lite`, `full`, and `ultra`.
 
 ## How `ccpg --all` Works
 
@@ -289,9 +303,10 @@ Every request goes through the same basic flow:
 1. Claude Code sends `POST /v1/messages` to CCPG's local proxy.
 2. CCPG authenticates the local request with its generated gateway token.
 3. CCPG resolves the target provider and model from the selected launch mode, model prefix, or routing rules.
-4. CCPG converts Anthropic Messages to the provider's native format when needed.
-5. CCPG streams the response back as Anthropic-compatible SSE.
-6. CCPG records session metadata and request details locally.
+4. CCPG applies enabled token savers to the request.
+5. CCPG converts Anthropic Messages to the provider's native format when needed.
+6. CCPG streams the response back as Anthropic-compatible SSE.
+7. CCPG records session metadata and request details locally.
 
 ## Runtime Storage
 
@@ -302,7 +317,7 @@ Runtime files live in:
 
 | File | Purpose |
 |---|---|
-| `config.json` | Non-sensitive provider settings, routing rules, ports, and model mode. |
+| `config.json` | Non-sensitive provider settings, routing rules, token saver settings, ports, and model mode. |
 | `secrets.enc.json` | API keys, OAuth tokens, and auth token encrypted with AES-256-GCM. |
 | `secret.key` | Local master key, unless `CC_GATEWAY_MASTER_KEY` is provided. |
 | `current-session.json` | Active session checkpoint. |

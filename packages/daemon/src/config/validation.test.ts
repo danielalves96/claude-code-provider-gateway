@@ -32,11 +32,15 @@ test('normalizeConfig uses proxy defaults when proxy field is absent (legacy con
   const defaults = buildDefaultConfig()
   const legacyConfig = { ...defaults } as Record<string, unknown>
   delete legacyConfig.proxy
+  delete legacyConfig.tokenSavers
 
   const normalized = normalizeConfig(legacyConfig as unknown as typeof defaults, defaults)
 
   assert.equal(normalized.proxy.enabled, false)
   assert.equal(normalized.proxy.url, '')
+  assert.equal(normalized.tokenSavers.rtkEnabled, false)
+  assert.equal(normalized.tokenSavers.cavemanEnabled, false)
+  assert.equal(normalized.tokenSavers.cavemanLevel, 'lite')
 })
 
 test('normalizeConfig preserves proxy config when present', () => {
@@ -86,4 +90,22 @@ test('normalizeConfig falls back for invalid runtime values', () => {
   assert.equal(normalized.modelMode, defaults.modelMode)
   assert.equal(normalized.providers.nvidia_nim.enabled, defaults.providers.nvidia_nim.enabled)
   assert.equal(normalized.providers.nvidia_nim.requestTimeoutMs, undefined)
+})
+
+test('normalizeConfig preserves valid token saver settings', () => {
+  const defaults = buildDefaultConfig()
+  const config = {
+    ...defaults,
+    tokenSavers: {
+      rtkEnabled: true,
+      cavemanEnabled: true,
+      cavemanLevel: 'ultra' as const,
+    },
+  }
+
+  const normalized = normalizeConfig(config, defaults)
+
+  assert.equal(normalized.tokenSavers.rtkEnabled, true)
+  assert.equal(normalized.tokenSavers.cavemanEnabled, true)
+  assert.equal(normalized.tokenSavers.cavemanLevel, 'ultra')
 })

@@ -29,6 +29,7 @@ export type {
   SessionProviderStat,
   SessionRecord,
   SessionRequestLogEntry,
+  TokenSaverStats,
 } from './session-types.js'
 
 const HEARTBEAT_TIMEOUT_MS = 60_000
