@@ -2,7 +2,7 @@
 
 # Claude Code Provider Gateway
 
-**Stop paying Anthropic prices. Keep the Claude Code experience.**
+**Claude Code, your provider, one local desktop gateway.**
 
 Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, llama.cpp, or Anthropic itself, while keeping the Claude Code workflow intact.
 
@@ -15,7 +15,7 @@ Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NV
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-0f172a?style=for-the-badge)](#pricing)
 [![Forever Free](https://img.shields.io/badge/forever-free-16a34a?style=for-the-badge)](#pricing)
 
-**Desktop-first. Local-only. Forever free.**
+**Free, open source, and local-first.**
 
 </div>
 
@@ -75,11 +75,17 @@ ccpg --all
 
 ## Status
 
-The public launch target is **v0.1.0**. When the repository goes public, CCPG should already have desktop installers attached to the v0.1.0 GitHub Release.
+CCPG is an early release, feedback is welcome, and it is already usable for testing.
 
-Until that release is cut, this repository is the source of truth for development. The production path is desktop-only: users should not need Node.js, npm, Rust, Bun, or hand-edited terminal config.
+v0.1.0 is available now with desktop installers for macOS, Linux, and Windows.
+Expect rough edges, but the core flow is ready:
+
+install app → add provider → test connection → run Claude Code through CCPG.
+
+The production path is desktop-only: users should not need Node.js, npm, Rust, Bun, or hand-edited terminal config.
 
 The next documentation step is a separate official docs site repository. Until then, the key docs live here:
+
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development](docs/DEVELOPMENT.md)
