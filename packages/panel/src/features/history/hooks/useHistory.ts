@@ -60,9 +60,7 @@ export function useHistory() {
   }, []);
 
   const toggleExpanded = useCallback((id: string, expanded: boolean) => {
-    setExpandedKeys((prev) =>
-      expanded ? [...prev, id] : prev.filter((k) => k !== id),
-    );
+    setExpandedKeys((prev) => (expanded ? [...prev, id] : prev.filter((k) => k !== id)));
   }, []);
 
   return {

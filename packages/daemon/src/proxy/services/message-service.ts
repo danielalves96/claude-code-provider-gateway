@@ -1,32 +1,30 @@
-import type { MessagesRequest } from "../../core/anthropic/types.js";
 import { countRequestTokens } from "../../core/anthropic/tokens.js";
+import type { MessagesRequest } from "../../core/anthropic/types.js";
 import { logger } from "../../observability/log.js";
+import type { TokenSaverStats } from "../../runtime/session-types.js";
 import {
-  recordSessionRequest,
-  setSessionPrimaryModel,
   getSessionPrimaryModel,
   isFirstSessionRequest,
+  recordSessionRequest,
+  setSessionPrimaryModel,
 } from "../../runtime/sessions.js";
 import { recordRequest } from "../../runtime/stats.js";
-import {
-  anthropicError,
-  providerErrorStatus,
-  providerErrorType,
-} from "../errors.js";
 import type { AnthropicErrorResponse, ErrorStatus } from "../errors.js";
+import { anthropicError, providerErrorStatus, providerErrorType } from "../errors.js";
 import { resolveModel } from "../model-router.js";
+import { tryOptimize } from "../optimizations.js";
 import {
   getAnthropicCredentialsStatus,
   streamAnthropicNative,
 } from "../providers/anthropic-passthrough.js";
-import { tryOptimize } from "../optimizations.js";
 import type { ProxyRuntime } from "../runtime.js";
-import { serializePrompt } from "./prompt-serializer.js";
-import { streamResult, streamResultWithCapture } from "./stream-result.js";
 import { injectCaveman } from "../token-savers/caveman.js";
 import { cloneMessagesRequest, compressMessages, formatRtkLog } from "../token-savers/rtk.js";
-import type { TokenSaverStats } from "../../runtime/session-types.js";
+import { serializePrompt } from "./prompt-serializer.js";
+import { streamResult, streamResultWithCapture } from "./stream-result.js";
+
 export { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
+
 import { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 
 export type MessageServiceResult =
@@ -48,16 +46,11 @@ export class MessageService {
   async createMessage(req: MessagesRequest): Promise<MessageServiceResult> {
     const started = Date.now();
     const isClaudeTierRequest = /^claude-/i.test(req.model);
-    const optimized = isClaudeTierRequest
-      ? { handled: false as const }
-      : tryOptimize(req);
+    const optimized = isClaudeTierRequest ? { handled: false as const } : tryOptimize(req);
 
     if (optimized.handled) {
       const latency = Date.now() - started;
-      logger.info(
-        "proxy",
-        `→ local optimization for ${req.model} (${latency}ms)`,
-      );
+      logger.info("proxy", `→ local optimization for ${req.model} (${latency}ms)`);
       const resolved = resolveModel(req.model, this.runtime.currentConfig());
       if (resolved.source === "prefix") {
         setSessionPrimaryModel(resolved.providerId, resolved.providerModel);
@@ -134,7 +127,10 @@ export class MessageService {
       };
     }
 
-    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers({ ...cloneMessagesRequest(req), model: providerModel });
+    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers({
+      ...cloneMessagesRequest(req),
+      model: providerModel,
+    });
     const inputTokens = countRequestTokens(providerReq);
     const result = await provider.streamResponse(providerReq, inputTokens);
     const latency = Date.now() - started;
@@ -194,7 +190,9 @@ export class MessageService {
     req: MessagesRequest,
     started: number,
   ): Promise<MessageServiceResult> {
-    const { req: nativeReq, stats: tokenSaverStats } = this.applyTokenSavers(cloneMessagesRequest(req));
+    const { req: nativeReq, stats: tokenSaverStats } = this.applyTokenSavers(
+      cloneMessagesRequest(req),
+    );
     const inputTokens = countRequestTokens(nativeReq);
     const result = await streamAnthropicNative(nativeReq, nativeReq.model, undefined);
     const latency = Date.now() - started;
@@ -258,7 +256,10 @@ export class MessageService {
     return countRequestTokens(transformed);
   }
 
-  private applyTokenSavers(req: MessagesRequest): { req: MessagesRequest; stats: TokenSaverStats | undefined } {
+  private applyTokenSavers(req: MessagesRequest): {
+    req: MessagesRequest;
+    stats: TokenSaverStats | undefined;
+  } {
     const { tokenSavers } = this.runtime.currentConfig();
     const rtkStats = compressMessages(req, tokenSavers.rtkEnabled);
     const rtkLine = formatRtkLog(rtkStats);
@@ -275,7 +276,7 @@ export class MessageService {
       rtkBytesBefore: rtkStats?.bytesBefore ?? 0,
       rtkBytesAfter: rtkStats?.bytesAfter ?? 0,
       rtkHits: rtkStats?.hits.length ?? 0,
-      rtkFilters: rtkStats ? Array.from(new Set(rtkStats.hits.map(hit => hit.filter))) : [],
+      rtkFilters: rtkStats ? Array.from(new Set(rtkStats.hits.map((hit) => hit.filter))) : [],
       cavemanLevel: tokenSavers.cavemanEnabled ? tokenSavers.cavemanLevel : null,
     };
     return { req, stats };

@@ -12,12 +12,10 @@ declare global {
   }
 }
 
-const externalDevDaemon =
-  import.meta.env.VITE_CC_GATEWAY_EXTERNAL_DAEMON === "1";
+const externalDevDaemon = import.meta.env.VITE_CC_GATEWAY_EXTERNAL_DAEMON === "1";
 
 export const runtime = {
-  isTauri: (): boolean =>
-    typeof window !== "undefined" && window.__TAURI_INTERNALS__ != null,
+  isTauri: (): boolean => typeof window !== "undefined" && window.__TAURI_INTERNALS__ != null,
   usesExternalDevDaemon: (): boolean => externalDevDaemon,
 };
 
@@ -40,9 +38,7 @@ export const daemonControl = {
       await tauriInvoke<number>("start_daemon");
       return;
     }
-    throw new Error(
-      "Daemon offline. In dev mode, restart via `bun dev:desk`.",
-    );
+    throw new Error("Daemon offline. In dev mode, restart via `bun dev:desk`.");
   },
 
   canStartFromPanel(): boolean {

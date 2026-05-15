@@ -1,18 +1,8 @@
-import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Flex,
-  Layout,
-  Popconfirm,
-  Tooltip,
-  Typography,
-  theme,
-  App,
-} from "antd";
 import { PoweroffOutlined } from "@ant-design/icons";
+import { App, Badge, Button, Flex, Layout, Popconfirm, Tooltip, Typography, theme } from "antd";
+import { useState } from "react";
 import { daemonControl } from "./daemonControl.js";
-import { useDaemonStatus, type DaemonState } from "./useDaemonStatus.js";
+import { type DaemonState, useDaemonStatus } from "./useDaemonStatus.js";
 
 const { Header } = Layout;
 const { Text } = Typography;
@@ -50,9 +40,7 @@ export function TopBar() {
         resume();
       }, 500);
     } catch (err) {
-      message.error(
-        err instanceof Error ? err.message : "Failed to stop gateway",
-      );
+      message.error(err instanceof Error ? err.message : "Failed to stop gateway");
     } finally {
       setBusy(false);
     }
@@ -65,9 +53,7 @@ export function TopBar() {
       message.success("Gateway started");
       setTimeout(() => void refresh(), 500);
     } catch (err) {
-      message.error(
-        err instanceof Error ? err.message : "Failed to start gateway",
-      );
+      message.error(err instanceof Error ? err.message : "Failed to start gateway");
     } finally {
       setBusy(false);
     }
@@ -141,12 +127,7 @@ function ControlButton({
   }
 
   return (
-    <Button
-      type="primary"
-      icon={<PoweroffOutlined />}
-      loading={busy}
-      onClick={onStart}
-    >
+    <Button type="primary" icon={<PoweroffOutlined />} loading={busy} onClick={onStart}>
       Start
     </Button>
   );

@@ -1,10 +1,14 @@
-import { AnthropicMessagesTransport } from './transport-anthropic.js'
+import { AnthropicMessagesTransport } from "./transport-anthropic.js";
 
 export class LMStudioProvider extends AnthropicMessagesTransport {
-  get id() { return 'lmstudio' }
-  get label() { return 'LM Studio' }
+  get id() {
+    return "lmstudio";
+  }
+  get label() {
+    return "LM Studio";
+  }
 
   protected override requiresApiKey(): boolean {
-    return false
+    return false;
   }
 }

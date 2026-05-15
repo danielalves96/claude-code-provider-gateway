@@ -10,8 +10,7 @@ interface ProviderStatCardProps {
 
 export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
   const { token } = theme.useToken();
-  const errorRate =
-    p.requests > 0 ? Math.round((p.errors / p.requests) * 100) : 0;
+  const errorRate = p.requests > 0 ? Math.round((p.errors / p.requests) * 100) : 0;
   const lastActivity = p.lastActivityAt ? formatRelative(p.lastActivityAt) : "never";
 
   return (
@@ -30,10 +29,7 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
           <Statistic title="Requests" value={p.requests} />
         </Col>
         <Col span={12}>
-          <Statistic
-            title="Avg latency"
-            value={p.requests > 0 ? `${p.avgLatencyMs}ms` : "—"}
-          />
+          <Statistic title="Avg latency" value={p.requests > 0 ? `${p.avgLatencyMs}ms` : "—"} />
         </Col>
       </Row>
       <Flex gap={token.paddingXS} style={{ marginTop: token.paddingSM }}>

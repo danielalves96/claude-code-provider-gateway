@@ -1,10 +1,6 @@
-import { useEffect, useRef } from "react";
+import { ClearOutlined, PauseCircleOutlined, PlayCircleOutlined } from "@ant-design/icons";
 import { Badge, Button, Card, Flex, Space, Typography, theme } from "antd";
-import {
-  ClearOutlined,
-  PauseCircleOutlined,
-  PlayCircleOutlined,
-} from "@ant-design/icons";
+import { useEffect, useRef } from "react";
 
 const { Text } = Typography;
 
@@ -15,12 +11,7 @@ interface LiveLogsPanelProps {
   onClear: () => void;
 }
 
-export function LiveLogsPanel({
-  logs,
-  paused,
-  onTogglePaused,
-  onClear,
-}: LiveLogsPanelProps) {
+export function LiveLogsPanel({ logs, paused, onTogglePaused, onClear }: LiveLogsPanelProps) {
   const { token } = theme.useToken();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +71,7 @@ export function LiveLogsPanel({
             Waiting for log activity…
           </Text>
         ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: log lines are append-only and can repeat exactly.
           logs.map((line, i) => <LogLine key={i} line={line} />)
         )}
       </Flex>

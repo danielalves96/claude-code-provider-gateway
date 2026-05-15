@@ -1,25 +1,16 @@
 import { Alert, Card, Col, Flex, Row, theme } from "antd";
-import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { LoadingState } from "../../../shared/components/LoadingState.js";
+import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { SaveButton } from "../../../shared/components/SaveButton.js";
-import { useRouting } from "../hooks/useRouting.js";
 import { TIERS } from "../constants.js";
-import { TierCard } from "./TierCard.js";
+import { useRouting } from "../hooks/useRouting.js";
 import { ThinkingToggle } from "./ThinkingToggle.js";
+import { TierCard } from "./TierCard.js";
 
 export default function RoutingPage() {
   const { token } = theme.useToken();
-  const {
-    rules,
-    thinking,
-    setThinking,
-    options,
-    updateRule,
-    loaded,
-    saving,
-    saved,
-    save,
-  } = useRouting();
+  const { rules, thinking, setThinking, options, updateRule, loaded, saving, saved, save } =
+    useRouting();
 
   if (!loaded) return <LoadingState />;
 
@@ -55,12 +46,7 @@ export default function RoutingPage() {
       <Card>
         <Flex justify="space-between" align="center">
           <ThinkingToggle checked={thinking} onChange={setThinking} />
-          <SaveButton
-            onClick={save}
-            saving={saving}
-            saved={saved}
-            label="Save routing"
-          />
+          <SaveButton onClick={save} saving={saving} saved={saved} label="Save routing" />
         </Flex>
       </Card>
     </Flex>

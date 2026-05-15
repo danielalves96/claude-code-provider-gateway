@@ -71,9 +71,7 @@ export function ProvidersTable({ rows, title = "Providers" }: ProvidersTableProp
             title: "Last activity",
             key: "la",
             render: ([, s]: Row) => (
-              <Text type="secondary">
-                {s.lastActivityAt ? formatTime(s.lastActivityAt) : "—"}
-              </Text>
+              <Text type="secondary">{s.lastActivityAt ? formatTime(s.lastActivityAt) : "—"}</Text>
             ),
           },
           {
@@ -82,9 +80,7 @@ export function ProvidersTable({ rows, title = "Providers" }: ProvidersTableProp
             ellipsis: true,
             render: ([, s]: Row) => (
               <Tooltip title={s.lastError ?? ""}>
-                <Text type="secondary">
-                  {s.lastError ? s.lastError.slice(0, 60) : "—"}
-                </Text>
+                <Text type="secondary">{s.lastError ? s.lastError.slice(0, 60) : "—"}</Text>
               </Tooltip>
             ),
           },

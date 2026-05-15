@@ -1,6 +1,6 @@
 import { Descriptions, Flex, Tag, Typography, theme } from "antd";
-import { SectionLabel } from "./SectionLabel.js";
 import type { RequestLogEntry } from "../types.js";
+import { SectionLabel } from "./SectionLabel.js";
 
 const { Text } = Typography;
 
@@ -22,22 +22,13 @@ export function RequestDetails({ entry: r }: RequestDetailsProps) {
         <Descriptions.Item label="Timestamp">
           {new Date(r.timestamp).toLocaleString()}
         </Descriptions.Item>
-        <Descriptions.Item label="Requested Model">
-          {r.requestedModel}
-        </Descriptions.Item>
+        <Descriptions.Item label="Requested Model">{r.requestedModel}</Descriptions.Item>
         <Descriptions.Item label="Provider">{r.providerId}</Descriptions.Item>
-        <Descriptions.Item label="Provider Model">
-          {r.providerModel}
-        </Descriptions.Item>
-        <Descriptions.Item label="Input Tokens">
-          {r.inputTokens}
-        </Descriptions.Item>
+        <Descriptions.Item label="Provider Model">{r.providerModel}</Descriptions.Item>
+        <Descriptions.Item label="Input Tokens">{r.inputTokens}</Descriptions.Item>
         <Descriptions.Item label="Latency (ms)">{r.latencyMs}</Descriptions.Item>
         <Descriptions.Item label="Status">
-          <Tag
-            color={r.status === "ok" ? "success" : "error"}
-            style={{ margin: 0 }}
-          >
+          <Tag color={r.status === "ok" ? "success" : "error"} style={{ margin: 0 }}>
             {r.status}
           </Tag>
         </Descriptions.Item>

@@ -1,4 +1,4 @@
-import type { Hono } from 'hono'
+import type { Hono } from "hono";
 import {
   attachSessionProcess,
   clearArchivedSessions,
@@ -6,42 +6,46 @@ import {
   getCurrentSession,
   heartbeatSession,
   listArchivedSessions,
-} from '../../runtime/sessions.js'
-import type { SessionsResponse } from '../contracts.js'
+} from "../../runtime/sessions.js";
+import type { SessionsResponse } from "../contracts.js";
 
 export function registerSessionRoutes(app: Hono): void {
-  app.get('/api/sessions', c => {
+  app.get("/api/sessions", (c) => {
     const response = {
       current: getCurrentSession(),
       archive: listArchivedSessions(),
-    } satisfies SessionsResponse
-    return c.json(response)
-  })
+    } satisfies SessionsResponse;
+    return c.json(response);
+  });
 
-  app.delete('/api/sessions', c => {
-    clearArchivedSessions()
+  app.delete("/api/sessions", (c) => {
+    clearArchivedSessions();
     const response = {
       ok: true,
       current: getCurrentSession(),
       archive: listArchivedSessions(),
-    } satisfies SessionsResponse & { ok: true }
-    return c.json(response)
-  })
+    } satisfies SessionsResponse & { ok: true };
+    return c.json(response);
+  });
 
-  app.post('/api/launch/end', async c => {
-    const body = await c.req.json<{ sessionId?: string }>().catch(() => ({} as { sessionId?: string }))
-    return c.json({ ok: endSession(body.sessionId) })
-  })
+  app.post("/api/launch/end", async (c) => {
+    const body = await c.req
+      .json<{ sessionId?: string }>()
+      .catch(() => ({}) as { sessionId?: string });
+    return c.json({ ok: endSession(body.sessionId) });
+  });
 
-  app.post('/api/launch/heartbeat', async c => {
-    const body = await c.req.json<{ sessionId?: string }>().catch(() => ({} as { sessionId?: string }))
-    return c.json({ ok: heartbeatSession(body.sessionId) })
-  })
+  app.post("/api/launch/heartbeat", async (c) => {
+    const body = await c.req
+      .json<{ sessionId?: string }>()
+      .catch(() => ({}) as { sessionId?: string });
+    return c.json({ ok: heartbeatSession(body.sessionId) });
+  });
 
-  app.post('/api/launch/attach', async c => {
-    const body = await c.req.json<{ sessionId?: string; pid?: number }>().catch(
-      () => ({} as { sessionId?: string; pid?: number }),
-    )
-    return c.json({ ok: attachSessionProcess(body.sessionId, body.pid) })
-  })
+  app.post("/api/launch/attach", async (c) => {
+    const body = await c.req
+      .json<{ sessionId?: string; pid?: number }>()
+      .catch(() => ({}) as { sessionId?: string; pid?: number });
+    return c.json({ ok: attachSessionProcess(body.sessionId, body.pid) });
+  });
 }

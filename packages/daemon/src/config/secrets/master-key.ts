@@ -1,13 +1,13 @@
-import { randomBytes } from 'node:crypto'
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { randomBytes } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
-const MASTER_KEY_ENV = 'CC_GATEWAY_SECRET_KEY'
-const KEY_BYTES = 32
+const MASTER_KEY_ENV = "CC_GATEWAY_SECRET_KEY";
+const KEY_BYTES = 32;
 
 export interface MasterKeySource {
-  origin: 'env' | 'file-existing' | 'file-generated'
-  key: Buffer
+  origin: "env" | "file-existing" | "file-generated";
+  key: Buffer;
 }
 
 // Resolution order:
@@ -15,41 +15,41 @@ export interface MasterKeySource {
 //   2. Existing key file at `filePath`
 //   3. Generate fresh key, persist with 0600 perms (dev fallback)
 export function resolveMasterKey(filePath: string): MasterKeySource {
-  const fromEnv = readEnvKey()
-  if (fromEnv) return { origin: 'env', key: fromEnv }
+  const fromEnv = readEnvKey();
+  if (fromEnv) return { origin: "env", key: fromEnv };
 
   if (existsSync(filePath)) {
-    return { origin: 'file-existing', key: readKeyFile(filePath) }
+    return { origin: "file-existing", key: readKeyFile(filePath) };
   }
 
-  const generated = randomBytes(KEY_BYTES)
-  persistKeyFile(filePath, generated)
-  return { origin: 'file-generated', key: generated }
+  const generated = randomBytes(KEY_BYTES);
+  persistKeyFile(filePath, generated);
+  return { origin: "file-generated", key: generated };
 }
 
 function readEnvKey(): Buffer | null {
-  const raw = process.env[MASTER_KEY_ENV]
-  if (!raw) return null
-  const buf = Buffer.from(raw.trim(), 'hex')
+  const raw = process.env[MASTER_KEY_ENV];
+  if (!raw) return null;
+  const buf = Buffer.from(raw.trim(), "hex");
   if (buf.length !== KEY_BYTES) {
-    throw new Error(`${MASTER_KEY_ENV} must be ${KEY_BYTES}-byte hex (got ${buf.length} bytes)`)
+    throw new Error(`${MASTER_KEY_ENV} must be ${KEY_BYTES}-byte hex (got ${buf.length} bytes)`);
   }
-  return buf
+  return buf;
 }
 
 function readKeyFile(filePath: string): Buffer {
-  const buf = Buffer.from(readFileSync(filePath, 'utf-8').trim(), 'hex')
+  const buf = Buffer.from(readFileSync(filePath, "utf-8").trim(), "hex");
   if (buf.length !== KEY_BYTES) {
-    throw new Error(`Master key file at ${filePath} is corrupt (expected ${KEY_BYTES} bytes hex)`)
+    throw new Error(`Master key file at ${filePath} is corrupt (expected ${KEY_BYTES} bytes hex)`);
   }
-  return buf
+  return buf;
 }
 
 function persistKeyFile(filePath: string, key: Buffer): void {
-  mkdirSync(dirname(filePath), { recursive: true })
-  writeFileSync(filePath, key.toString('hex'), { encoding: 'utf-8', mode: 0o600 })
+  mkdirSync(dirname(filePath), { recursive: true });
+  writeFileSync(filePath, key.toString("hex"), { encoding: "utf-8", mode: 0o600 });
   try {
-    chmodSync(filePath, 0o600)
+    chmodSync(filePath, 0o600);
   } catch {
     // Best-effort on platforms without POSIX perms (Windows)
   }

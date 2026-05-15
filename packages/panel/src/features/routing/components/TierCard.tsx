@@ -1,15 +1,4 @@
-import {
-  Alert,
-  Card,
-  Col,
-  Row,
-  Select,
-  Space,
-  Switch,
-  Tag,
-  Typography,
-  theme,
-} from "antd";
+import { Alert, Card, Col, Row, Select, Space, Switch, Tag, Typography, theme } from "antd";
 import { TIER_META } from "../constants.js";
 import type { RoutingOption, RoutingRule, Tier } from "../types.js";
 
@@ -73,9 +62,7 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
             onChange={(v) => onChange({ providerId: v, model: "" })}
             options={options.map((p) => ({ value: p.id, label: p.label }))}
             allowClear
-            onClear={() =>
-              onChange({ providerId: "", model: "", enabled: false })
-            }
+            onClear={() => onChange({ providerId: "", model: "", enabled: false })}
           />
         </Col>
         <Col span={12}>
@@ -120,10 +107,7 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const { token } = theme.useToken();
   return (
-    <Text
-      type="secondary"
-      style={{ display: "block", marginBottom: token.marginXS }}
-    >
+    <Text type="secondary" style={{ display: "block", marginBottom: token.marginXS }}>
       {children}
     </Text>
   );

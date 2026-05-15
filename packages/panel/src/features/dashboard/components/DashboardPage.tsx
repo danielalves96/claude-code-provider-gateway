@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
 import { Flex, theme } from "antd";
+import { useMemo, useState } from "react";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { useGatewayStatus } from "../hooks/useGatewayStatus.js";
 import { useLaunchCommands } from "../hooks/useLaunchCommands.js";
 import { useLiveLogs } from "../hooks/useLiveLogs.js";
 import { useShellSetup } from "../hooks/useShellSetup.js";
-import { StatusOverview } from "./StatusOverview.js";
 import { EnabledProvidersCard } from "./EnabledProvidersCard.js";
-import { QuickLaunchCard, ShellSetupCard } from "./ShellSetupCard.js";
 import { LiveLogsPanel } from "./LiveLogsPanel.js";
+import { QuickLaunchCard, ShellSetupCard } from "./ShellSetupCard.js";
+import { StatusOverview } from "./StatusOverview.js";
 
 const DISMISSED_SHELL_SETUP_KEY = "cc-provider-gtw:shell-setup-dismissed";
 
@@ -23,23 +23,24 @@ export default function DashboardPage() {
   );
 
   const hasTerminalConfigured = useMemo(
-    () => setup?.shells.some(shell => shell.installed) ?? false,
+    () => setup?.shells.some((shell) => shell.installed) ?? false,
     [setup],
   );
 
-  const shellSetupCard = setup && status && !setupDismissed ? (
-    <ShellSetupCard
-      setup={setup}
-      panelPort={status.panelPort ?? 6767}
-      defaultOpen={!hasTerminalConfigured}
-      canDismiss={hasTerminalConfigured}
-      onRefresh={refresh}
-      onDismiss={() => {
-        window.localStorage.setItem(DISMISSED_SHELL_SETUP_KEY, "true");
-        setSetupDismissed(true);
-      }}
-    />
-  ) : null;
+  const shellSetupCard =
+    setup && status && !setupDismissed ? (
+      <ShellSetupCard
+        setup={setup}
+        panelPort={status.panelPort ?? 6767}
+        defaultOpen={!hasTerminalConfigured}
+        canDismiss={hasTerminalConfigured}
+        onRefresh={refresh}
+        onDismiss={() => {
+          window.localStorage.setItem(DISMISSED_SHELL_SETUP_KEY, "true");
+          setSetupDismissed(true);
+        }}
+      />
+    ) : null;
 
   return (
     <Flex vertical gap={token.paddingLG}>
@@ -49,12 +50,7 @@ export default function DashboardPage() {
       {!hasTerminalConfigured && shellSetupCard}
       <QuickLaunchCard items={items} error={launchError} />
       {hasTerminalConfigured && shellSetupCard}
-      <LiveLogsPanel
-        logs={logs}
-        paused={paused}
-        onTogglePaused={togglePaused}
-        onClear={clear}
-      />
+      <LiveLogsPanel logs={logs} paused={paused} onTogglePaused={togglePaused} onClear={clear} />
     </Flex>
   );
 }

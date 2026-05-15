@@ -34,15 +34,9 @@ const COPY = {
   },
 } as const;
 
-export function ConfirmModal({
-  action,
-  providers,
-  onCancel,
-  onConfirm,
-}: ConfirmModalProps) {
+export function ConfirmModal({ action, providers, onCancel, onConfirm }: ConfirmModalProps) {
   if (!action) return null;
-  const label =
-    providers.find((p) => p.id === action.providerId)?.label ?? action.providerId;
+  const label = providers.find((p) => p.id === action.providerId)?.label ?? action.providerId;
   const copy = COPY[action.kind];
 
   return (
@@ -54,13 +48,7 @@ export function ConfirmModal({
         <Button key="cancel" onClick={onCancel}>
           Cancel
         </Button>,
-        <Button
-          key="ok"
-          type="primary"
-          danger={copy.danger}
-          onClick={onConfirm}
-          autoFocus
-        >
+        <Button key="ok" type="primary" danger={copy.danger} onClick={onConfirm} autoFocus>
           {copy.okText}
         </Button>,
       ]}

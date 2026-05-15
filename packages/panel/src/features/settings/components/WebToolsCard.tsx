@@ -1,5 +1,5 @@
-import { Card, Divider, Flex, Space, Switch, Typography, theme } from "antd";
 import { GlobalOutlined } from "@ant-design/icons";
+import { Card, Divider, Flex, Space, Switch, Typography, theme } from "antd";
 import type { WebToolsConfig } from "../types.js";
 
 const { Text } = Typography;
@@ -50,13 +50,7 @@ interface ToggleRowProps {
   onChange: (value: boolean) => void;
 }
 
-function ToggleRow({
-  title,
-  description,
-  checked,
-  disabled = false,
-  onChange,
-}: ToggleRowProps) {
+function ToggleRow({ title, description, checked, disabled = false, onChange }: ToggleRowProps) {
   return (
     <Flex justify="space-between" align="flex-start">
       <Flex vertical>

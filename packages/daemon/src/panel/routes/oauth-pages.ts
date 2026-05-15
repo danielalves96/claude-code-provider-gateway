@@ -77,7 +77,7 @@ const BASE_STYLES = `
   }
   .dot.success { background: #7fb069; box-shadow: 0 0 6px #7fb069; }
   .dot.error   { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
-`
+`;
 
 function shell(body: string): string {
   return `<!doctype html>
@@ -89,11 +89,11 @@ function shell(body: string): string {
   <style>${BASE_STYLES}</style>
 </head>
 <body>${body}</body>
-</html>`
+</html>`;
 }
 
 export function oauthSuccessPage(provider: string): string {
-  const providerLabel = escapeHtml(provider)
+  const providerLabel = escapeHtml(provider);
   return shell(`
   <div class="card">
     <div class="wordmark">Claude Code <span>Gateway</span></div>
@@ -111,12 +111,12 @@ export function oauthSuccessPage(provider: string): string {
     <div class="hint">This window can be safely closed.</div>
   </div>
   <script>setTimeout(() => window.close(), 4000)</script>
-`)
+`);
 }
 
 export function oauthErrorPage(provider: string, message?: string): string {
-  const providerLabel = escapeHtml(provider)
-  const detail = message ?? 'An unexpected error occurred during authentication.'
+  const providerLabel = escapeHtml(provider);
+  const detail = message ?? "An unexpected error occurred during authentication.";
   return shell(`
   <div class="card">
     <div class="wordmark">Claude Code <span>Gateway</span></div>
@@ -133,7 +133,7 @@ export function oauthErrorPage(provider: string, message?: string): string {
     <p>${escapeHtml(detail)}</p>
     <div class="hint">Return to the gateway and try again.</div>
   </div>
-`)
+`);
 }
 
 export function oauthBadRequestPage(): string {
@@ -149,9 +149,13 @@ export function oauthBadRequestPage(): string {
     <p>Invalid OAuth state or missing authorization code.</p>
     <div class="hint">Return to the gateway and try again.</div>
   </div>
-`)
+`);
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

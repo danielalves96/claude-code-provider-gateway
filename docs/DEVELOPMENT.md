@@ -158,6 +158,9 @@ The desktop crate has focused unit tests for security-sensitive pure functions s
 ## Testing
 
 ```bash
+npm run quality:ci # Biome format + lint + import ordering, CI mode
+npm run quality    # Biome check for local feedback
+npm run quality:fix # Biome safe fixes and formatting
 npm test          # Node built-in test runner (all daemon tests)
 npm run typecheck # tsc --noEmit across daemon + panel (no emit, just type errors)
 ```
@@ -241,7 +244,11 @@ There are two GitHub Actions workflows:
 
 Runs on every PR touching `packages/daemon`, `packages/panel`, `packages/desktop`, or `docs`. Also available via manual dispatch.
 
-Two parallel jobs:
+Three parallel jobs:
+
+**Biome** (`ubuntu-22.04`):
+1. `npm ci`
+2. `npm run quality:ci -- --reporter=github --diagnostic-level=error` — format, lint, and import-order validation
 
 **TypeScript** (`ubuntu-22.04`):
 1. `npm ci`

@@ -2,62 +2,62 @@
 // switch the active provider in config, wipe Claude's gateway-model cache,
 // and return shell-evaluable `export KEY=value` lines.
 
-import { existsSync, unlinkSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
-import type { Config, ProviderId } from '../config/schema.js'
-import { CLI_FLAGS, PROVIDER_IDS } from '../config/schema.js'
-import { saveConfig } from '../config/index.js'
-import { endSession, startSession } from '../runtime/sessions.js'
+import { existsSync, unlinkSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { saveConfig } from "../config/index.js";
+import type { Config, ProviderId } from "../config/schema.js";
+import { CLI_FLAGS, PROVIDER_IDS } from "../config/schema.js";
+import { endSession, startSession } from "../runtime/sessions.js";
 
 export interface LaunchPrepareRequest {
-  flag: string
+  flag: string;
 }
 
 export interface LaunchEnvVars {
-  authToken: string
-  baseUrl: string
-  sessionId: string
+  authToken: string;
+  baseUrl: string;
+  sessionId: string;
 }
 
 export interface LaunchPrepareResult {
-  ok: true
-  providerId: ProviderId | null
-  sessionId: string
-  shellScript: string
-  envVars: LaunchEnvVars
+  ok: true;
+  providerId: ProviderId | null;
+  sessionId: string;
+  shellScript: string;
+  envVars: LaunchEnvVars;
 }
 
 export interface LaunchPrepareFailure {
-  ok: false
-  error: string
+  ok: false;
+  error: string;
 }
 
 export function resolveProviderFlag(flag: string): ProviderId | null {
-  if (!flag.startsWith('--')) return null
-  const target = flag.slice(2).toLowerCase()
+  if (!flag.startsWith("--")) return null;
+  const target = flag.slice(2).toLowerCase();
   for (const [definedFlag, providerId] of Object.entries(CLI_FLAGS)) {
-    if (definedFlag.slice(2).toLowerCase() === target) return providerId
+    if (definedFlag.slice(2).toLowerCase() === target) return providerId;
   }
-  if ((PROVIDER_IDS as readonly string[]).includes(target)) return target as ProviderId
-  return null
+  if ((PROVIDER_IDS as readonly string[]).includes(target)) return target as ProviderId;
+  return null;
 }
 
 export function prepareLaunch(
   config: Config,
   flag: string,
 ): LaunchPrepareResult | LaunchPrepareFailure {
-  if (flag === '--all' || flag === '--a') {
-    config.modelMode = 'all'
+  if (flag === "--all" || flag === "--a") {
+    config.modelMode = "all";
     if (!config.providers[config.activeProvider]?.enabled) {
-      const fallbackProvider = PROVIDER_IDS.find(id => config.providers[id]?.enabled)
-      if (fallbackProvider) config.activeProvider = fallbackProvider
+      const fallbackProvider = PROVIDER_IDS.find((id) => config.providers[id]?.enabled);
+      if (fallbackProvider) config.activeProvider = fallbackProvider;
     }
-    saveConfig(config)
-    clearClaudeGatewayCache()
+    saveConfig(config);
+    clearClaudeGatewayCache();
 
-    endSession()
-    const session = startSession(config)
+    endSession();
+    const session = startSession(config);
 
     return {
       ok: true,
@@ -65,31 +65,31 @@ export function prepareLaunch(
       sessionId: session.id,
       shellScript: buildShellExports(config, session.id),
       envVars: buildEnvVars(config, session.id),
-    }
+    };
   }
 
-  const providerId = resolveProviderFlag(flag)
+  const providerId = resolveProviderFlag(flag);
   if (!providerId) {
-    return { ok: false, error: `Unknown provider flag: ${flag}` }
+    return { ok: false, error: `Unknown provider flag: ${flag}` };
   }
 
-  const provider = config.providers[providerId]
+  const provider = config.providers[providerId];
   if (!provider) {
-    return { ok: false, error: `Provider ${providerId} not configured` }
+    return { ok: false, error: `Provider ${providerId} not configured` };
   }
   if (!provider.enabled) {
-    return { ok: false, error: `Provider ${providerId} is disabled — enable it in the app first` }
+    return { ok: false, error: `Provider ${providerId} is disabled — enable it in the app first` };
   }
 
-  config.activeProvider = providerId
-  config.modelMode = 'single'
-  saveConfig(config)
-  clearClaudeGatewayCache()
+  config.activeProvider = providerId;
+  config.modelMode = "single";
+  saveConfig(config);
+  clearClaudeGatewayCache();
 
   // End any session that was running (e.g. user switching providers), then
   // start a new one now that the user has issued a terminal launch command.
-  endSession()
-  const session = startSession(config)
+  endSession();
+  const session = startSession(config);
 
   return {
     ok: true,
@@ -97,7 +97,7 @@ export function prepareLaunch(
     sessionId: session.id,
     shellScript: buildShellExports(config, session.id),
     envVars: buildEnvVars(config, session.id),
-  }
+  };
 }
 
 function buildEnvVars(config: Config, sessionId: string): LaunchEnvVars {
@@ -105,7 +105,7 @@ function buildEnvVars(config: Config, sessionId: string): LaunchEnvVars {
     authToken: config.server.authToken,
     baseUrl: `http://127.0.0.1:${config.server.proxyPort}`,
     sessionId,
-  }
+  };
 }
 
 function buildShellExports(config: Config, sessionId: string): string {
@@ -114,17 +114,17 @@ function buildShellExports(config: Config, sessionId: string): string {
     `export ANTHROPIC_BASE_URL=${shellQuote(`http://127.0.0.1:${config.server.proxyPort}`)}`,
     `export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`,
     `export CC_GATEWAY_SESSION_ID=${shellQuote(sessionId)}`,
-  ].join('\n')
+  ].join("\n");
 }
 
 export function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", "'\\''")}'`
+  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function clearClaudeGatewayCache(): void {
-  const cachePath = join(homedir(), '.claude', 'cache', 'gateway-models.json')
+  const cachePath = join(homedir(), ".claude", "cache", "gateway-models.json");
   try {
-    if (existsSync(cachePath)) unlinkSync(cachePath)
+    if (existsSync(cachePath)) unlinkSync(cachePath);
   } catch {
     // Best-effort: stale cache will be regenerated by Claude on next launch.
   }

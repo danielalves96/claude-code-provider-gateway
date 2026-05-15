@@ -1,5 +1,5 @@
-import { Card, Col, Row, Statistic, theme } from "antd";
 import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
+import { Card, Col, Row, Statistic, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import type { GatewayStatus } from "../types.js";
 
@@ -11,11 +11,7 @@ export function StatusOverview({ status }: StatusOverviewProps) {
   const { token } = theme.useToken();
 
   const statusValue = status?.running ? "Running" : status ? "Stopped" : "—";
-  const statusColor = status?.running
-    ? token.colorSuccess
-    : status
-      ? token.colorError
-      : undefined;
+  const statusColor = status?.running ? token.colorSuccess : status ? token.colorError : undefined;
   const statusIcon = status?.running ? (
     <CheckCircleFilled />
   ) : status ? (
@@ -36,10 +32,7 @@ export function StatusOverview({ status }: StatusOverviewProps) {
       </Col>
       <Col span={6}>
         <Card>
-          <Statistic
-            title="Uptime"
-            value={status ? formatUptime(status.uptimeMs) : "—"}
-          />
+          <Statistic title="Uptime" value={status ? formatUptime(status.uptimeMs) : "—"} />
         </Card>
       </Col>
       <Col span={6}>
@@ -49,11 +42,7 @@ export function StatusOverview({ status }: StatusOverviewProps) {
       </Col>
       <Col span={6}>
         <Card>
-          <Statistic
-            title="PID"
-            value={status?.pid?.toString() ?? "—"}
-            groupSeparator=""
-          />
+          <Statistic title="PID" value={status?.pid?.toString() ?? "—"} groupSeparator="" />
         </Card>
       </Col>
     </Row>

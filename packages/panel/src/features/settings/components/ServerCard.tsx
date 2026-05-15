@@ -1,6 +1,6 @@
-import { Card, Form, InputNumber, Space, type FormInstance } from "antd";
-import type { CSSProperties } from "react";
 import { SettingOutlined } from "@ant-design/icons";
+import { Card, Form, type FormInstance, InputNumber, Space } from "antd";
+import type { CSSProperties } from "react";
 import type { ServerConfig } from "../types.js";
 
 interface ServerCardProps {

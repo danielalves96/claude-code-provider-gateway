@@ -1,11 +1,11 @@
-import { useState } from "react";
 import { Card, Empty, Flex, Typography, theme } from "antd";
+import { useState } from "react";
 import { useHistory } from "../hooks/useHistory.js";
+import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { HistoryHeader } from "./HistoryHeader.js";
 import { HistorySummary } from "./HistorySummary.js";
-import { SessionsTable } from "./SessionsTable.js";
-import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { ProvidersTable } from "./ProvidersTable.js";
+import { SessionsTable } from "./SessionsTable.js";
 
 const { Text } = Typography;
 
@@ -54,9 +54,7 @@ export default function HistoryPage() {
 
       {sessions.length === 0 ? (
         <Card>
-          <Empty
-            description={<Text type="secondary">No sessions recorded yet.</Text>}
-          />
+          <Empty description={<Text type="secondary">No sessions recorded yet.</Text>} />
         </Card>
       ) : (
         <SessionsTable

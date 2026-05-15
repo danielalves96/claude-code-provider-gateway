@@ -1,5 +1,5 @@
-import { Card, Divider, Flex, Segmented, Space, Switch, Typography, theme } from "antd";
 import { CompressOutlined } from "@ant-design/icons";
+import { Card, Divider, Flex, Segmented, Space, Switch, Typography, theme } from "antd";
 import type { TokenSaversConfig } from "../types.js";
 
 const { Text } = Typography;
