@@ -5,6 +5,7 @@ import { SaveButton } from "../../../shared/components/SaveButton.js";
 import { useSettings } from "../hooks/useSettings.js";
 import { ServerCard } from "./ServerCard.js";
 import { WebToolsCard } from "./WebToolsCard.js";
+import { ProxyCard } from "./ProxyCard.js";
 
 export default function SettingsPage() {
   const { token } = theme.useToken();
@@ -12,6 +13,8 @@ export default function SettingsPage() {
     serverForm,
     webTools,
     updateWebTools,
+    proxy,
+    updateProxy,
     loaded,
     saving,
     saved,
@@ -31,12 +34,15 @@ export default function SettingsPage() {
         <Col xs={24} lg={12}>
           <WebToolsCard value={webTools} onChange={updateWebTools} />
         </Col>
+        <Col xs={24} lg={12}>
+          <ProxyCard value={proxy} onChange={updateProxy} />
+        </Col>
       </Row>
 
       <Alert
         type="info"
         showIcon
-        message="Port changes require a gateway restart to take effect."
+        message="Port and proxy changes require a gateway restart to take effect."
       />
 
       <Flex>

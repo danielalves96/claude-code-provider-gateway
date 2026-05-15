@@ -30,6 +30,7 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.routing) Object.assign(merged.routing, update.routing)
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
+    if (update.proxy) Object.assign(merged.proxy, update.proxy)
     if (update.activeProvider) merged.activeProvider = update.activeProvider
     if (update.modelMode) merged.modelMode = update.modelMode
 

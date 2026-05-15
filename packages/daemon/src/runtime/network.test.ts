@@ -1,35 +1,40 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mergeLocalNoProxy, resolveOutboundProxyConfig } from './network.js'
+import { configureOutboundNetwork, mergeLocalNoProxy } from './network.js'
 
-test('resolveOutboundProxyConfig maps HTTPS proxy env and protects local hosts', () => {
-  const config = resolveOutboundProxyConfig({
-    HTTPS_PROXY: 'http://127.0.0.1:7890',
-  } as NodeJS.ProcessEnv)
+test('configureOutboundNetwork applies proxy URL and sets NO_PROXY for local hosts', () => {
+  const originalFetch = globalThis.fetch
+  const originalNoProxy = process.env.NO_PROXY
 
-  assert.deepEqual(config, {
-    httpProxy: undefined,
-    httpsProxy: 'http://127.0.0.1:7890',
-    noProxy: 'localhost,127.0.0.1,::1',
-  })
+  try {
+    const applied = configureOutboundNetwork('http://127.0.0.1:7890')
+    assert.equal(applied, true)
+    assert.equal(process.env.NO_PROXY, 'localhost,127.0.0.1,::1')
+  } finally {
+    if (originalNoProxy === undefined) delete process.env.NO_PROXY
+    else process.env.NO_PROXY = originalNoProxy
+    globalThis.fetch = originalFetch
+  }
 })
 
-test('resolveOutboundProxyConfig uses ALL_PROXY as fallback for both schemes', () => {
-  const config = resolveOutboundProxyConfig({
-    ALL_PROXY: 'http://127.0.0.1:7890',
-  } as NodeJS.ProcessEnv)
-
-  assert.deepEqual(config, {
-    httpProxy: 'http://127.0.0.1:7890',
-    httpsProxy: 'http://127.0.0.1:7890',
-    noProxy: 'localhost,127.0.0.1,::1',
-  })
+test('configureOutboundNetwork returns false and has no side effects when URL is undefined', () => {
+  const originalFetch = globalThis.fetch
+  const applied = configureOutboundNetwork(undefined)
+  assert.equal(applied, false)
+  assert.equal(globalThis.fetch, originalFetch)
 })
 
-test('resolveOutboundProxyConfig returns null when no proxy env is set', () => {
-  assert.equal(resolveOutboundProxyConfig({} as NodeJS.ProcessEnv), null)
+test('configureOutboundNetwork returns false and has no side effects when URL is empty string', () => {
+  const originalFetch = globalThis.fetch
+  const applied = configureOutboundNetwork('')
+  assert.equal(applied, false)
+  assert.equal(globalThis.fetch, originalFetch)
 })
 
 test('mergeLocalNoProxy preserves existing entries and appends missing local hosts', () => {
   assert.equal(mergeLocalNoProxy('example.com, localhost'), 'example.com,localhost,127.0.0.1,::1')
+})
+
+test('mergeLocalNoProxy with undefined returns only local hosts', () => {
+  assert.equal(mergeLocalNoProxy(undefined), 'localhost,127.0.0.1,::1')
 })

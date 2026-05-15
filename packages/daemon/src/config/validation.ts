@@ -31,6 +31,10 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
         defaults.webTools.allowPrivateNetworks,
       ),
     },
+    proxy: {
+      enabled: booleanOrDefault(config.proxy?.enabled, defaults.proxy.enabled),
+      url: stringOrDefault(config.proxy?.url, defaults.proxy.url) || '',
+    },
     activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
   }

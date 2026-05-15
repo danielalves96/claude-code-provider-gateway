@@ -82,6 +82,10 @@ export function buildDefaultConfig(): Config {
       enabled: true,
       allowPrivateNetworks: false,
     },
+    proxy: {
+      enabled: false,
+      url: '',
+    },
     activeProvider: 'nvidia_nim',
     modelMode: 'single',
   }

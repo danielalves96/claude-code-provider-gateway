@@ -67,6 +67,10 @@ export interface Config {
     enabled: boolean
     allowPrivateNetworks: boolean
   }
+  proxy: {
+    enabled: boolean
+    url: string
+  }
   activeProvider: ProviderId
   modelMode: ModelMode
 }
