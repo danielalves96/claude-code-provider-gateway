@@ -6,7 +6,7 @@
 
 Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, llama.cpp, or Anthropic itself, while keeping the Claude Code workflow intact.
 
-[![Version](https://img.shields.io/badge/v0.1.0-initial_release-111827?style=for-the-badge)](#status)
+[![Version](https://img.shields.io/badge/v0.1.2-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
 [![Providers](https://img.shields.io/badge/providers-10-2563eb?style=for-the-badge)](#supported-providers)
@@ -80,7 +80,7 @@ ccpg --all
 
 CCPG is an early release, feedback is welcome, and it is already usable for testing.
 
-v0.1.0 is available now with desktop installers for macOS, Linux, and Windows.
+v0.1.2 is available now with desktop installers for macOS, Linux, and Windows.
 Expect rough edges, but the core flow is ready:
 
 install app → add provider → test connection → run Claude Code through CCPG.
