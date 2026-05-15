@@ -6,6 +6,7 @@ export const OPENAI_ACCOUNT_AUTHORIZE_URL = 'https://auth.openai.com/oauth/autho
 export const OPENAI_ACCOUNT_TOKEN_URL = 'https://auth.openai.com/oauth/token'
 export const OPENAI_ACCOUNT_REDIRECT_URI = 'http://localhost:1455/auth/callback'
 export const OPENAI_ACCOUNT_SCOPE = 'openid profile email offline_access'
+const OPENAI_UNSUPPORTED_REGION_CODE = 'unsupported_country_region_territory'
 
 export interface PkcePair {
   verifier: string
@@ -90,7 +91,7 @@ async function exchangeToken(params: Record<string, string>): Promise<OAuthToken
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`OpenAI OAuth token exchange failed: HTTP ${response.status} ${text.slice(0, 300)}`)
+    throw new Error(formatTokenExchangeError(response.status, text))
   }
 
   const json = await response.json() as {
@@ -108,6 +109,44 @@ async function exchangeToken(params: Record<string, string>): Promise<OAuthToken
     refreshToken: json.refresh_token,
     expiresAt: Date.now() + json.expires_in * 1000,
     ...claims,
+  }
+}
+
+function formatTokenExchangeError(status: number, body: string): string {
+  const openaiError = parseOpenAIError(body)
+  if (openaiError?.code === OPENAI_UNSUPPORTED_REGION_CODE) {
+    return [
+      'OpenAI OAuth token exchange failed:',
+      'OpenAI rejected the daemon token exchange because the outbound network is in an unsupported country, region, or territory.',
+      'Configure the daemon to use a supported outbound proxy/network and try logging in again.',
+      `(${OPENAI_UNSUPPORTED_REGION_CODE})`,
+    ].join(' ')
+  }
+
+  if (openaiError) {
+    const details = [
+      openaiError.code,
+      openaiError.type,
+      openaiError.message,
+    ].filter(Boolean).join(' ')
+    return `OpenAI OAuth token exchange failed: HTTP ${status} ${details}`.trim()
+  }
+
+  return `OpenAI OAuth token exchange failed: HTTP ${status} ${body.slice(0, 300)}`
+}
+
+function parseOpenAIError(body: string): { code?: string; message?: string; type?: string } | null {
+  try {
+    const parsed = JSON.parse(body) as { error?: { code?: unknown; message?: unknown; type?: unknown } }
+    const error = parsed.error
+    if (!error) return null
+    return {
+      code: typeof error.code === 'string' ? error.code : undefined,
+      message: typeof error.message === 'string' ? error.message : undefined,
+      type: typeof error.type === 'string' ? error.type : undefined,
+    }
+  } catch {
+    return null
   }
 }
 
