@@ -12,6 +12,11 @@ export function configureOutboundNetwork(env: NodeJS.ProcessEnv = process.env): 
   const proxyConfig = resolveOutboundProxyConfig(env)
   if (!proxyConfig) return false
 
+  env.NO_PROXY = proxyConfig.noProxy
+  env.no_proxy = proxyConfig.noProxy
+  process.env.NO_PROXY = proxyConfig.noProxy
+  process.env.no_proxy = proxyConfig.noProxy
+
   setGlobalDispatcher(new EnvHttpProxyAgent(proxyConfig))
   globalThis.fetch = undiciFetch as unknown as typeof globalThis.fetch
   return true
