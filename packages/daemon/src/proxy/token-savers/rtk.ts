@@ -229,6 +229,7 @@ const gitStatus: Filter = (input: string): string => {
   let modified = 0
   let untracked = 0
   let conflicts = 0
+  let inStagedSection = false
 
   for (const raw of input.split('\n')) {
     if (!raw.trim()) continue
@@ -239,6 +240,14 @@ const gitStatus: Filter = (input: string): string => {
     }
     if (raw.startsWith('##')) {
       branch = raw.replace(/^##\s*/, '')
+      continue
+    }
+    if (raw.includes('Changes to be committed:')) {
+      inStagedSection = true
+      continue
+    }
+    if (raw.includes('Changes not staged for commit:') || raw.includes('Untracked files:') || raw.includes('Unmerged paths:')) {
+      inStagedSection = false
       continue
     }
     if (/^[ MADRCU?!][ MADRCU?!] /.test(raw)) {
@@ -265,12 +274,12 @@ const gitStatus: Filter = (input: string): string => {
     const kind = longMatch[1]
     const file = longMatch[2]?.trim() ?? ''
     if (kind === 'both modified') conflicts += 1
-    else if (kind === 'modified' || kind === 'deleted') {
-      modified += 1
-      modifiedFiles.push(file)
-    } else {
+    else if (inStagedSection) {
       staged += 1
       stagedFiles.push(file)
+    } else {
+      modified += 1
+      modifiedFiles.push(file)
     }
   }
 

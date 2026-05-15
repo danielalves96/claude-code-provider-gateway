@@ -175,7 +175,7 @@ export class MessageService {
       `→ ${providerId}/${providerModel} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(req, isFirstSessionRequest());
+    const prompt = serializePrompt(providerReq, isFirstSessionRequest());
     const logEntryId = recordSessionRequest({
       requestedModel: req.model,
       providerId,
@@ -238,7 +238,7 @@ export class MessageService {
       `→ ${providerId}/${req.model} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(req, isFirstSessionRequest());
+    const prompt = serializePrompt(nativeReq, isFirstSessionRequest());
     const logEntryId = recordSessionRequest({
       requestedModel: req.model,
       providerId,
