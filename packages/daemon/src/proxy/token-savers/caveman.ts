@@ -50,7 +50,7 @@ export function injectCaveman(req: MessagesRequest, enabled: boolean, level: Cav
         break
       }
     }
-    if (lastCacheIdx >= 0) req.system.splice(lastCacheIdx + 1, 0, block)
+    if (lastCacheIdx >= 0) req.system.splice(lastCacheIdx, 0, block)
     else req.system.push(block)
     return
   }
