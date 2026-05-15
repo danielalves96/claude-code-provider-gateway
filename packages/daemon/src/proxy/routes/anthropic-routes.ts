@@ -1,5 +1,4 @@
 import type { Hono } from 'hono'
-import { countRequestTokens } from '../../core/anthropic/tokens.js'
 import type { CountTokensRequest, MessagesRequest } from '../../core/anthropic/types.js'
 import { requireAnthropicAuth } from '../middleware/auth.js'
 import type { ProxyRuntime } from '../runtime.js'
@@ -17,7 +16,7 @@ export function registerAnthropicRoutes(app: Hono, runtime: ProxyRuntime): void 
 
   app.post('/v1/messages/count_tokens', async c => {
     const req = await c.req.json<CountTokensRequest>()
-    const tokens = countRequestTokens(req as MessagesRequest)
+    const tokens = messages.countTokens(req as MessagesRequest)
     return c.json({ input_tokens: tokens })
   })
 

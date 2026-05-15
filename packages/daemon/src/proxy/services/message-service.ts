@@ -253,6 +253,11 @@ export class MessageService {
     return streamResultWithCapture(result.stream, logEntryId);
   }
 
+  countTokens(req: MessagesRequest): number {
+    const { req: transformed } = this.applyTokenSavers(cloneMessagesRequest(req));
+    return countRequestTokens(transformed);
+  }
+
   private applyTokenSavers(req: MessagesRequest): { req: MessagesRequest; stats: TokenSaverStats | undefined } {
     const { tokenSavers } = this.runtime.currentConfig();
     const rtkStats = compressMessages(req, tokenSavers.rtkEnabled);
