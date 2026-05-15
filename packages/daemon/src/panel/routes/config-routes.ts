@@ -30,12 +30,38 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.routing) Object.assign(merged.routing, update.routing)
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
+    if (update.proxy) {
+      if (update.proxy.url !== undefined) {
+        const urlError = validateProxyUrl(update.proxy.url)
+        if (urlError) return c.json({ error: urlError }, 400)
+      }
+      Object.assign(merged.proxy, update.proxy)
+      if (merged.proxy.enabled && !merged.proxy.url) {
+        return c.json({ error: 'Proxy URL is required when proxy is enabled' }, 400)
+      }
+    }
     if (update.activeProvider) merged.activeProvider = update.activeProvider
     if (update.modelMode) merged.modelMode = update.modelMode
 
     runtime.saveAndUpdateConfig(normalizeConfig(merged, config))
     return c.json({ ok: true })
   })
+}
+
+function validateProxyUrl(url: string): string | null {
+  if (!url) return null
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return 'Proxy URL must start with http:// or https://'
+  }
+  try {
+    const parsed = new URL(url)
+    if (parsed.username || parsed.password) {
+      return 'Proxy URL must not contain credentials — use a proxy that does not require authentication'
+    }
+  } catch {
+    return 'Proxy URL is not a valid URL'
+  }
+  return null
 }
 
 function maskConfig(config: Config): Config {

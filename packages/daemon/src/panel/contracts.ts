@@ -129,7 +129,7 @@ export type RoutingOption = {
 }
 
 export type PanelConfigResponse = Config
-export type SettingsConfigResponse = Pick<Config, 'server' | 'webTools'>
+export type SettingsConfigResponse = Pick<Config, 'server' | 'webTools' | 'proxy'>
 export type RoutingConfigResponse = Pick<Config, 'routing' | 'thinking'>
 
 export type SessionsResponse = {

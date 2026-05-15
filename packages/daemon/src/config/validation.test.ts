@@ -28,6 +28,40 @@ test('normalizeConfig preserves valid config values', () => {
   assert.equal(normalized.providers.ollama.requestTimeoutMs, 1200)
 })
 
+test('normalizeConfig uses proxy defaults when proxy field is absent (legacy config)', () => {
+  const defaults = buildDefaultConfig()
+  const legacyConfig = { ...defaults } as Record<string, unknown>
+  delete legacyConfig.proxy
+
+  const normalized = normalizeConfig(legacyConfig as unknown as typeof defaults, defaults)
+
+  assert.equal(normalized.proxy.enabled, false)
+  assert.equal(normalized.proxy.url, '')
+})
+
+test('normalizeConfig preserves proxy config when present', () => {
+  const defaults = buildDefaultConfig()
+  const config = { ...defaults, proxy: { enabled: true, url: 'http://127.0.0.1:7890' } }
+
+  const normalized = normalizeConfig(config, defaults)
+
+  assert.equal(normalized.proxy.enabled, true)
+  assert.equal(normalized.proxy.url, 'http://127.0.0.1:7890')
+})
+
+test('normalizeConfig falls back to defaults for invalid proxy values', () => {
+  const defaults = buildDefaultConfig()
+  const config = {
+    ...defaults,
+    proxy: { enabled: 'yes' as unknown as boolean, url: 123 as unknown as string },
+  }
+
+  const normalized = normalizeConfig(config, defaults)
+
+  assert.equal(normalized.proxy.enabled, false)
+  assert.equal(normalized.proxy.url, '')
+})
+
 test('normalizeConfig falls back for invalid runtime values', () => {
   const defaults = buildDefaultConfig()
   const config = {
