@@ -13,7 +13,7 @@ Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NV
 <br />
 [![Platforms](https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-f97316?style=for-the-badge)](#system-requirements)
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-0f172a?style=for-the-badge)](#pricing)
-[![Forever Free](https://img.shields.io/badge/forever-free-16a34a?style=for-the-badge)](#pricing)
+[![Open Source](https://img.shields.io/badge/open_source-MIT-16a34a?style=for-the-badge)](#license)
 
 **Free, open source, and local-first.**
 
