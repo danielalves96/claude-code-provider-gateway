@@ -33,7 +33,7 @@ test('normalizeConfig uses proxy defaults when proxy field is absent (legacy con
   const legacyConfig = { ...defaults } as Record<string, unknown>
   delete legacyConfig.proxy
 
-  const normalized = normalizeConfig(legacyConfig as typeof defaults, defaults)
+  const normalized = normalizeConfig(legacyConfig as unknown as typeof defaults, defaults)
 
   assert.equal(normalized.proxy.enabled, false)
   assert.equal(normalized.proxy.url, '')
