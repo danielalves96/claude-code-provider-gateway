@@ -118,7 +118,7 @@ function formatTokenExchangeError(status: number, body: string): string {
     return [
       'OpenAI OAuth token exchange failed:',
       'OpenAI rejected the daemon token exchange because the outbound network is in an unsupported country, region, or territory.',
-      'Configure the gateway daemon to use a supported outbound proxy/network and try logging in again.',
+      'Configure the daemon to use a supported outbound proxy/network and try logging in again.',
       `(${OPENAI_UNSUPPORTED_REGION_CODE})`,
     ].join(' ')
   }
