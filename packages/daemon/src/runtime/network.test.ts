@@ -1,10 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { getGlobalDispatcher, setGlobalDispatcher } from 'undici'
 import { configureOutboundNetwork, mergeLocalNoProxy } from './network.js'
 
 test('configureOutboundNetwork applies proxy URL and sets NO_PROXY for local hosts', () => {
   const originalFetch = globalThis.fetch
+  const originalDispatcher = getGlobalDispatcher()
   const originalNoProxy = process.env.NO_PROXY
+  const originalNoProxyLower = process.env.no_proxy
 
   try {
     const applied = configureOutboundNetwork('http://127.0.0.1:7890')
@@ -13,7 +16,10 @@ test('configureOutboundNetwork applies proxy URL and sets NO_PROXY for local hos
   } finally {
     if (originalNoProxy === undefined) delete process.env.NO_PROXY
     else process.env.NO_PROXY = originalNoProxy
+    if (originalNoProxyLower === undefined) delete process.env.no_proxy
+    else process.env.no_proxy = originalNoProxyLower
     globalThis.fetch = originalFetch
+    setGlobalDispatcher(originalDispatcher)
   }
 })
 

@@ -31,10 +31,11 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
     if (update.proxy) {
-      if (update.proxy.enabled && update.proxy.url !== undefined && !isValidProxyUrl(update.proxy.url)) {
-        return c.json({ error: 'Proxy URL must start with http:// or https://' }, 400)
-      }
       Object.assign(merged.proxy, update.proxy)
+      if (merged.proxy.enabled) {
+        const urlError = validateProxyUrl(merged.proxy.url)
+        if (urlError) return c.json({ error: urlError }, 400)
+      }
     }
     if (update.activeProvider) merged.activeProvider = update.activeProvider
     if (update.modelMode) merged.modelMode = update.modelMode
@@ -44,8 +45,20 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
   })
 }
 
-function isValidProxyUrl(url: string): boolean {
-  return url.startsWith('http://') || url.startsWith('https://')
+function validateProxyUrl(url: string): string | null {
+  if (!url) return 'Proxy URL is required when proxy is enabled'
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return 'Proxy URL must start with http:// or https://'
+  }
+  try {
+    const parsed = new URL(url)
+    if (parsed.username || parsed.password) {
+      return 'Proxy URL must not contain credentials — use a proxy that does not require authentication'
+    }
+  } catch {
+    return 'Proxy URL is not a valid URL'
+  }
+  return null
 }
 
 function maskConfig(config: Config): Config {
