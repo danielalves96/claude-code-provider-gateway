@@ -106,16 +106,24 @@ function autoDetectFilter(text: string): Filter | null {
   if (/^On branch |^nothing to commit|^Changes (not |to be )|^Untracked files:/m.test(head) || isMostlyPorcelain(head)) return gitStatus
 
   const lines = head.split('\n')
+  const totalLines = text.split('\n').length
   const nonEmpty = lines.filter(line => line.trim().length > 0)
   if (nonEmpty.slice(0, 5).some(isGrepLine)) return grep
   if (nonEmpty.length >= 3 && nonEmpty.every(isPathLike)) return find
   if (/[├└]──|│  /.test(head)) return tree
   if (/^total \d+$/m.test(head) || countMatches(head, /^[-dlbcps][rwx-]{9}/m) >= 3) return ls
   if (SEARCH_LIST_HEADER_RE.test(head)) return searchList
-  if (lines.length >= SMART_TRUNCATE_MIN_LINES && isLineNumbered(lines)) return readNumbered
-  if (nonEmpty.length >= 5) return dedupLog
-  if (text.split('\n').length >= SMART_TRUNCATE_MIN_LINES) return smartTruncate
+  if (totalLines >= SMART_TRUNCATE_MIN_LINES && isLineNumbered(lines)) return readNumbered
+  if (nonEmpty.length >= 5 && hasDuplicateRun(nonEmpty)) return dedupLog
+  if (totalLines >= SMART_TRUNCATE_MIN_LINES) return smartTruncate
   return null
+}
+
+function hasDuplicateRun(lines: string[]): boolean {
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i] === lines[i - 1]) return true
+  }
+  return false
 }
 
 function isGrepLine(line: string): boolean {

@@ -42,6 +42,7 @@ export function TokenSaversCard({ value, onChange }: TokenSaversCardProps) {
             Caveman level
           </Text>
           <Segmented
+            aria-label="Caveman mode level"
             disabled={!value.cavemanEnabled}
             value={value.cavemanLevel}
             options={[
@@ -71,7 +72,7 @@ function ToggleRow({ title, description, checked, onChange }: ToggleRowProps) {
         <Text strong>{title}</Text>
         <Text type="secondary">{description}</Text>
       </Flex>
-      <Switch checked={checked} onChange={onChange} />
+      <Switch aria-label={title} checked={checked} onChange={onChange} />
     </Flex>
   );
 }
