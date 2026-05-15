@@ -47,7 +47,6 @@ export function ProxyCard({ value, onChange }: ProxyCardProps) {
             onChange={(e) => onChange({ url: e.target.value })}
           />
           <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-            If unset, falls back to HTTP_PROXY / HTTPS_PROXY environment variables.
             Takes effect on next gateway restart.
           </Text>
         </Flex>

@@ -184,6 +184,24 @@ test('PUT /api/config persists proxy settings and returns them on GET', async ()
   assert.equal(body.proxy?.url, 'http://127.0.0.1:7890')
 })
 
+test('PUT /api/config rejects invalid proxy URL when enabled', async () => {
+  const config = buildDefaultConfig()
+  config.server.authToken = 'secret'
+  const app = createPanelApp(config)
+
+  const response = await app.request('/api/config', {
+    method: 'PUT',
+    headers: {
+      Authorization: 'Bearer secret',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ proxy: { enabled: true, url: 'not-a-url' } }),
+  })
+  assert.equal(response.status, 400)
+  const body = await response.json() as { error: string }
+  assert.ok(body.error.includes('http://') || body.error.includes('https://'))
+})
+
 test('PUT /api/config disabling proxy clears the enabled flag', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'

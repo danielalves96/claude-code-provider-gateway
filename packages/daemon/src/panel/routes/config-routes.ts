@@ -30,13 +30,22 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.routing) Object.assign(merged.routing, update.routing)
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
-    if (update.proxy) Object.assign(merged.proxy, update.proxy)
+    if (update.proxy) {
+      if (update.proxy.enabled && update.proxy.url !== undefined && !isValidProxyUrl(update.proxy.url)) {
+        return c.json({ error: 'Proxy URL must start with http:// or https://' }, 400)
+      }
+      Object.assign(merged.proxy, update.proxy)
+    }
     if (update.activeProvider) merged.activeProvider = update.activeProvider
     if (update.modelMode) merged.modelMode = update.modelMode
 
     runtime.saveAndUpdateConfig(normalizeConfig(merged, config))
     return c.json({ ok: true })
   })
+}
+
+function isValidProxyUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://')
 }
 
 function maskConfig(config: Config): Config {
