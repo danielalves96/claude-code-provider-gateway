@@ -31,10 +31,13 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.thinking) Object.assign(merged.thinking, update.thinking)
     if (update.webTools) Object.assign(merged.webTools, update.webTools)
     if (update.proxy) {
-      Object.assign(merged.proxy, update.proxy)
-      if (merged.proxy.enabled) {
-        const urlError = validateProxyUrl(merged.proxy.url)
+      if (update.proxy.url !== undefined) {
+        const urlError = validateProxyUrl(update.proxy.url)
         if (urlError) return c.json({ error: urlError }, 400)
+      }
+      Object.assign(merged.proxy, update.proxy)
+      if (merged.proxy.enabled && !merged.proxy.url) {
+        return c.json({ error: 'Proxy URL is required when proxy is enabled' }, 400)
       }
     }
     if (update.activeProvider) merged.activeProvider = update.activeProvider
@@ -46,7 +49,7 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
 }
 
 function validateProxyUrl(url: string): string | null {
-  if (!url) return 'Proxy URL is required when proxy is enabled'
+  if (!url) return null
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return 'Proxy URL must start with http:// or https://'
   }

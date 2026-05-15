@@ -202,22 +202,24 @@ test('PUT /api/config rejects invalid proxy URL when enabled', async () => {
   assert.ok(body.error.includes('http://') || body.error.includes('https://'))
 })
 
-test('PUT /api/config rejects proxy URL with embedded credentials', async () => {
+test('PUT /api/config rejects proxy URL with embedded credentials even when disabled', async () => {
   const config = buildDefaultConfig()
   config.server.authToken = 'secret'
   const app = createPanelApp(config)
 
-  const response = await app.request('/api/config', {
-    method: 'PUT',
-    headers: {
-      Authorization: 'Bearer secret',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ proxy: { enabled: true, url: 'http://user:pass@proxy.example.com:8080' } }),
-  })
-  assert.equal(response.status, 400)
-  const body = await response.json() as { error: string }
-  assert.ok(body.error.toLowerCase().includes('credential'))
+  for (const enabled of [true, false]) {
+    const response = await app.request('/api/config', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer secret',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ proxy: { enabled, url: 'http://user:pass@proxy.example.com:8080' } }),
+    })
+    assert.equal(response.status, 400, `expected rejection when enabled=${enabled}`)
+    const body = await response.json() as { error: string }
+    assert.ok(body.error.toLowerCase().includes('credential'))
+  }
 })
 
 test('PUT /api/config rejects enabling proxy when existing URL is empty', async () => {
