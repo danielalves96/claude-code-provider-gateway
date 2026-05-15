@@ -5,7 +5,7 @@ const LOCAL_NO_PROXY_HOSTS = ['localhost', '127.0.0.1', '::1']
 export function configureOutboundNetwork(proxyUrl?: string): boolean {
   if (!proxyUrl) return false
 
-  const noProxy = mergeLocalNoProxy(undefined)
+  const noProxy = mergeLocalNoProxy(process.env.NO_PROXY ?? process.env.no_proxy)
   process.env.NO_PROXY = noProxy
   process.env.no_proxy = noProxy
 
