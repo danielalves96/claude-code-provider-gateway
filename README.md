@@ -63,6 +63,9 @@ Everything runs locally. There is no hosted CCPG service, no telemetry, no accou
 ccpg --<provider>
 ```
 
+> [!WARNING]
+> If your `.claude/settings.json` or `.claude/settings.local.json` has an `env` block with `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_BASE_URL`, **remove those entries before launching via `ccpg`**. Those env vars override the gateway endpoint and prevent CCPG from routing requests correctly.
+
 After that, switch providers per session:
 
 ```bash
@@ -209,6 +212,9 @@ Then:
 ```bash
 ccpg --DeepSeek # Or other configured provider
 ```
+
+> [!WARNING]
+> If your `.claude/settings.json` or `.claude/settings.local.json` has an `env` block containing `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_BASE_URL`, **remove those entries**. They override the gateway endpoint and prevent CCPG from intercepting Claude Code's requests.
 
 Any arguments after the provider flag are passed to Claude Code:
 

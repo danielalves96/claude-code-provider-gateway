@@ -17,10 +17,10 @@ export function transformOpenAIAccountResponsesStream(
   inputTokens: number,
 ): ReadableStream<string> {
   let buffer = ''
-  let textBlockStarted = false
+  let textBlockIndex = -1
+  let nextAvailableIndex = 0
   let outputTokens = 0
   let finished = false
-  let nextBlockIndex = 0
   const toolBlocks = new Map<string, { index: number; id: string; name: string }>()
   const decoder = new TextDecoder()
 
@@ -31,6 +31,11 @@ export function transformOpenAIAccountResponsesStream(
 
       enq(ssePing())
       enq(sseMessageStart(messageId, model, inputTokens))
+
+      const closeOpenBlocks = () => {
+        if (textBlockIndex !== -1) enq(sseContentBlockStop(textBlockIndex))
+        for (const tool of toolBlocks.values()) enq(sseContentBlockStop(tool.index))
+      }
 
       try {
         while (true) {
@@ -53,31 +58,31 @@ export function transformOpenAIAccountResponsesStream(
             if (type === 'response.output_text.delta') {
               const delta = typeof event['delta'] === 'string' ? event['delta'] : ''
               if (!delta) continue
-              if (!textBlockStarted) {
-                enq(sseContentBlockStart(nextBlockIndex, { type: 'text', text: '' }))
-                textBlockStarted = true
+              if (textBlockIndex === -1) {
+                textBlockIndex = nextAvailableIndex++
+                enq(sseContentBlockStart(textBlockIndex, { type: 'text', text: '' }))
               }
-              enq(sseContentBlockDelta(nextBlockIndex, { type: 'text_delta', text: delta }))
+              enq(sseContentBlockDelta(textBlockIndex, { type: 'text_delta', text: delta }))
             }
 
             if (type === 'response.output_item.added') {
               const item = event['item'] as Record<string, unknown> | undefined
               if (item?.['type'] === 'function_call') {
                 const callKey = String(item['id'] ?? item['call_id'] ?? randomUUID())
-                const blockIndex = textBlockStarted
-                  ? nextBlockIndex + 1 + toolBlocks.size
-                  : nextBlockIndex + toolBlocks.size
-                toolBlocks.set(callKey, {
-                  index: blockIndex,
-                  id: String(item['call_id'] ?? callKey),
-                  name: String(item['name'] ?? ''),
-                })
-                enq(sseContentBlockStart(blockIndex, {
-                  type: 'tool_use',
-                  id: String(item['call_id'] ?? callKey),
-                  name: String(item['name'] ?? ''),
-                  input: {},
-                }))
+                if (!toolBlocks.has(callKey)) {
+                  const blockIndex = nextAvailableIndex++
+                  toolBlocks.set(callKey, {
+                    index: blockIndex,
+                    id: String(item['call_id'] ?? callKey),
+                    name: String(item['name'] ?? ''),
+                  })
+                  enq(sseContentBlockStart(blockIndex, {
+                    type: 'tool_use',
+                    id: String(item['call_id'] ?? callKey),
+                    name: String(item['name'] ?? ''),
+                    input: {},
+                  }))
+                }
               }
             }
 
@@ -99,14 +104,14 @@ export function transformOpenAIAccountResponsesStream(
           }
         }
 
-        if (textBlockStarted) enq(sseContentBlockStop(nextBlockIndex))
-        for (const tool of toolBlocks.values()) enq(sseContentBlockStop(tool.index))
+        closeOpenBlocks()
         enq(sseMessageDelta(toolBlocks.size ? 'tool_use' : 'end_turn', outputTokens))
         enq(sseMessageStop())
       } catch (err) {
+        closeOpenBlocks()
         enq(sseError('api_error', String(err)))
       } finally {
-        if (!finished && !textBlockStarted && toolBlocks.size === 0) {
+        if (!finished && textBlockIndex === -1 && toolBlocks.size === 0) {
           enq(sseError('api_error', 'OpenAI Account stream ended without a completed response'))
         }
         controller.close()
