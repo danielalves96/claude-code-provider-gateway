@@ -8,9 +8,7 @@ export function useProviders() {
   const { message } = App.useApp();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, TestResult>>(
-    {},
-  );
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
 
   const refresh = useCallback(() => {
     providersService
@@ -51,9 +49,7 @@ export function useProviders() {
     async (id: string, currentlyEnabled: boolean) => {
       try {
         await providersService.setEnabled(id, !currentlyEnabled);
-        message.success(
-          `Provider ${!currentlyEnabled ? "enabled" : "disabled"}`,
-        );
+        message.success(`Provider ${!currentlyEnabled ? "enabled" : "disabled"}`);
         refresh();
       } catch {
         message.error("Failed to toggle provider status");
@@ -136,9 +132,7 @@ export function useProviders() {
       try {
         await providersService.setDisabledModels(id, disabledModels);
         message.success("Active models updated");
-        setProviders((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)),
-        );
+        setProviders((prev) => prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)));
       } catch {
         message.error("Failed to update active models");
       }
