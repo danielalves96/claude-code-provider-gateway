@@ -1,5 +1,5 @@
-import { EditOutlined, LinkOutlined, WarningOutlined } from "@ant-design/icons";
-import { Button, Flex, Input, Space, Typography } from "antd";
+import { CloseOutlined, EditOutlined, LinkOutlined, SaveOutlined } from "@ant-design/icons";
+import { Alert, Button, Flex, Input, Space, Typography, theme } from "antd";
 import { useState } from "react";
 
 const { Text } = Typography;
@@ -10,6 +10,7 @@ interface BaseUrlSectionProps {
 }
 
 export function BaseUrlSection({ baseUrl, onRequestChange }: BaseUrlSectionProps) {
+  const { token } = theme.useToken();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(baseUrl ?? "");
 
@@ -29,57 +30,74 @@ export function BaseUrlSection({ baseUrl, onRequestChange }: BaseUrlSectionProps
   };
 
   return (
-    <Flex vertical gap={4}>
-      <Text type="secondary">
-        <Space>
-          <LinkOutlined />
-          Base URL
-        </Space>
-      </Text>
-      {!editing ? (
-        <Space>
-          <Text code style={{ fontFamily: "monospace" }}>
-            {baseUrl ?? "—"}
-          </Text>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditing(true);
-              setDraft(baseUrl ?? "");
-            }}
-          />
-        </Space>
-      ) : (
-        <Flex vertical gap={8} style={{ width: "100%", maxWidth: 520 }}>
-          <Space.Compact style={{ width: "100%" }}>
-            <Input
-              autoFocus
-              placeholder="http://localhost:..."
-              value={draft}
-              style={{ fontFamily: "monospace" }}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submit();
-                if (e.key === "Escape") cancel();
-              }}
-            />
-            <Button
-              type="primary"
-              disabled={!draft.trim() || draft.trim() === baseUrl}
-              onClick={submit}
-            >
-              Save
-            </Button>
-            <Button onClick={cancel}>Cancel</Button>
-          </Space.Compact>
-          <Text type="warning" style={{ fontSize: 12 }}>
-            <Space size={6}>
-              <WarningOutlined />
-              Provider credentials are sent to this endpoint. Use only URLs you trust.
+    <div
+      style={{
+        padding: 16,
+        backgroundColor: token.colorFillAlter,
+        borderRadius: token.borderRadiusLG,
+      }}
+    >
+      <Flex vertical gap={12}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Text strong>
+            <Space>
+              <LinkOutlined style={{ color: token.colorPrimary }} />
+              Custom Base URL
             </Space>
           </Text>
-        </Flex>
-      )}
-    </Flex>
+          {!editing ? (
+            <Button
+              size="small"
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditing(true);
+                setDraft(baseUrl ?? "");
+              }}
+            >
+              Edit
+            </Button>
+          ) : (
+            <Button size="small" type="text" icon={<CloseOutlined />} onClick={cancel} />
+          )}
+        </div>
+
+        {!editing ? (
+          <Input disabled size="large" value={baseUrl || "—"} style={{ fontFamily: "monospace" }} />
+        ) : (
+          <Flex vertical gap={12}>
+            <Flex gap={8}>
+              <Input
+                autoFocus
+                size="large"
+                placeholder="http://localhost:..."
+                value={draft}
+                style={{ fontFamily: "monospace" }}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submit();
+                  if (e.key === "Escape") cancel();
+                }}
+              />
+              <Button
+                size="large"
+                type="primary"
+                icon={<SaveOutlined />}
+                disabled={!draft.trim() || draft.trim() === baseUrl}
+                onClick={submit}
+              >
+                Save URL
+              </Button>
+            </Flex>
+            <Alert
+              type="warning"
+              showIcon
+              message="Provider credentials are sent to this endpoint. Use only URLs you trust."
+              style={{ fontSize: 13, padding: "6px 12px" }}
+            />
+          </Flex>
+        )}
+      </Flex>
+    </div>
   );
 }

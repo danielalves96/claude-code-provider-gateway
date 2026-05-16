@@ -1,157 +1,123 @@
-import { Badge, Button, Card, Divider, Flex, Space, Switch, Tag, Typography, theme } from "antd";
+import { Badge, Card, Space, Switch, Tag, Typography, theme } from "antd";
 import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
-import type { CopilotFlow, ProviderInfo, TestResult } from "../types.js";
-import { ApiKeySection } from "./ApiKeySection.js";
-import { BaseUrlSection } from "./BaseUrlSection.js";
-import { ExtraModelsSection } from "./ExtraModelsSection.js";
-import { ModelSelector } from "./ModelSelector.js";
-import { OAuthSection } from "./OAuthSection.js";
+import type { ProviderInfo, TestResult } from "../types.js";
+import { ProviderLogo } from "./ProviderLogo.js";
 
 const { Text } = Typography;
 
-export interface ProviderCardHandlers {
-  onTest: (id: string) => void;
-  onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
-  onSaveKey: (id: string, key: string) => void;
-  onRequestReplaceKey: (id: string, key: string) => void;
-  onRequestRemoveKey: (id: string) => void;
-  onRequestChangeUrl: (id: string, url: string) => void;
-  onAddModel: (p: ProviderInfo, model: string) => void;
-  onRemoveModel: (p: ProviderInfo, model: string) => void;
-  onDisabledModelsChange: (id: string, disabledModels: string[]) => void;
-  onOAuthLogin: (id: string) => void;
-  onOAuthLogout: (id: string) => void;
-  onCancelOAuthFlow: () => void;
-}
+type ProviderStatus = {
+  badge: "default" | "success" | "warning";
+  label: string;
+  ready: boolean;
+};
 
 interface ProviderCardProps {
   provider: ProviderInfo;
-  testing: boolean;
   testResult?: TestResult;
-  oauthBusyFor: string | null;
-  oauthError: string | null;
-  copilotFlow: CopilotFlow | null;
-  handlers: ProviderCardHandlers;
+  onClick: (provider: ProviderInfo) => void;
+  onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
 }
 
 export function ProviderCard({
   provider: p,
-  testing,
   testResult,
-  oauthBusyFor,
-  oauthError,
-  copilotFlow,
-  handlers,
+  onClick,
+  onToggleEnabled,
 }: ProviderCardProps) {
   const { token } = theme.useToken();
-  const isLocal = LOCAL_PROVIDERS.has(p.id);
-  const isOAuth = OAUTH_PROVIDERS.has(p.id);
-  const canTest = p.enabled && (isLocal || (isOAuth ? p.oauth?.loggedIn : p.hasKey));
-  const ready = isLocal ? true : isOAuth ? p.oauth?.loggedIn === true : p.hasKey;
+  const status = getProviderStatus(p);
 
   return (
     <Card
-      style={{ width: "100%", display: "flex", flexDirection: "column" }}
+      hoverable
+      onClick={() => onClick(p)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick(p);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Configure ${p.label}`}
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        borderColor: p.enabled && !status.ready ? token.colorWarningBorder : undefined,
+      }}
       styles={{
         body: {
-          opacity: p.enabled ? 1 : 0.6,
-          transition: "opacity 0.2s",
+          padding: token.padding,
           flex: 1,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
         },
       }}
-      title={<CardTitle provider={p} result={testResult} />}
-      extra={
-        <Space>
-          <Button loading={testing} disabled={!canTest} onClick={() => handlers.onTest(p.id)}>
-            Test
-          </Button>
-          <Switch checked={p.enabled} onChange={() => handlers.onToggleEnabled(p.id, p.enabled)} />
-        </Space>
-      }
     >
-      <Flex vertical gap={token.padding}>
-        {isOAuth && (
-          <>
-            <OAuthSection
-              providerId={p.id}
-              oauth={p.oauth}
-              busy={oauthBusyFor === p.id}
-              error={oauthError}
-              copilotFlow={copilotFlow}
-              onLogin={() => handlers.onOAuthLogin(p.id)}
-              onLogout={() => handlers.onOAuthLogout(p.id)}
-              onCancelFlow={handlers.onCancelOAuthFlow}
-            />
-            {p.id !== "copilot" && (
-              <ExtraModelsSection
-                models={p.models ?? []}
-                onAdd={(model) => handlers.onAddModel(p, model)}
-                onRemove={(model) => handlers.onRemoveModel(p, model)}
+      <div
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+          <ProviderLogo providerId={p.id} label={p.label} size={42} />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              minWidth: 0,
+              opacity: p.enabled ? 1 : 0.6,
+              transition: "opacity 0.2s",
+            }}
+          >
+            <Text strong ellipsis style={{ fontSize: 15, lineHeight: 1.2 }}>
+              {p.label}
+            </Text>
+
+            <Space size={6} wrap style={{ marginTop: 4 }}>
+              <Badge
+                status={status.badge}
+                text={<span style={{ fontSize: 12 }}>{status.label}</span>}
               />
-            )}
-          </>
-        )}
-
-        {!isLocal && !isOAuth && (
-          <ApiKeySection
-            hasKey={p.hasKey}
-            keyPreview={p.keyPreview}
-            onSave={(value) => handlers.onSaveKey(p.id, value)}
-            onRequestRemove={() => handlers.onRequestRemoveKey(p.id)}
-            onRequestReplace={(value) => handlers.onRequestReplaceKey(p.id, value)}
-          />
-        )}
-
-        {isLocal && (
-          <BaseUrlSection
-            baseUrl={p.baseUrl}
-            onRequestChange={(url) => handlers.onRequestChangeUrl(p.id, url)}
-          />
-        )}
-
-        {p.enabled && (
-          <>
-            <SingleProviderHint providerId={p.id} />
-            <Divider style={{ margin: 0 }} />
-            <ModelSelector
-              providerId={p.id}
-              disabledModels={p.disabledModels ?? []}
-              ready={!!ready}
-              onDisabledModelsChange={(disabled) => handlers.onDisabledModelsChange(p.id, disabled)}
-            />
-          </>
-        )}
-      </Flex>
+              {testResult && (
+                <Tag
+                  color={testResult.ok ? "success" : "error"}
+                  style={{ margin: 0, fontSize: 11 }}
+                >
+                  {testResult.ok ? `${testResult.latencyMs}ms` : "Error"}
+                </Tag>
+              )}
+            </Space>
+          </div>
+        </div>
+        <Switch
+          checked={p.enabled}
+          onClick={(_, event) => event.stopPropagation()}
+          onChange={() => onToggleEnabled(p.id, p.enabled)}
+          size="small"
+          aria-label={`${p.enabled ? "Disable" : "Enable"} ${p.label}`}
+        />
+      </div>
     </Card>
   );
 }
 
-function CardTitle({ provider: p, result }: { provider: ProviderInfo; result?: TestResult }) {
-  return (
-    <Space>
-      {p.enabled && <Badge status="processing" />}
-      <Text strong>{p.label}</Text>
-      {result && (
-        <Tag color={result.ok ? "success" : "error"}>
-          {result.ok
-            ? `✓ ${result.modelCount ?? 0} models · ${result.latencyMs}ms`
-            : `✗ ${result.error ?? "failed"}`}
-        </Tag>
-      )}
-    </Space>
-  );
+function getProviderStatus(provider: ProviderInfo): ProviderStatus {
+  const ready = isProviderReady(provider);
+
+  if (!provider.enabled) {
+    return { badge: "default", label: "Disabled", ready };
+  }
+
+  return ready
+    ? { badge: "success", label: "Ready", ready }
+    : { badge: "warning", label: "Needs Config", ready };
 }
 
-function SingleProviderHint({ providerId }: { providerId: string }) {
-  const { token } = theme.useToken();
-  return (
-    <Text style={{ fontFamily: "monospace", color: token.colorSuccessText }}>
-      ccpg --{providerId.replace("_", "")}{" "}
-      <Text type="secondary" style={{ fontFamily: "inherit" }}>
-        — single-provider mode
-      </Text>
-    </Text>
-  );
+function isProviderReady(provider: ProviderInfo) {
+  if (LOCAL_PROVIDERS.has(provider.id)) return true;
+  if (OAUTH_PROVIDERS.has(provider.id)) return provider.oauth?.loggedIn === true;
+  return provider.hasKey;
 }

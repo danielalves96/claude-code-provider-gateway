@@ -1,35 +1,36 @@
-import { Col, Flex, Row, theme } from "antd";
+import { Flex, Typography, theme } from "antd";
 import { useCallback, useState } from "react";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { useOAuth } from "../hooks/useOAuth.js";
 import { useProviders } from "../hooks/useProviders.js";
-import { providersService } from "../providersService.js";
 import type { ConfirmAction } from "../types.js";
 import { ConfirmModal } from "./ConfirmModal.js";
-import { ProviderCard, type ProviderCardHandlers } from "./ProviderCard.js";
+import { ProviderConfigModal, type ProviderConfigModalHandlers } from "./ProviderConfigModal.js";
+import { groupProvidersByConfiguration, ProviderGridSection } from "./ProviderGridSection.js";
+
+const { Text } = Typography;
 
 export default function ProvidersPage() {
   const { token } = theme.useToken();
   const providersApi = useProviders();
   const oauth = useOAuth({ onSuccess: providersApi.refresh });
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
 
   const runConfirmed = useCallback(async () => {
     if (!confirm) return;
     if (confirm.kind === "replace-key") {
       await providersApi.saveKey(confirm.providerId, confirm.newValue);
     } else if (confirm.kind === "remove-key") {
-      await providersService.removeKey(confirm.providerId);
-      providersApi.refresh();
+      await providersApi.removeKey(confirm.providerId);
     } else if (confirm.kind === "change-url") {
       await providersApi.saveBaseUrl(confirm.providerId, confirm.newValue);
     }
     setConfirm(null);
   }, [confirm, providersApi]);
 
-  const handlers: ProviderCardHandlers = {
+  const modalHandlers: ProviderConfigModalHandlers = {
     onTest: providersApi.test,
-    onToggleEnabled: providersApi.toggleEnabled,
     onSaveKey: providersApi.saveKey,
     onRequestReplaceKey: (providerId, newValue) =>
       setConfirm({ kind: "replace-key", providerId, newValue }),
@@ -44,25 +45,37 @@ export default function ProvidersPage() {
     onCancelOAuthFlow: oauth.cancel,
   };
 
+  const providerGroups = groupProvidersByConfiguration(providersApi.providers);
+  const activeProvider = selectedProviderId
+    ? (providersApi.providers.find((provider) => provider.id === selectedProviderId) ?? null)
+    : null;
+
   return (
     <Flex vertical gap={token.paddingLG}>
-      <PageHeader title="Providers" />
+      <ProvidersHeader />
 
-      <Row gutter={[token.paddingLG, token.paddingLG]} align="stretch">
-        {providersApi.providers.map((p) => (
-          <Col xs={24} xl={12} key={p.id} style={{ display: "flex" }}>
-            <ProviderCard
-              provider={p}
-              testing={providersApi.testing === p.id}
-              testResult={providersApi.testResults[p.id]}
-              oauthBusyFor={oauth.busy}
-              oauthError={oauth.error}
-              copilotFlow={oauth.copilotFlow}
-              handlers={handlers}
-            />
-          </Col>
-        ))}
-      </Row>
+      {providerGroups.map((group) => (
+        <ProviderGridSection
+          key={group.title}
+          title={group.title}
+          providers={group.providers}
+          testResults={providersApi.testResults}
+          onProviderSelect={(provider) => setSelectedProviderId(provider.id)}
+          onToggleEnabled={providersApi.toggleEnabled}
+        />
+      ))}
+
+      <ProviderConfigModal
+        provider={activeProvider}
+        open={!!activeProvider}
+        onClose={() => setSelectedProviderId(null)}
+        testing={activeProvider ? providersApi.testing === activeProvider.id : false}
+        oauthBusyFor={oauth.busy}
+        oauthError={oauth.error}
+        copilotFlow={oauth.copilotFlow}
+        handlers={modalHandlers}
+        onToggleEnabled={providersApi.toggleEnabled}
+      />
 
       <ConfirmModal
         action={confirm}
@@ -71,5 +84,16 @@ export default function ProvidersPage() {
         onConfirm={runConfirmed}
       />
     </Flex>
+  );
+}
+
+function ProvidersHeader() {
+  return (
+    <div>
+      <PageHeader title="Providers" />
+      <Text type="secondary" style={{ marginTop: 8, display: "block" }}>
+        Select a provider card below to configure API keys, custom URLs, and active models.
+      </Text>
+    </div>
   );
 }

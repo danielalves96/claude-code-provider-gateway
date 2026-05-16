@@ -7,7 +7,8 @@ import { useLiveLogs } from "../hooks/useLiveLogs.js";
 import { useShellSetup } from "../hooks/useShellSetup.js";
 import { EnabledProvidersCard } from "./EnabledProvidersCard.js";
 import { LiveLogsPanel } from "./LiveLogsPanel.js";
-import { QuickLaunchCard, ShellSetupCard } from "./ShellSetupCard.js";
+import { QuickLaunchCard } from "./QuickLaunchCard.js";
+import { ShellSetupCard } from "./ShellSetupCard.js";
 import { StatusOverview } from "./StatusOverview.js";
 
 const DISMISSED_SHELL_SETUP_KEY = "cc-provider-gtw:shell-setup-dismissed";

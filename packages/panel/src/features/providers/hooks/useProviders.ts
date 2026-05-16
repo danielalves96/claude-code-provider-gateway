@@ -1,9 +1,11 @@
+import { App } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { providersService } from "../providersService.js";
 import type { ProviderInfo, TestResult } from "../types.js";
 import { mergeModelLists } from "../utils.js";
 
 export function useProviders() {
+  const { message } = App.useApp();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
@@ -19,77 +21,124 @@ export function useProviders() {
     refresh();
   }, [refresh]);
 
-  const test = useCallback(async (id: string) => {
-    setTesting(id);
-    try {
-      const result = await providersService.test(id);
-      setTestResults((r) => ({ ...r, [id]: result }));
-    } catch {
-      setTestResults((r) => ({
-        ...r,
-        [id]: { ok: false, latencyMs: 0, error: "Request failed" },
-      }));
-    } finally {
-      setTesting(null);
-    }
-  }, []);
+  const test = useCallback(
+    async (id: string) => {
+      setTesting(id);
+      try {
+        const result = await providersService.test(id);
+        setTestResults((r) => ({ ...r, [id]: result }));
+        if (result.ok) {
+          message.success(`Connection test passed (${result.latencyMs}ms)`);
+        } else {
+          message.error(`Test failed: ${result.error}`);
+        }
+      } catch {
+        setTestResults((r) => ({
+          ...r,
+          [id]: { ok: false, latencyMs: 0, error: "Request failed" },
+        }));
+        message.error("Connection test failed");
+      } finally {
+        setTesting(null);
+      }
+    },
+    [message],
+  );
 
   const toggleEnabled = useCallback(
     async (id: string, currentlyEnabled: boolean) => {
-      await providersService.setEnabled(id, !currentlyEnabled);
-      refresh();
+      try {
+        await providersService.setEnabled(id, !currentlyEnabled);
+        message.success(`Provider ${!currentlyEnabled ? "enabled" : "disabled"}`);
+        refresh();
+      } catch {
+        message.error("Failed to toggle provider status");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
   const saveKey = useCallback(
     async (id: string, key: string) => {
-      await providersService.setKey(id, key);
-      refresh();
+      try {
+        await providersService.setKey(id, key);
+        message.success("API Key saved successfully");
+        refresh();
+      } catch {
+        message.error("Failed to save API Key");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
   const removeKey = useCallback(
     async (id: string) => {
-      await providersService.removeKey(id);
-      refresh();
+      try {
+        await providersService.removeKey(id);
+        message.success("API Key removed");
+        refresh();
+      } catch {
+        message.error("Failed to remove API Key");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
   const saveBaseUrl = useCallback(
     async (id: string, url: string) => {
-      await providersService.setBaseUrl(id, url);
-      refresh();
+      try {
+        await providersService.setBaseUrl(id, url);
+        message.success("Custom Base URL updated");
+        refresh();
+      } catch {
+        message.error("Failed to update Base URL");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
   const addModel = useCallback(
     async (p: ProviderInfo, model: string) => {
       const trimmed = model.trim();
       if (!trimmed) return;
-      const next = mergeModelLists([...(p.models ?? []), trimmed]);
-      await providersService.setModels(p.id, next);
-      refresh();
+      try {
+        const next = mergeModelLists([...(p.models ?? []), trimmed]);
+        await providersService.setModels(p.id, next);
+        message.success(`Model ${trimmed} added`);
+        refresh();
+      } catch {
+        message.error("Failed to add model");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
   const removeModel = useCallback(
     async (p: ProviderInfo, model: string) => {
-      const next = (p.models ?? []).filter((m) => m !== model);
-      await providersService.setModels(p.id, next);
-      refresh();
+      try {
+        const next = (p.models ?? []).filter((m) => m !== model);
+        await providersService.setModels(p.id, next);
+        message.success(`Model ${model} removed`);
+        refresh();
+      } catch {
+        message.error("Failed to remove model");
+      }
     },
-    [refresh],
+    [refresh, message],
   );
 
-  const setDisabledModels = useCallback(async (id: string, disabledModels: string[]) => {
-    await providersService.setDisabledModels(id, disabledModels);
-    setProviders((prev) => prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)));
-  }, []);
+  const setDisabledModels = useCallback(
+    async (id: string, disabledModels: string[]) => {
+      try {
+        await providersService.setDisabledModels(id, disabledModels);
+        message.success("Active models updated");
+        setProviders((prev) => prev.map((p) => (p.id === id ? { ...p, disabledModels } : p)));
+      } catch {
+        message.error("Failed to update active models");
+      }
+    },
+    [message],
+  );
 
   return {
     providers,
