@@ -11,11 +11,11 @@ export function registerAnthropicRoutes(app: Hono, runtime: ProxyRuntime): void 
 
   app.use("/v1/*", requireAnthropicAuth(runtime));
 
-  app.on(["HEAD", "OPTIONS"], "/v1/messages", (c) => new Response(null, { status: 204 }));
+  app.on(["HEAD", "OPTIONS"], "/v1/messages", (_c) => new Response(null, { status: 204 }));
   app.on(
     ["HEAD", "OPTIONS"],
     "/v1/messages/count_tokens",
-    (c) => new Response(null, { status: 204 }),
+    (_c) => new Response(null, { status: 204 }),
   );
 
   app.post("/v1/messages/count_tokens", async (c) => {

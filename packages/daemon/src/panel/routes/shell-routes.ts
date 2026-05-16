@@ -43,7 +43,7 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
     if (!isShellName(shell)) {
       return c.json({ error: `Unknown shell: ${shell}` }, 400);
     }
-    return c.text("\n" + getSnippetForShell(config, shell) + "\n", 200, {
+    return c.text(`\n${getSnippetForShell(config, shell)}\n`, 200, {
       "Content-Type": "text/x-shellscript; charset=utf-8",
     });
   });

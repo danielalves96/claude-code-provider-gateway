@@ -57,10 +57,10 @@ export function transformOpenAIAccountResponsesStream(
             } catch {
               continue;
             }
-            const type = String(event["type"] ?? "");
+            const type = String(event.type ?? "");
 
             if (type === "response.output_text.delta") {
-              const delta = typeof event["delta"] === "string" ? event["delta"] : "";
+              const delta = typeof event.delta === "string" ? event.delta : "";
               if (!delta) continue;
               if (textBlockIndex === -1) {
                 textBlockIndex = nextAvailableIndex++;
@@ -70,21 +70,21 @@ export function transformOpenAIAccountResponsesStream(
             }
 
             if (type === "response.output_item.added") {
-              const item = event["item"] as Record<string, unknown> | undefined;
-              if (item?.["type"] === "function_call") {
-                const callKey = String(item["id"] ?? item["call_id"] ?? randomUUID());
+              const item = event.item as Record<string, unknown> | undefined;
+              if (item?.type === "function_call") {
+                const callKey = String(item.id ?? item.call_id ?? randomUUID());
                 if (!toolBlocks.has(callKey)) {
                   const blockIndex = nextAvailableIndex++;
                   toolBlocks.set(callKey, {
                     index: blockIndex,
-                    id: String(item["call_id"] ?? callKey),
-                    name: String(item["name"] ?? ""),
+                    id: String(item.call_id ?? callKey),
+                    name: String(item.name ?? ""),
                   });
                   enq(
                     sseContentBlockStart(blockIndex, {
                       type: "tool_use",
-                      id: String(item["call_id"] ?? callKey),
-                      name: String(item["name"] ?? ""),
+                      id: String(item.call_id ?? callKey),
+                      name: String(item.name ?? ""),
                       input: {},
                     }),
                   );
@@ -93,9 +93,9 @@ export function transformOpenAIAccountResponsesStream(
             }
 
             if (type === "response.function_call_arguments.delta") {
-              const itemId = String(event["item_id"] ?? event["output_index"] ?? "");
+              const itemId = String(event.item_id ?? event.output_index ?? "");
               const tool = toolBlocks.get(itemId) ?? Array.from(toolBlocks.values()).at(-1);
-              const delta = typeof event["delta"] === "string" ? event["delta"] : "";
+              const delta = typeof event.delta === "string" ? event.delta : "";
               if (tool && delta) {
                 enq(
                   sseContentBlockDelta(tool.index, {
@@ -107,9 +107,9 @@ export function transformOpenAIAccountResponsesStream(
             }
 
             if (type === "response.completed") {
-              const response = event["response"] as Record<string, unknown> | undefined;
-              const usage = response?.["usage"] as Record<string, unknown> | undefined;
-              outputTokens = numberValue(usage?.["output_tokens"]) ?? outputTokens;
+              const response = event.response as Record<string, unknown> | undefined;
+              const usage = response?.usage as Record<string, unknown> | undefined;
+              outputTokens = numberValue(usage?.output_tokens) ?? outputTokens;
               finished = true;
             }
           }

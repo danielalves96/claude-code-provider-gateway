@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 export function getConfigDir(): string {
   if (platform() === "win32") {
-    return join(process.env["APPDATA"] ?? homedir(), "claude-code-provider-gateway");
+    return join(process.env.APPDATA ?? homedir(), "claude-code-provider-gateway");
   }
   return join(homedir(), ".config", "claude-code-provider-gateway");
 }

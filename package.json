@@ -12,7 +12,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
+    "lint:fix": "biome lint --write --unsafe .",
     "quality": "biome check .",
     "quality:fix": "biome check --write .",
     "quality:ci": "biome ci .",

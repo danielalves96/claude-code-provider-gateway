@@ -50,8 +50,7 @@ export function compressMessages(
       }
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[RTK] compressMessages error: ${message}`);
+    const _message = error instanceof Error ? error.message : String(error);
     return null;
   }
 
@@ -97,10 +96,7 @@ function safeApply(filter: Filter, text: string): string {
     const out = filter(text);
     return typeof out === "string" ? out : text;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      `[rtk] warning: filter '${filter.filterName ?? filter.name}' failed; passing through raw output: ${message}`,
-    );
+    const _message = error instanceof Error ? error.message : String(error);
     return text;
   }
 }

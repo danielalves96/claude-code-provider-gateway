@@ -47,7 +47,7 @@ export function SessionMetadataCards({ session }: SessionMetadataCardsProps) {
               {label}
             </Text>
             <Text ellipsis={{ tooltip: value }}>
-              {value.length > 30 ? value.slice(0, 30) + "…" : value}
+              {value.length > 30 ? `${value.slice(0, 30)}…` : value}
             </Text>
           </Card>
         </Col>

@@ -13,7 +13,7 @@ const CLAUDE_SONNET_PATTERN = /claude-(3[.-]5?-sonnet|sonnet)/i;
 const CLAUDE_HAIKU_PATTERN = /claude-(3-haiku|haiku)/i;
 
 function applyRule(rule: RoutingRule | undefined): ResolvedModel | null {
-  if (!rule || !rule.enabled || !rule.providerId || !rule.model) return null;
+  if (!rule?.enabled || !rule.providerId || !rule.model) return null;
 
   // Normalize the stored model name: the panel lets users pick models by their full
   // gateway ID (e.g. "anthropic/deepseek/deepseek-v4-flash"), but only the bare

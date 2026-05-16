@@ -59,7 +59,7 @@ function isAvailableForAccount(model: CopilotApiModel): boolean {
   if (model.capabilities?.type !== "chat") return false;
   if (model.model_picker_enabled !== true) return false;
   // Some models gate behind terms-of-use; only "enabled" means the account accepted.
-  if (model.policy && model.policy.state && model.policy.state !== "enabled") return false;
+  if (model.policy?.state && model.policy.state !== "enabled") return false;
   // Preview models are visible in the API but hidden in the picker by opencode/VSCode.
   if (model.preview === true) return false;
   // Codex-style models only expose /responses; our transport speaks /chat/completions,

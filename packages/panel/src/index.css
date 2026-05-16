@@ -22,14 +22,14 @@ body {
 
 /* Fix Ant Design nested tables border stripping */
 .ant-table-wrapper .ant-table-expanded-row .ant-table-wrapper .ant-table {
-  margin: 0 !important;
+  margin: 0;
 }
 .ant-table-wrapper .ant-table-expanded-row .ant-table-wrapper .ant-table-thead > tr > th {
-  border-top: 1px solid #3e3e38 !important;
+  border-top: 1px solid #3e3e38;
 }
 .ant-table-wrapper .ant-table-expanded-row .ant-table-wrapper .ant-table-container {
-  border-inline-start: 1px solid #3e3e38 !important;
-  border-inline-end: 1px solid #3e3e38 !important;
+  border-inline-start: 1px solid #3e3e38;
+  border-inline-end: 1px solid #3e3e38;
 }
 .ant-table-wrapper
   .ant-table-expanded-row
@@ -37,5 +37,5 @@ body {
   .ant-table-tbody
   > tr:last-child
   > td {
-  border-bottom: 1px solid #3e3e38 !important;
+  border-bottom: 1px solid #3e3e38;
 }
