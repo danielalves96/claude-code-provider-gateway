@@ -1,4 +1,4 @@
-import { Avatar } from "antd";
+import { Avatar, theme } from "antd";
 import { useState } from "react";
 
 interface ProviderLogoProps {
@@ -8,12 +8,17 @@ interface ProviderLogoProps {
 }
 
 export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
+  const { token } = theme.useToken();
   const [failedProviderId, setFailedProviderId] = useState<string | null>(null);
 
   if (failedProviderId === providerId) {
     return (
-      <Avatar shape="square" size={size} style={{ backgroundColor: "#f0f0f0", flexShrink: 0 }}>
-        <span style={{ color: "#000", fontSize: Math.max(12, Math.round(size * 0.38)) }}>
+      <Avatar
+        shape="square"
+        size={size}
+        style={{ backgroundColor: token.colorFillSecondary, flexShrink: 0 }}
+      >
+        <span style={{ color: token.colorText, fontSize: Math.max(12, Math.round(size * 0.38)) }}>
           {label.charAt(0).toUpperCase()}
         </span>
       </Avatar>

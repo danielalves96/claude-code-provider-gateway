@@ -52,6 +52,7 @@ export function ShellInstallActions({
 }
 
 export function ShellInstallSummary({ shells }: { shells: ShellInfo[] }) {
+  const { token } = theme.useToken();
   const installed = shells.filter((shell) => shell.installed);
 
   if (installed.length === 0) {
@@ -60,7 +61,7 @@ export function ShellInstallSummary({ shells }: { shells: ShellInfo[] }) {
 
   return (
     <Space size={4}>
-      <CheckCircleFilled style={{ color: "#52c41a" }} />
+      <CheckCircleFilled style={{ color: token.colorSuccess }} />
       <Text type="secondary">
         Installed in {installed.map((shell) => SHELL_DISPLAY_NAMES[shell.name]).join(", ")}
       </Text>
@@ -79,12 +80,13 @@ function ShellInstallButton({
   disabledByOthers: boolean;
   onClick: () => void;
 }) {
+  const { token } = theme.useToken();
   const displayName = SHELL_DISPLAY_NAMES[shell.name];
 
   if (shell.installed) {
     return (
       <Tooltip title={`Already in ${shell.rcPath}`}>
-        <Button icon={<CheckCircleFilled style={{ color: "#52c41a" }} />} disabled>
+        <Button icon={<CheckCircleFilled style={{ color: token.colorSuccess }} />} disabled>
           {displayName}
         </Button>
       </Tooltip>

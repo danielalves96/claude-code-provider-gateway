@@ -1,5 +1,5 @@
 import { Button, Modal, Switch } from "antd";
-import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
+import { canTestProvider } from "../status.js";
 import type { CopilotFlow, ProviderInfo } from "../types.js";
 import { ProviderConfigContent, type ProviderConfigHandlers } from "./ProviderConfigContent.js";
 import { ProviderLogo } from "./ProviderLogo.js";
@@ -63,15 +63,6 @@ export function ProviderConfigModal({
       />
     </Modal>
   );
-}
-
-function canTestProvider(provider: ProviderInfo) {
-  if (!provider.enabled) return false;
-  if (LOCAL_PROVIDERS.has(provider.id)) return true;
-  if (OAUTH_PROVIDERS.has(provider.id)) {
-    return provider.oauth?.loggedIn === true;
-  }
-  return provider.hasKey;
 }
 
 function ProviderConfigTitle({

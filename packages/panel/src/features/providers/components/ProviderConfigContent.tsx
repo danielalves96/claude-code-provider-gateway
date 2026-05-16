@@ -1,5 +1,5 @@
 import { Divider, Flex } from "antd";
-import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
+import { getProviderKind, isProviderReady } from "../status.js";
 import type { CopilotFlow, ProviderInfo } from "../types.js";
 import { ApiKeySection } from "./ApiKeySection.js";
 import { BaseUrlSection } from "./BaseUrlSection.js";
@@ -80,16 +80,4 @@ export function ProviderConfigContent({
       )}
     </Flex>
   );
-}
-
-function getProviderKind(provider: ProviderInfo) {
-  if (LOCAL_PROVIDERS.has(provider.id)) return "local";
-  if (OAUTH_PROVIDERS.has(provider.id)) return "oauth";
-  return "api-key";
-}
-
-function isProviderReady(provider: ProviderInfo) {
-  if (LOCAL_PROVIDERS.has(provider.id)) return true;
-  if (OAUTH_PROVIDERS.has(provider.id)) return provider.oauth?.loggedIn === true;
-  return provider.hasKey;
 }

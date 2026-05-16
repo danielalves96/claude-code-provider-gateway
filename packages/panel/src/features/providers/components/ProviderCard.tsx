@@ -1,5 +1,5 @@
 import { Badge, Card, Space, Switch, Tag, Typography, theme } from "antd";
-import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
+import { isProviderReady } from "../status.js";
 import type { ProviderInfo, TestResult } from "../types.js";
 import { ProviderLogo } from "./ProviderLogo.js";
 
@@ -114,10 +114,4 @@ function getProviderStatus(provider: ProviderInfo): ProviderStatus {
   return ready
     ? { badge: "success", label: "Ready", ready }
     : { badge: "warning", label: "Needs Config", ready };
-}
-
-function isProviderReady(provider: ProviderInfo) {
-  if (LOCAL_PROVIDERS.has(provider.id)) return true;
-  if (OAUTH_PROVIDERS.has(provider.id)) return provider.oauth?.loggedIn === true;
-  return provider.hasKey;
 }
