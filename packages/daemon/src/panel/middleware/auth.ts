@@ -47,7 +47,7 @@ export function requirePanelAccess(runtime: PanelRuntime) {
 function isAllowedPanelOrigin(origin: string): boolean {
   if (!origin) return false;
   if (TAURI_PANEL_ORIGINS.has(origin)) return true;
-  if (process.env["NODE_ENV"] !== "production" && DEV_PANEL_ORIGINS.has(origin)) return true;
+  if (process.env.NODE_ENV !== "production" && DEV_PANEL_ORIGINS.has(origin)) return true;
   return false;
 }
 

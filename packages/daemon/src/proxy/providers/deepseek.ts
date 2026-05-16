@@ -11,7 +11,7 @@ export class DeepSeekProvider extends AnthropicMessagesTransport {
   }
 
   override async listModels(): Promise<ModelInfo[]> {
-    const url = this.baseUrl().replace(/\/anthropic\/?$/, "") + "/models";
+    const url = `${this.baseUrl().replace(/\/anthropic\/?$/, "")}/models`;
     const json = await fetchProviderJson<{ data?: Array<{ id: string; created?: number }> }>({
       url,
       headers: { Authorization: this.authHeader() },

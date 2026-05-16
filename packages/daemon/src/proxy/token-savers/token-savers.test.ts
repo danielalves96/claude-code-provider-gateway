@@ -58,7 +58,7 @@ test("caveman inserts before last cache_control block to preserve prompt cache",
   assert.ok(Array.isArray(req.system));
   const texts = (req.system as Array<{ text: string }>).map((b) => b.text);
   const cavemanIdx = texts.findIndex((t) => /terse caveman/.test(t));
-  const cachedIdx = texts.findIndex((t) => t === "rule B");
+  const cachedIdx = texts.indexOf("rule B");
   assert.ok(cavemanIdx >= 0 && cachedIdx >= 0);
   assert.ok(
     cavemanIdx < cachedIdx,
@@ -78,7 +78,7 @@ test("caveman appends to system array when no cache_control present", () => {
   assert.ok(Array.isArray(req.system));
   const arr = req.system as Array<{ text: string }>;
   assert.equal(arr.length, 3);
-  assert.match(arr[2]!.text, /terse/);
+  assert.match(arr[2]?.text, /terse/);
 });
 
 function baseRequest(toolResult: string, isError = false): MessagesRequest {

@@ -25,8 +25,8 @@ test("panel API rejects browser requests from untrusted origins", async () => {
 });
 
 test("panel API allows trusted Tauri origins in production", async () => {
-  const previous = process.env["NODE_ENV"];
-  process.env["NODE_ENV"] = "production";
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
   try {
     const config = buildDefaultConfig();
     config.server.authToken = "secret";
@@ -39,14 +39,14 @@ test("panel API allows trusted Tauri origins in production", async () => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://tauri.localhost");
   } finally {
-    if (previous === undefined) delete process.env["NODE_ENV"];
-    else process.env["NODE_ENV"] = previous;
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
   }
 });
 
 test("panel API allows vite dev origin only outside production", async () => {
-  const previous = process.env["NODE_ENV"];
-  delete process.env["NODE_ENV"];
+  const previous = process.env.NODE_ENV;
+  delete process.env.NODE_ENV;
   try {
     const config = buildDefaultConfig();
     config.server.authToken = "secret";
@@ -59,14 +59,14 @@ test("panel API allows vite dev origin only outside production", async () => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("Access-Control-Allow-Origin"), "http://localhost:5173");
   } finally {
-    if (previous === undefined) delete process.env["NODE_ENV"];
-    else process.env["NODE_ENV"] = previous;
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
   }
 });
 
 test("panel API rejects vite dev origin in production", async () => {
-  const previous = process.env["NODE_ENV"];
-  process.env["NODE_ENV"] = "production";
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
   try {
     const config = buildDefaultConfig();
     config.server.authToken = "secret";
@@ -78,8 +78,8 @@ test("panel API rejects vite dev origin in production", async () => {
 
     assert.equal(response.status, 403);
   } finally {
-    if (previous === undefined) delete process.env["NODE_ENV"];
-    else process.env["NODE_ENV"] = previous;
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
   }
 });
 

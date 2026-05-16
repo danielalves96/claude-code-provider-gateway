@@ -109,7 +109,11 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
               <Tooltip title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}>
                 <Tag
                   color="geekblue"
-                  style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}
+                  style={{
+                    margin: 0,
+                    fontFamily: "monospace",
+                    fontSize: token.fontSizeSM,
+                  }}
                 >
                   RTK -{pct}%
                 </Tag>
@@ -119,9 +123,13 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
               <Tooltip title={`Caveman ${ts.cavemanLevel} injected into system prompt`}>
                 <Tag
                   color="orange"
-                  style={{ margin: 0, fontFamily: "monospace", fontSize: token.fontSizeSM }}
+                  style={{
+                    margin: 0,
+                    fontFamily: "monospace",
+                    fontSize: token.fontSizeSM,
+                  }}
                 >
-                  CAVE {ts.cavemanLevel}
+                  Caveman ({ts.cavemanLevel})
                 </Tag>
               </Tooltip>
             )}

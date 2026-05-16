@@ -99,13 +99,13 @@ function getPowerShellProfilePath(): string {
 
 function detectCurrentShell(): ShellName | null {
   if (platform() === "win32") {
-    return process.env["PSModulePath"] ? "powershell" : null;
+    return process.env.PSModulePath ? "powershell" : null;
   }
-  const shellPath = process.env["SHELL"] ?? "";
+  const shellPath = process.env.SHELL ?? "";
   if (shellPath.endsWith("/zsh")) return "zsh";
   if (shellPath.endsWith("/bash")) return "bash";
   if (shellPath.endsWith("/fish")) return "fish";
-  if (process.env["PSModulePath"]) return "powershell";
+  if (process.env.PSModulePath) return "powershell";
   return null;
 }
 
@@ -189,7 +189,7 @@ export function installSnippet(config: Config, shell: ShellName): InstallResult 
     mkdirSync(dirname(rcPath), { recursive: true });
 
     if (!existsSync(rcPath)) {
-      writeFileSync(rcPath, desired + "\n", { encoding: "utf-8" });
+      writeFileSync(rcPath, `${desired}\n`, { encoding: "utf-8" });
       return { shell, status: "installed", rcPath };
     }
 
@@ -206,7 +206,7 @@ export function installSnippet(config: Config, shell: ShellName): InstallResult 
       return { shell, status: "updated", rcPath };
     }
 
-    const block = "\n" + desired + "\n";
+    const block = `\n${desired}\n`;
     appendFileSync(rcPath, block, { encoding: "utf-8" });
     return { shell, status: "installed", rcPath };
   } catch (err) {

@@ -44,7 +44,7 @@ class DaemonRuntime {
         app: createPanelApp(this.config),
         onReady: () => {
           const panelPort =
-            process.env["NODE_ENV"] !== "production" ? 5173 : this.config.server.panelPort;
+            process.env.NODE_ENV !== "production" ? 5173 : this.config.server.panelPort;
           logger.info("panel", `http://localhost:${panelPort}`);
         },
       }),

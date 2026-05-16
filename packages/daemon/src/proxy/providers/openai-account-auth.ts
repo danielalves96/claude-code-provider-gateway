@@ -82,10 +82,8 @@ export function decodeOpenAIAccountClaims(
   const payload = decodeJwt(accessToken);
   const auth = payload?.["https://api.openai.com/auth"] as Record<string, unknown> | undefined;
   return {
-    accountId:
-      typeof auth?.["chatgpt_account_id"] === "string" ? auth["chatgpt_account_id"] : undefined,
-    planType:
-      typeof auth?.["chatgpt_plan_type"] === "string" ? auth["chatgpt_plan_type"] : undefined,
+    accountId: typeof auth?.chatgpt_account_id === "string" ? auth.chatgpt_account_id : undefined,
+    planType: typeof auth?.chatgpt_plan_type === "string" ? auth.chatgpt_plan_type : undefined,
   };
 }
 

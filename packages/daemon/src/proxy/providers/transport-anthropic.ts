@@ -85,7 +85,7 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
                 continue;
               }
 
-              const type = evt["type"] as string;
+              const type = evt.type as string;
 
               if (!started) {
                 enq(ssePing());
@@ -94,16 +94,16 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
               }
 
               if (type === "content_block_start") {
-                enq(sseContentBlockStart(evt["index"] as number, evt["content_block"]));
+                enq(sseContentBlockStart(evt.index as number, evt.content_block));
               } else if (type === "content_block_delta") {
-                enq(sseContentBlockDelta(evt["index"] as number, evt["delta"]));
+                enq(sseContentBlockDelta(evt.index as number, evt.delta));
               } else if (type === "content_block_stop") {
-                enq(sseContentBlockStop(evt["index"] as number));
+                enq(sseContentBlockStop(evt.index as number));
               } else if (type === "message_delta") {
-                const delta = evt["delta"] as Record<string, unknown>;
-                const usage = evt["usage"] as Record<string, unknown> | undefined;
-                outputTokens = (usage?.["output_tokens"] as number) ?? outputTokens;
-                enq(sseMessageDelta((delta?.["stop_reason"] as string) ?? null, outputTokens));
+                const delta = evt.delta as Record<string, unknown>;
+                const usage = evt.usage as Record<string, unknown> | undefined;
+                outputTokens = (usage?.output_tokens as number) ?? outputTokens;
+                enq(sseMessageDelta((delta?.stop_reason as string) ?? null, outputTokens));
               } else if (type === "message_stop") {
                 enq(sseMessageStop());
                 stopped = true;

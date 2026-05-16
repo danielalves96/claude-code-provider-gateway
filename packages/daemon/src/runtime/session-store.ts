@@ -33,7 +33,7 @@ export function removeCurrentSession(): void {
 
 export function archiveSession(session: SessionRecord): void {
   ensureSessionDir();
-  appendPrivateFile(ARCHIVE_PATH, JSON.stringify(session) + "\n");
+  appendPrivateFile(ARCHIVE_PATH, `${JSON.stringify(session)}\n`);
   trimArchivedSessions();
 }
 
@@ -61,7 +61,7 @@ function trimArchivedSessions(): void {
   try {
     const lines = readFileSync(ARCHIVE_PATH, "utf-8").split("\n").filter(Boolean);
     if (lines.length > MAX_SESSIONS) {
-      writePrivateFile(ARCHIVE_PATH, lines.slice(-MAX_SESSIONS).join("\n") + "\n");
+      writePrivateFile(ARCHIVE_PATH, `${lines.slice(-MAX_SESSIONS).join("\n")}\n`);
     }
   } catch {}
 }

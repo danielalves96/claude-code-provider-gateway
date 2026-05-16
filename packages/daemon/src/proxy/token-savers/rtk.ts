@@ -1,4 +1,5 @@
 import type { ContentBlock, MessagesRequest } from "../../core/anthropic/types.js";
+import { logger } from "../../observability/log.js";
 
 const RAW_CAP = 10 * 1024 * 1024;
 const MIN_COMPRESS_SIZE = 500;
@@ -51,7 +52,7 @@ export function compressMessages(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[RTK] compressMessages error: ${message}`);
+    logger.warn("rtk", `compressMessages failed: ${message}`);
     return null;
   }
 
@@ -98,8 +99,9 @@ function safeApply(filter: Filter, text: string): string {
     return typeof out === "string" ? out : text;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      `[rtk] warning: filter '${filter.filterName ?? filter.name}' failed; passing through raw output: ${message}`,
+    logger.warn(
+      "rtk",
+      `filter '${filter.filterName ?? filter.name}' failed; passing through raw output: ${message}`,
     );
     return text;
   }

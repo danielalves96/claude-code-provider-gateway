@@ -52,17 +52,17 @@ export function transformCopilotChatStream(
               continue;
             }
 
-            const choices = chunk["choices"] as Array<Record<string, unknown>> | undefined;
+            const choices = chunk.choices as Array<Record<string, unknown>> | undefined;
             if (!choices?.length) {
-              const usage = chunk["usage"] as Record<string, unknown> | undefined;
-              if (usage) outputTokens = (usage["completion_tokens"] as number) ?? outputTokens;
+              const usage = chunk.usage as Record<string, unknown> | undefined;
+              if (usage) outputTokens = (usage.completion_tokens as number) ?? outputTokens;
               continue;
             }
 
-            const delta = choices[0]?.["delta"] as Record<string, unknown> | undefined;
-            const finishReason = choices[0]?.["finish_reason"] as string | null;
+            const delta = choices[0]?.delta as Record<string, unknown> | undefined;
+            const finishReason = choices[0]?.finish_reason as string | null;
 
-            const textDelta = delta?.["content"] as string | undefined;
+            const textDelta = delta?.content as string | undefined;
             if (textDelta) {
               if (!blockStarted) {
                 enq(sseContentBlockStart(textBlockIndex, { type: "text", text: "" }));
@@ -71,39 +71,39 @@ export function transformCopilotChatStream(
               enq(sseContentBlockDelta(textBlockIndex, { type: "text_delta", text: textDelta }));
             }
 
-            const toolCalls = delta?.["tool_calls"] as Array<Record<string, unknown>> | undefined;
+            const toolCalls = delta?.tool_calls as Array<Record<string, unknown>> | undefined;
             if (toolCalls) {
               for (const tc of toolCalls) {
-                const idx = tc["index"] as number;
+                const idx = tc.index as number;
                 if (!toolCallBuffers.has(idx)) {
-                  const fn = tc["function"] as Record<string, unknown>;
+                  const fn = tc.function as Record<string, unknown>;
                   toolCallBuffers.set(idx, {
-                    id: (tc["id"] as string) ?? `call_${idx}`,
-                    name: (fn?.["name"] as string) ?? "",
+                    id: (tc.id as string) ?? `call_${idx}`,
+                    name: (fn?.name as string) ?? "",
                   });
                   enq(
                     sseContentBlockStart(textBlockIndex + 1 + idx, {
                       type: "tool_use",
-                      id: tc["id"],
-                      name: fn?.["name"],
+                      id: tc.id,
+                      name: fn?.name,
                       input: {},
                     }),
                   );
                 }
-                const fn = tc["function"] as Record<string, unknown> | undefined;
-                if (fn?.["arguments"]) {
+                const fn = tc.function as Record<string, unknown> | undefined;
+                if (fn?.arguments) {
                   enq(
                     sseContentBlockDelta(textBlockIndex + 1 + idx, {
                       type: "input_json_delta",
-                      partial_json: fn["arguments"] as string,
+                      partial_json: fn.arguments as string,
                     }),
                   );
                 }
               }
             }
 
-            const usage = chunk["usage"] as Record<string, unknown> | undefined;
-            if (usage) outputTokens = (usage["completion_tokens"] as number) ?? outputTokens;
+            const usage = chunk.usage as Record<string, unknown> | undefined;
+            if (usage) outputTokens = (usage.completion_tokens as number) ?? outputTokens;
 
             if (finishReason && !finished) {
               finished = true;

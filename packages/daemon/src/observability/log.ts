@@ -28,7 +28,7 @@ export function log(level: LogLevel, source: string, msg: string) {
   const ts = new Date().toISOString().slice(11, 23); // HH:MM:SS.mmm
   const line = `${ts} [${level.toUpperCase()}] [${source}] ${msg}`;
   const out = level === "error" ? process.stderr : process.stdout;
-  out.write(line + "\n");
+  out.write(`${line}\n`);
   emitLog(line);
 }
 

@@ -149,7 +149,7 @@ function userContentToResponses(content: ContentBlock[]): ResponsesContentPart[]
 }
 
 function applyTools(req: MessagesRequest, body: ResponsesRequest): void {
-  body.tools = req.tools!.map((tool) => ({
+  body.tools = req.tools?.map((tool) => ({
     type: "function",
     name: tool.name,
     description: tool.description,

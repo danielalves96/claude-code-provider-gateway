@@ -13,7 +13,7 @@ export function createProxyApp(initialConfig: Config, options: ProxyAppOptions =
   const app = new Hono();
   const runtime = new ProxyRuntime(initialConfig, options.loadConfig);
 
-  app.use("*", async (c, next) => {
+  app.use("*", async (_c, next) => {
     runtime.reloadConfig();
     await next();
   });

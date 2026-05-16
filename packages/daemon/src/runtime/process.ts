@@ -13,7 +13,7 @@ export function readPid(): number | null {
   if (!existsSync(path)) return null;
   const raw = readFileSync(path, "utf-8").trim();
   const pid = parseInt(raw, 10);
-  return isNaN(pid) ? null : pid;
+  return Number.isNaN(pid) ? null : pid;
 }
 
 export function removePid(): void {

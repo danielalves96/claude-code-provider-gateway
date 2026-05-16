@@ -98,24 +98,24 @@ export async function pollDeviceFlow(deviceCode: string): Promise<DevicePollResu
     return { status: "error", error: `HTTP ${response.status} ${text.slice(0, 200)}` };
   }
   const json = (await response.json()) as Record<string, unknown>;
-  const error = typeof json["error"] === "string" ? json["error"] : null;
+  const error = typeof json.error === "string" ? json.error : null;
   if (error === "authorization_pending") return { status: "pending" };
   if (error === "slow_down") {
-    const interval = typeof json["interval"] === "number" ? json["interval"] : 5;
+    const interval = typeof json.interval === "number" ? json.interval : 5;
     return { status: "slow_down", interval };
   }
   if (error === "expired_token") return { status: "expired" };
   if (error === "access_denied") return { status: "denied" };
   if (error) return { status: "error", error };
 
-  const accessToken = typeof json["access_token"] === "string" ? json["access_token"] : "";
+  const accessToken = typeof json.access_token === "string" ? json.access_token : "";
   if (!accessToken) return { status: "error", error: "no access_token in response" };
   return {
     status: "success",
     token: {
       accessToken,
-      scope: typeof json["scope"] === "string" ? json["scope"] : undefined,
-      tokenType: typeof json["token_type"] === "string" ? json["token_type"] : undefined,
+      scope: typeof json.scope === "string" ? json.scope : undefined,
+      tokenType: typeof json.token_type === "string" ? json.token_type : undefined,
     },
   };
 }
