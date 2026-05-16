@@ -1,5 +1,11 @@
-import { DeleteOutlined, EditOutlined, KeyOutlined } from "@ant-design/icons";
-import { Button, Flex, Input, Space, Typography } from "antd";
+import {
+  CloseOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  KeyOutlined,
+  SaveOutlined,
+} from "@ant-design/icons";
+import { Button, Flex, Input, Space, Typography, theme } from "antd";
 import { useState } from "react";
 
 const { Text } = Typography;
@@ -19,6 +25,7 @@ export function ApiKeySection({
   onRequestRemove,
   onRequestReplace,
 }: ApiKeySectionProps) {
+  const { token } = theme.useToken();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -38,46 +45,82 @@ export function ApiKeySection({
   const showInput = !hasKey || editing;
 
   return (
-    <Flex vertical gap={4}>
-      <Text type="secondary">
-        <Space>
-          <KeyOutlined />
-          API Key
-        </Space>
-      </Text>
-      {!showInput ? (
-        <Space>
-          <Text code style={{ fontFamily: "monospace" }}>
-            {keyPreview ?? "••••••••"}
+    <div
+      style={{
+        padding: 16,
+        backgroundColor: token.colorFillAlter,
+        borderRadius: token.borderRadiusLG,
+      }}
+    >
+      <Flex vertical gap={12}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Text strong>
+            <Space>
+              <KeyOutlined style={{ color: token.colorPrimary }} />
+              API Key Authentication
+            </Space>
           </Text>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditing(true);
-              setDraft("");
-            }}
-          />
-          <Button danger icon={<DeleteOutlined />} onClick={onRequestRemove} />
-        </Space>
-      ) : (
-        <Space.Compact style={{ width: "100%", maxWidth: 480 }}>
-          <Input.Password
-            autoFocus={editing}
-            placeholder="paste your API key"
-            value={draft}
+          {hasKey && !editing ? (
+            <Space>
+              <Button
+                size="small"
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditing(true);
+                  setDraft("");
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="small"
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={onRequestRemove}
+              >
+                Remove
+              </Button>
+            </Space>
+          ) : editing ? (
+            <Button size="small" type="text" icon={<CloseOutlined />} onClick={close} />
+          ) : null}
+        </div>
+
+        {!showInput ? (
+          <Input
+            disabled
+            size="large"
+            value={keyPreview ?? "••••••••••••••••"}
             style={{ fontFamily: "monospace" }}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
-              if (e.key === "Escape" && editing) close();
-            }}
           />
-          <Button type="primary" disabled={!draft.trim()} onClick={submit}>
-            Save
-          </Button>
-          {editing && <Button onClick={close}>Cancel</Button>}
-        </Space.Compact>
-      )}
-    </Flex>
+        ) : (
+          <Flex gap={8}>
+            <Input.Password
+              autoFocus={editing}
+              size="large"
+              placeholder="Paste your provider API key here"
+              value={draft}
+              style={{ fontFamily: "monospace" }}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+                if (e.key === "Escape" && editing) close();
+              }}
+            />
+            <Button
+              size="large"
+              type="primary"
+              icon={<SaveOutlined />}
+              disabled={!draft.trim()}
+              onClick={submit}
+            >
+              Save Key
+            </Button>
+          </Flex>
+        )}
+      </Flex>
+    </div>
   );
 }
