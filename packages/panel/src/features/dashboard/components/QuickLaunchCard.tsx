@@ -1,4 +1,4 @@
-import { Card, Empty, Flex, Tag, Tooltip, Typography, theme } from "antd";
+import { Button, Card, Empty, Flex, Tag, Tooltip, Typography, theme } from "antd";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
 import type { LaunchItem } from "../types.js";
 
@@ -85,12 +85,20 @@ function QuickLaunchTag({
 
   return (
     <Tooltip title={copied ? "Copied!" : `Click to copy: ${item.cmd}`}>
-      <Tag
-        color={copied ? "success" : "processing"}
-        onClick={() => onCopy(item.id, item.cmd)}
-        style={{ margin: 0, fontFamily: "monospace", color: textColor, cursor: "pointer" }}
-      >
-        {item.badge}
+      <Tag color={copied ? "success" : "processing"} style={{ margin: 0 }}>
+        <Button
+          type="text"
+          size="small"
+          onClick={() => onCopy(item.id, item.cmd)}
+          style={{
+            height: "auto",
+            padding: 0,
+            fontFamily: "monospace",
+            color: textColor,
+          }}
+        >
+          {item.badge}
+        </Button>
       </Tag>
     </Tooltip>
   );
