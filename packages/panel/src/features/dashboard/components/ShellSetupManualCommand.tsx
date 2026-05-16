@@ -59,8 +59,17 @@ function ShellPicker({
         {shells.map((shell) => (
           <Tag
             key={shell}
+            role="button"
+            tabIndex={0}
+            aria-pressed={selectedShell === shell}
             color={selectedShell === shell ? "blue" : undefined}
             style={{ cursor: "pointer", margin: 0 }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect(shell);
+              }
+            }}
             onClick={() => onSelect(shell)}
           >
             {SHELL_DISPLAY_NAMES[shell]}
@@ -84,5 +93,6 @@ function buildInstallCommand({
     return `Invoke-RestMethod http://127.0.0.1:${panelPort}/api/shell-setup/snippet/powershell | Add-Content $PROFILE`;
   }
 
-  return `curl -fsS http://127.0.0.1:${panelPort}/api/shell-setup/snippet/${shell} >> ${rcPath ?? `~/.${shell}rc`}`;
+  const destinationPath = rcPath ?? `$HOME/.${shell}rc`;
+  return `curl -fsS http://127.0.0.1:${panelPort}/api/shell-setup/snippet/${shell} >> "${destinationPath}"`;
 }
