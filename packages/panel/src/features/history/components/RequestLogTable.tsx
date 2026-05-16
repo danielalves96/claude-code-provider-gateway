@@ -61,10 +61,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       width: 80,
       align: "right",
       render: (v: number) => (
-        <Text
-          type="secondary"
-          style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}
-        >
+        <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
           {formatNumber(v)}
         </Text>
       ),
@@ -76,10 +73,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       width: 80,
       align: "right",
       render: (v: number) => (
-        <Text
-          type="secondary"
-          style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}
-        >
+        <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
           {v}ms
         </Text>
       ),
@@ -90,10 +84,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "s",
       width: 70,
       render: (v: string) => (
-        <Tag
-          color={v === "ok" ? "success" : "error"}
-          style={{ fontFamily: "monospace" }}
-        >
+        <Tag color={v === "ok" ? "success" : "error"} style={{ fontFamily: "monospace" }}>
           {v}
         </Tag>
       ),
@@ -111,16 +102,11 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
             </Text>
           );
         const saved = ts.rtkBytesBefore - ts.rtkBytesAfter;
-        const pct =
-          ts.rtkBytesBefore > 0
-            ? ((saved / ts.rtkBytesBefore) * 100).toFixed(0)
-            : "0";
+        const pct = ts.rtkBytesBefore > 0 ? ((saved / ts.rtkBytesBefore) * 100).toFixed(0) : "0";
         return (
           <Space size={4} wrap>
             {ts.rtkHits > 0 && (
-              <Tooltip
-                title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}
-              >
+              <Tooltip title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}>
                 <Tag
                   color="geekblue"
                   style={{
@@ -134,9 +120,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
               </Tooltip>
             )}
             {ts.cavemanLevel && (
-              <Tooltip
-                title={`Caveman ${ts.cavemanLevel} injected into system prompt`}
-              >
+              <Tooltip title={`Caveman ${ts.cavemanLevel} injected into system prompt`}>
                 <Tag
                   color="orange"
                   style={{
@@ -163,10 +147,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "has_resp",
       width: 90,
       render: (_, e) => (
-        <Tag
-          color={e.response ? "success" : "error"}
-          style={{ fontFamily: "monospace" }}
-        >
+        <Tag color={e.response ? "success" : "error"} style={{ fontFamily: "monospace" }}>
           {e.response ? "yes" : "no"}
         </Tag>
       ),
@@ -178,10 +159,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       render: (_, e) => {
         const hasUser = !!e.prompt && e.prompt.toLowerCase().includes("[user]");
         return (
-          <Tag
-            color={hasUser ? "success" : "error"}
-            style={{ fontFamily: "monospace" }}
-          >
+          <Tag color={hasUser ? "success" : "error"} style={{ fontFamily: "monospace" }}>
             {hasUser ? "yes" : "no"}
           </Tag>
         );
