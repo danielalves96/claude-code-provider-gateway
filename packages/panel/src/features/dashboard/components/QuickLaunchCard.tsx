@@ -95,6 +95,7 @@ function QuickLaunchTag({
             padding: 0,
             fontFamily: "monospace",
             color: textColor,
+            fontSize: 13,
           }}
         >
           {item.badge}
