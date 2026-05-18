@@ -54,9 +54,7 @@ export function ProviderConfigContent({
   // Show picker when: API key provider, ready, discovery returned nothing.
   // Also always show if already has manually configured models (so they're editable).
   const showPicker =
-    providerKind === "api-key" &&
-    ready &&
-    (discoveredEmpty || (provider.models ?? []).length > 0);
+    providerKind === "api-key" && ready && (discoveredEmpty || (provider.models ?? []).length > 0);
 
   return (
     <Flex vertical gap="large" style={{ marginTop: 24 }}>

@@ -146,9 +146,7 @@ export const SUGGESTED_MODELS: Partial<Record<ProviderId, SuggestedModel[]>> = {
     { id: "command-r-08-2024", name: "Command R (Aug 2024)" },
     { id: "command-a-03-2025", name: "Command A (Mar 2025)" },
   ],
-  nebius: [
-    { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" },
-  ],
+  nebius: [{ id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" }],
   siliconflow: [
     { id: "deepseek-ai/DeepSeek-V3.2", name: "DeepSeek V3.2" },
     { id: "deepseek-ai/DeepSeek-V3.1", name: "DeepSeek V3.1" },
