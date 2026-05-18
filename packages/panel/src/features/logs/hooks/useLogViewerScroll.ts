@@ -15,7 +15,7 @@ export function useLogViewerScroll({ lineCount, paused }: UseLogViewerScrollOpti
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
     prevLengthRef.current = lineCount;
-  });
+  }, [paused, isAtBottom, lineCount]);
 
   const handleScroll = useCallback(() => {
     const element = containerRef.current;

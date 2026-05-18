@@ -10,9 +10,9 @@ interface LogEvent {
 export type LogLevel = "all" | "error" | "warn" | "info" | "debug";
 
 export function detectLogLevel(line: string): "error" | "warn" | "info" | "debug" {
-  if (/ \[ERROR\] /.test(line)) return "error";
-  if (/ \[WARN\] /.test(line)) return "warn";
-  if (/ \[DEBUG\] /.test(line)) return "debug";
+  if (/\[ERROR\]/i.test(line)) return "error";
+  if (/\[WARN\]/i.test(line)) return "warn";
+  if (/\[DEBUG\]/i.test(line)) return "debug";
   return "info";
 }
 

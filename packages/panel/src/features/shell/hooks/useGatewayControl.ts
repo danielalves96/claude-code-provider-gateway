@@ -35,6 +35,7 @@ export function useGatewayControl({ message }: UseGatewayControlOptions) {
       }, 500);
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Failed to stop gateway");
+      resume();
     } finally {
       setBusy(false);
     }

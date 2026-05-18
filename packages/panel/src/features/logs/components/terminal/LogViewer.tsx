@@ -56,6 +56,7 @@ export function LogViewer({ logs, paused, wrapLines, showLineNumbers }: LogViewe
 
       {!isAtBottom && (
         <Button
+          aria-label="Scroll to bottom"
           icon={<VerticalAlignBottomOutlined />}
           onClick={scrollToBottom}
           type="primary"

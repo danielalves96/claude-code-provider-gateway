@@ -21,16 +21,21 @@ export function ProxyCard({ value, onChange }: ProxyCardProps) {
             Route OpenAI OAuth and external provider requests through a proxy
           </Text>
         </Flex>
-        <Switch checked={value.enabled} onChange={(v) => onChange({ enabled: v })} />
+        <Switch
+          aria-label="Enable proxy"
+          checked={value.enabled}
+          onChange={(v) => onChange({ enabled: v })}
+        />
       </Flex>
 
       <Divider style={{ margin: 0, borderColor: token.colorBorderSecondary }} />
 
       <Flex vertical gap={token.paddingXS}>
-        <Text strong style={{ opacity: value.enabled ? 1 : 0.4 }}>
+        <Text id="proxy-url-label" strong style={{ opacity: value.enabled ? 1 : 0.4 }}>
           Proxy URL
         </Text>
         <Input
+          aria-labelledby="proxy-url-label"
           disabled={!value.enabled}
           placeholder="http://127.0.0.1:7890"
           value={value.url}

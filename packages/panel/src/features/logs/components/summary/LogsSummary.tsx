@@ -21,6 +21,7 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
 
   const cards = [
     {
+      id: "total-lines",
       title: "Total Lines",
       value: totalLines,
       icon: <ProfileOutlined />,
@@ -28,6 +29,7 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
       active: true,
     },
     {
+      id: "errors",
       title: "Errors",
       value: errors,
       icon: <CloseCircleOutlined />,
@@ -35,6 +37,7 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
       active: errors > 0,
     },
     {
+      id: "warnings",
       title: "Warnings",
       value: warns,
       icon: <WarningOutlined />,
@@ -42,6 +45,7 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
       active: warns > 0,
     },
     {
+      id: "info",
       title: "Info",
       value: infos,
       icon: <InfoCircleOutlined />,
@@ -49,6 +53,7 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
       active: infos > 0,
     },
     {
+      id: "debug",
       title: "Debug",
       value: debugs,
       icon: <BugOutlined />,

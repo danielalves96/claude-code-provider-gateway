@@ -11,11 +11,10 @@ export default function DashboardPage() {
   const page = useDashboardPage();
 
   const shellSetupCard = page.shouldShowShellSetup
-    ? page.shellSetup &&
-      page.status && (
+    ? page.shellSetup && (
         <ShellSetupCard
           setup={page.shellSetup}
-          panelPort={page.status.panelPort ?? 6767}
+          panelPort={page.status?.panelPort ?? 6767}
           defaultOpen={!page.hasTerminalConfigured}
           canDismiss={page.hasTerminalConfigured}
           onRefresh={page.refreshShellSetup}

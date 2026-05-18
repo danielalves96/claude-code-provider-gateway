@@ -76,7 +76,7 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
             style={{ width: "100%" }}
             value={rule.providerId || undefined}
             placeholder="Select provider"
-            onChange={(v) => onChange({ providerId: v, model: "" })}
+            onChange={(v) => onChange({ providerId: v, model: "", enabled: false })}
             options={options.map((p) => ({
               value: p.id,
               label: (

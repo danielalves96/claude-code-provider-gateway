@@ -24,6 +24,7 @@ export function HistorySummary({
 
   const metrics = [
     {
+      id: "active-sessions",
       title: "Active Sessions",
       value: sessionCount,
       icon: <ClockCircleOutlined />,
@@ -31,6 +32,7 @@ export function HistorySummary({
       active: sessionCount > 0,
     },
     {
+      id: "archived",
       title: "Archived",
       value: archived,
       icon: <DatabaseOutlined />,
@@ -38,6 +40,7 @@ export function HistorySummary({
       active: false,
     },
     {
+      id: "total-requests",
       title: "Total Requests",
       value: totalRequests,
       icon: <CheckCircleOutlined />,
@@ -45,6 +48,7 @@ export function HistorySummary({
       active: totalRequests > 0,
     },
     {
+      id: "total-errors",
       title: "Total Errors",
       value: totalErrors,
       icon: <WarningOutlined />,

@@ -100,6 +100,8 @@ export function LogsToolbar({
         <Space.Compact>
           <Tooltip title="Toggle line numbers">
             <Button
+              aria-label="Toggle line numbers"
+              aria-pressed={showLineNumbers}
               icon={<NumberOutlined />}
               onClick={onToggleLineNumbers}
               type={showLineNumbers ? "primary" : "default"}
@@ -107,6 +109,8 @@ export function LogsToolbar({
           </Tooltip>
           <Tooltip title="Toggle word wrap">
             <Button
+              aria-label="Toggle word wrap"
+              aria-pressed={wrapLines}
               icon={<AlignLeftOutlined />}
               onClick={onToggleWrap}
               type={wrapLines ? "primary" : "default"}
@@ -116,6 +120,8 @@ export function LogsToolbar({
 
         <Space.Compact>
           <Button
+            aria-label={paused ? "Resume log" : "Pause log"}
+            aria-pressed={paused}
             icon={paused ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
             onClick={onTogglePaused}
             danger={paused}
@@ -124,7 +130,7 @@ export function LogsToolbar({
             {paused ? "Resume" : "Pause"}
           </Button>
           <Tooltip title="Clear log buffer">
-            <Button icon={<ClearOutlined />} onClick={onClear} />
+            <Button aria-label="Clear log buffer" icon={<ClearOutlined />} onClick={onClear} />
           </Tooltip>
         </Space.Compact>
 

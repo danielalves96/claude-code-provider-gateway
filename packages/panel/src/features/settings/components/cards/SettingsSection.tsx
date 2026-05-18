@@ -37,13 +37,13 @@ export function SettingsSection({
                   width: 32,
                   height: 32,
                   borderRadius: token.borderRadius,
-                  background: `linear-gradient(135deg, ${token.colorPrimary}20 0%, ${token.colorBgContainer} 100%)`,
+                  background: `linear-gradient(135deg, ${token.colorFillContent} 0%, ${token.colorBgContainer} 100%)`,
                   color: token.colorPrimary,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 16,
-                  border: `1px solid ${token.colorPrimary}40`,
+                  border: `1px solid ${token.colorBorderSecondary}`,
                 }}
               >
                 {icon}

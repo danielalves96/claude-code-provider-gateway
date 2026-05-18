@@ -33,7 +33,7 @@ export function useTierCard({ tier, rule, options }: UseTierCardOptions) {
     provider,
     modelOptions,
     modelMissing,
-    canEnable: !!rule.providerId && !!rule.model,
+    canEnable: provider !== undefined && !!rule.providerId && !!rule.model && !modelMissing,
     isEnabled: rule.enabled,
   };
 }

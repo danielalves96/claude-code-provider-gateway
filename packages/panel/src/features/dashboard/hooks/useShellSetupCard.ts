@@ -1,13 +1,15 @@
-import type { MessageInstance } from "antd/es/message/interface.js";
+import type { message } from "antd";
 import { useEffect, useState } from "react";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
 import type { InstallResult, ShellName } from "../domain/types.js";
 import { dashboardService } from "../services/dashboardService.js";
 
+type MessageApi = ReturnType<typeof message.useMessage>[0];
+
 interface UseShellSetupCardOptions {
   defaultOpen: boolean;
   onRefresh: () => void;
-  message: MessageInstance;
+  message: MessageApi;
 }
 
 export function useShellSetupCard({ defaultOpen, onRefresh, message }: UseShellSetupCardOptions) {
@@ -46,7 +48,7 @@ export function useShellSetupCard({ defaultOpen, onRefresh, message }: UseShellS
   };
 }
 
-function announceResults(results: InstallResult[], message: MessageInstance): void {
+function announceResults(results: InstallResult[], message: MessageApi): void {
   const installed = results.filter((result) => result.status === "installed");
   const updated = results.filter((result) => result.status === "updated");
   const already = results.filter((result) => result.status === "already-installed");

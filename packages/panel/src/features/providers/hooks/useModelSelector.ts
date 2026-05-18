@@ -16,7 +16,10 @@ export function useModelSelector({
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState("");
 
-  const disabledSet = useMemo(() => new Set(disabledModels), [disabledModels]);
+  const disabledSet = useMemo(() => {
+    const modelIds = new Set(models?.map((model) => model.id) ?? []);
+    return new Set(disabledModels.filter((id) => modelIds.has(id)));
+  }, [disabledModels, models]);
   const total = models?.length ?? 0;
   const activeCount = total - disabledSet.size;
   const query = search.trim().toLowerCase();

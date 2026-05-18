@@ -41,17 +41,19 @@ interface ToggleRowProps {
 }
 
 function ToggleRow({ title, description, checked, disabled = false, onChange }: ToggleRowProps) {
+  const labelId = `web-tools-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
   return (
     <Flex justify="space-between" align="center" gap={16}>
       <Flex vertical>
-        <Text strong style={{ opacity: disabled ? 0.4 : 1, fontSize: 15 }}>
+        <Text id={labelId} strong style={{ opacity: disabled ? 0.4 : 1, fontSize: 15 }}>
           {title}
         </Text>
         <Text type="secondary" style={{ fontSize: 13, opacity: disabled ? 0.6 : 1 }}>
           {description}
         </Text>
       </Flex>
-      <Switch checked={checked} disabled={disabled} onChange={onChange} />
+      <Switch aria-labelledby={labelId} checked={checked} disabled={disabled} onChange={onChange} />
     </Flex>
   );
 }

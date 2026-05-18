@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 const { Text } = Typography;
 
 export interface MetricSummaryItem {
+  id: string;
   title: string;
   value: number;
   icon: ReactNode;
@@ -22,7 +23,7 @@ export function MetricSummaryGrid({ items, minWidth = 150 }: MetricSummaryGridPr
   return (
     <Flex gap={token.paddingSM} wrap="wrap">
       {items.map((item) => (
-        <div key={item.title} style={{ flex: `1 1 ${minWidth}px`, minWidth: 0 }}>
+        <div key={item.id} style={{ flex: `1 1 ${minWidth}px`, minWidth: 0 }}>
           <MetricSummaryCard item={item} />
         </div>
       ))}

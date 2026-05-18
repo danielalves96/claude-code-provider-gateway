@@ -41,9 +41,9 @@ export function SettingsCard({ title, icon, children }: SettingsCardProps) {
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: `linear-gradient(135deg, ${token.colorPrimary}20 0%, ${token.colorBgContainer} 100%)`,
-              border: `1px solid ${token.colorPrimary}30`,
-              boxShadow: `0 0 10px ${token.colorPrimary}10`,
+              background: `linear-gradient(135deg, ${token.colorPrimaryBg} 0%, ${token.colorBgContainer} 100%)`,
+              border: `1px solid ${token.colorPrimaryBorder}`,
+              boxShadow: token.boxShadowTertiary,
             }}
           >
             {icon}

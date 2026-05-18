@@ -18,7 +18,8 @@ export function useDashboardPage() {
     [shellSetup.setup],
   );
 
-  const shouldShowShellSetup = !!shellSetup.setup && !!gateway.status && !setupDismissed;
+  const shouldShowShellSetup =
+    !!shellSetup.setup && !!gateway.status && !setupDismissed && !hasTerminalConfigured;
 
   function dismissShellSetup(): void {
     window.localStorage.setItem(DISMISSED_SHELL_SETUP_KEY, "true");

@@ -41,9 +41,9 @@ export function Sidebar() {
           components: {
             Menu: {
               itemBg: "transparent",
-              itemSelectedBg: `${token.colorText}08`,
+              itemSelectedBg: token.colorFillTertiary,
               itemSelectedColor: token.colorPrimary,
-              itemHoverBg: `${token.colorText}05`,
+              itemHoverBg: token.colorFillQuaternary,
               itemHoverColor: token.colorText,
               activeBarBorderWidth: 0,
               itemHeight: 44,
@@ -94,7 +94,7 @@ function GitHubButton({ collapsed }: { collapsed: boolean }) {
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.color = token.colorText;
-        e.currentTarget.style.background = `${token.colorText}07`;
+        e.currentTarget.style.background = token.colorFillQuaternary;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.color = token.colorTextSecondary;
@@ -106,7 +106,7 @@ function GitHubButton({ collapsed }: { collapsed: boolean }) {
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: `${token.colorText}08`,
+          background: token.colorFillQuaternary,
           border: `1px solid ${token.colorBorderSecondary}`,
           display: "flex",
           alignItems: "center",
@@ -157,7 +157,8 @@ function AppVersion({ collapsed }: { collapsed: boolean }) {
         alignItems: "center",
         justifyContent: "center",
         borderTop: `1px solid ${token.colorBorderSecondary}`,
-        background: `${token.colorText}03`,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        background: "transparent",
       }}
     >
       <Text
@@ -185,7 +186,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
         overflow: "hidden",
         height: 56,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
-        background: `linear-gradient(135deg, ${token.colorBgContainer} 0%, ${token.colorPrimary}08 100%)`,
+        background: `linear-gradient(135deg, ${token.colorBgContainer} 0%, ${token.colorPrimaryBg} 100%)`,
         flexShrink: 0,
       }}
     >
