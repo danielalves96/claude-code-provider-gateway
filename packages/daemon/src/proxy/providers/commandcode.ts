@@ -102,6 +102,7 @@ interface TransformState {
     string,
     { index: number; id: string; name: string; stopped: boolean; streamed: boolean }
   >;
+  deferredStops: number[];
   finishReason: string | null;
   outputTokens: number;
   finished: boolean;
@@ -453,6 +454,7 @@ function createTransformState(): TransformState {
     reasoningIndex: null,
     nextBlockIndex: 0,
     toolById: new Map(),
+    deferredStops: [],
     finishReason: null,
     outputTokens: 0,
     finished: false,
@@ -505,7 +507,7 @@ function handleCommandCodeEvent(
       emitToolDelta(toolId(event), stringValue(event.delta ?? event.inputTextDelta), state, enq);
       break;
     case "tool-input-end":
-      stopToolBlock(toolId(event), state, enq);
+      stopToolBlock(toolId(event), state);
       break;
     case "tool-call":
       emitToolCall(event, state, enq);
@@ -596,11 +598,11 @@ function startToolBlock(
   if (existing) return;
 
   if (state.textIndex != null) {
-    enq(sseContentBlockStop(state.textIndex));
+    state.deferredStops.push(state.textIndex);
     state.textIndex = null;
   }
   if (state.reasoningIndex != null) {
-    enq(sseContentBlockStop(state.reasoningIndex));
+    state.deferredStops.push(state.reasoningIndex);
     state.reasoningIndex = null;
   }
 
@@ -629,11 +631,11 @@ function emitToolDelta(
   enq(sseContentBlockDelta(tool.index, { type: "input_json_delta", partial_json: partialJson }));
 }
 
-function stopToolBlock(id: string, state: TransformState, enq: (chunk: string) => void): void {
+function stopToolBlock(id: string, state: TransformState): void {
   const tool = state.toolById.get(id);
   if (!tool || tool.stopped) return;
   tool.stopped = true;
-  enq(sseContentBlockStop(tool.index));
+  state.deferredStops.push(tool.index);
 }
 
 function emitToolCall(
@@ -645,30 +647,30 @@ function emitToolCall(
   if (!id) return;
   const existing = state.toolById.get(id);
   if (existing?.streamed) {
-    stopToolBlock(id, state, enq);
+    stopToolBlock(id, state);
     return;
   }
 
   startToolBlock(id, stringValue(event.toolName), state, enq);
   const input = typeof event.input === "string" ? event.input : JSON.stringify(event.input ?? {});
   emitToolDelta(id, input, state, enq);
-  stopToolBlock(id, state, enq);
+  stopToolBlock(id, state);
 }
 
 function finishAnthropicMessage(state: TransformState, enq: (chunk: string) => void): void {
   if (state.finished) return;
   state.finished = true;
 
-  const openIndexes: number[] = [];
-  if (state.reasoningIndex != null) openIndexes.push(state.reasoningIndex);
-  if (state.textIndex != null) openIndexes.push(state.textIndex);
+  const stopIndexes: number[] = [...state.deferredStops];
+  if (state.reasoningIndex != null) stopIndexes.push(state.reasoningIndex);
+  if (state.textIndex != null) stopIndexes.push(state.textIndex);
   for (const tool of state.toolById.values()) {
     if (!tool.stopped) {
       tool.stopped = true;
-      openIndexes.push(tool.index);
+      stopIndexes.push(tool.index);
     }
   }
-  for (const index of openIndexes.sort((a, b) => a - b)) {
+  for (const index of stopIndexes.sort((a, b) => a - b)) {
     enq(sseContentBlockStop(index));
   }
 
