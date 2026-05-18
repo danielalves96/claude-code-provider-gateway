@@ -4,6 +4,7 @@ import type { Config } from "../config/schema.js";
 import { ProviderRegistry } from "../proxy/providers/registry.js";
 
 export type OAuthFlow = {
+  provider?: "cline" | "openai_account";
   verifier: string;
   status: "pending" | "success" | "error";
   error?: string;

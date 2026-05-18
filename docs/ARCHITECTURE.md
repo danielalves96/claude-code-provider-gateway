@@ -169,7 +169,7 @@ custom providers:
 
 Transport hierarchy:
 
-```
+```text
 BaseProvider (abstract)
 │
 ├── AnthropicMessagesTransport (abstract)

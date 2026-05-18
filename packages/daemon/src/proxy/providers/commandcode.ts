@@ -242,7 +242,7 @@ export async function anthropicToCommandCode(
     threadId: randomUUID(),
     memory: "",
     config: {
-      workingDir: process.cwd(),
+      workingDir: "<workspace>",
       date: new Date().toISOString().slice(0, 10),
       environment: process.platform,
       structure: [],
@@ -309,26 +309,30 @@ async function convertMessages(messages: Message[]): Promise<CommandCodeMessage[
     }
 
     if (message.role === "user") {
-      const toolResults = await Promise.all(
-        message.content
-          .filter((block) => block.type === "tool_result")
-          .map((block) => convertToolResultBlock(block, toolNames)),
-      );
-      const nonToolResults = (
-        await Promise.all(
-          message.content.map((block) =>
-            block.type === "tool_result" ? Promise.resolve([]) : convertContentBlock(block),
-          ),
-        )
-      ).flat();
+      let nonToolBlocks: CommandCodeContentBlock[] = [];
+      let hasAny = false;
 
-      if (nonToolResults.length) {
-        out.push({ role: "user", content: collapseTextContent(nonToolResults) });
+      for (const block of message.content) {
+        if (block.type === "tool_result") {
+          if (nonToolBlocks.length) {
+            out.push({ role: "user", content: collapseTextContent(nonToolBlocks) });
+            nonToolBlocks = [];
+          }
+          const toolResult = await convertToolResultBlock(block, toolNames);
+          out.push({ role: "tool", content: [toolResult] });
+          hasAny = true;
+        } else {
+          const converted = await convertContentBlock(block);
+          nonToolBlocks.push(...converted);
+          hasAny = true;
+        }
       }
-      for (const toolResult of toolResults) {
-        out.push({ role: "tool", content: [toolResult] });
+
+      if (nonToolBlocks.length) {
+        out.push({ role: "user", content: collapseTextContent(nonToolBlocks) });
+      } else if (!hasAny) {
+        out.push({ role: "user", content: "" });
       }
-      if (!nonToolResults.length && !toolResults.length) out.push({ role: "user", content: "" });
       continue;
     }
 
@@ -590,6 +594,15 @@ function startToolBlock(
   if (!id) return;
   const existing = state.toolById.get(id);
   if (existing) return;
+
+  if (state.textIndex != null) {
+    enq(sseContentBlockStop(state.textIndex));
+    state.textIndex = null;
+  }
+  if (state.reasoningIndex != null) {
+    enq(sseContentBlockStop(state.reasoningIndex));
+    state.reasoningIndex = null;
+  }
 
   const tool = {
     index: state.nextBlockIndex++,

@@ -220,11 +220,17 @@ Caveman can be validated with a normal chat request after enabling **Caveman mod
 
 Provider source of truth lives in the daemon:
 
-- `packages/daemon/src/config/schema.ts` for provider IDs, defaults, labels,
-  OAuth membership, CLI flags, and panel settings defaults.
-- `packages/daemon/src/proxy/providers/` for provider implementations and
-  shared transports.
-- `packages/daemon/src/proxy/providers/registry.ts` for provider construction.
+- `packages/daemon/src/config/schema.ts` — controls provider IDs, defaults,
+  labels, OAuth membership, CLI flags, and panel settings defaults. Adding a new
+  provider ID or changing its defaults starts here.
+- `packages/daemon/src/proxy/providers/registry.ts` — **the authoritative
+  registry for provider construction**. Declarative factory registration via
+  this registry is the preferred way to add a provider. Most providers can be
+  fully expressed as a registry entry without a dedicated implementation file.
+- `packages/daemon/src/proxy/providers/` — provider implementation files.
+  Create a dedicated file here **only** for non-declarative or edge-case
+  behavior (custom stream handling, bespoke auth logic, dual-transport dispatch,
+  etc.) that cannot be expressed through a registry/factory declaration.
 
 Panel provider support is intentionally thinner:
 

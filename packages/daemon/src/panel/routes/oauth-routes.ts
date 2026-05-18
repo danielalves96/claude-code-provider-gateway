@@ -82,6 +82,10 @@ export function registerOAuthRoutes(app: Hono, runtime: PanelRuntime): void {
   });
 
   app.post("/api/providers/kilocode/oauth/logout", (c) => {
+    for (const [id, flow] of runtime.kilocodeFlows) {
+      if (flow.poller) clearTimeout(flow.poller);
+      runtime.kilocodeFlows.delete(id);
+    }
     const config = runtime.currentConfig();
     config.providers.kilocode.oauth = {};
     config.providers.kilocode.enabled = false;
@@ -98,6 +102,12 @@ export function registerOAuthRoutes(app: Hono, runtime: PanelRuntime): void {
   });
 
   app.post("/api/providers/cline/oauth/logout", (c) => {
+    for (const [state, flow] of runtime.oauthFlows) {
+      if (flow.provider !== "cline") continue;
+      if (flow.timer) clearTimeout(flow.timer);
+      flow.server?.close();
+      runtime.oauthFlows.delete(state);
+    }
     const config = runtime.currentConfig();
     config.providers.cline.oauth = {};
     config.providers.cline.enabled = false;
@@ -116,7 +126,11 @@ async function startOpenAIAccountFlow(c: Context, runtime: PanelRuntime) {
 
   const state = createState();
   const pkce = createPkcePair();
-  const flow: OAuthFlow = { verifier: pkce.verifier, status: "pending" };
+  const flow: OAuthFlow = {
+    provider: "openai_account",
+    verifier: pkce.verifier,
+    status: "pending",
+  };
   runtime.oauthFlows.set(state, flow);
 
   try {
@@ -391,7 +405,7 @@ async function startClineFlow(c: Context, runtime: PanelRuntime) {
   if (existing) return c.json({ error: "A browser login flow is already pending" }, 409);
 
   const state = createState();
-  const flow: OAuthFlow = { verifier: "", status: "pending" };
+  const flow: OAuthFlow = { provider: "cline", verifier: "", status: "pending" };
   runtime.oauthFlows.set(state, flow);
 
   try {
@@ -406,16 +420,15 @@ async function startClineFlow(c: Context, runtime: PanelRuntime) {
       const code = requestUrl.searchParams.get("code") ?? "";
       const error = requestUrl.searchParams.get("error") ?? "";
       const activeFlow = runtime.oauthFlows.get(state);
-      if (!activeFlow || returnedState !== state || !code) {
-        if (activeFlow) {
-          activeFlow.status = "error";
-          activeFlow.error =
-            error ||
-            (returnedState !== state
-              ? "Cline authorization callback state did not match"
-              : "Cline authorization callback did not include a code");
-          activeFlow.server?.close();
-        }
+      if (!activeFlow || returnedState !== state) {
+        res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(oauthBadRequestPage());
+        return;
+      }
+      if (!code) {
+        activeFlow.status = "error";
+        activeFlow.error = error || "Cline authorization callback did not include a code";
+        activeFlow.server?.close();
         res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
         res.end(oauthBadRequestPage());
         return;

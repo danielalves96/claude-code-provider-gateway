@@ -85,7 +85,14 @@ export function ApiKeySection({
                 </Button>
               </>
             ) : editing ? (
-              <Button size="small" type="text" icon={<CloseOutlined />} onClick={close} />
+              <Button
+                size="small"
+                type="text"
+                icon={<CloseOutlined />}
+                onClick={close}
+                aria-label="Close"
+                title="Close"
+              />
             ) : null}
           </Space>
         </div>
