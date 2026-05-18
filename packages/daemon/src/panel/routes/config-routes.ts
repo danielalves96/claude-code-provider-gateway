@@ -51,7 +51,9 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
       Object.assign(merged.panelSettings, update.panelSettings);
     }
 
-    const defaults = config.panelSettings ? config : { ...config, panelSettings: merged.panelSettings };
+    const defaults = config.panelSettings
+      ? config
+      : { ...config, panelSettings: merged.panelSettings };
     runtime.saveAndUpdateConfig(normalizeConfig(merged, defaults));
     return c.json({ ok: true });
   });

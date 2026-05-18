@@ -57,7 +57,9 @@ async function captureStreamHeaders(provider: AnthropicMessagesTransport): Promi
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (_input, init) => {
     captured = new Headers(init?.headers);
-    return new Response(new ReadableStream<Uint8Array>({ start: (controller) => controller.close() }));
+    return new Response(
+      new ReadableStream<Uint8Array>({ start: (controller) => controller.close() }),
+    );
   };
 
   try {
