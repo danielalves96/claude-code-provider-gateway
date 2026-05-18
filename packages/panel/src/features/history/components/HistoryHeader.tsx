@@ -34,7 +34,13 @@ export function HistoryHeader({
         <Button type="dashed" icon={<ReloadOutlined />} onClick={onRefresh}>
           Refresh
         </Button>
-        <Button danger type="text" icon={<DeleteOutlined />} disabled={!canClear} onClick={onRequestClear}>
+        <Button
+          danger
+          type="text"
+          icon={<DeleteOutlined />}
+          disabled={!canClear}
+          onClick={onRequestClear}
+        >
           Clear history
         </Button>
       </Space>

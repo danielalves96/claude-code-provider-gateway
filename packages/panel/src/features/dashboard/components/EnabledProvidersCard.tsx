@@ -46,7 +46,9 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
           >
             <ThunderboltOutlined />
           </div>
-          <Text strong style={{ fontSize: 16 }}>Current Session — Enabled Providers</Text>
+          <Text strong style={{ fontSize: 16 }}>
+            Current Session — Enabled Providers
+          </Text>
           {stats && (
             <Tag
               color={count > 0 ? "processing" : "default"}

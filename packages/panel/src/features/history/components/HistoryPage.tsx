@@ -1,13 +1,13 @@
 import { Card, Empty, Flex, Typography, theme } from "antd";
 import { useMemo, useState } from "react";
 import { useHistory } from "../hooks/useHistory.js";
+import { providerLabel } from "../labels.js";
 import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { HistoryHeader } from "./HistoryHeader.js";
 import { HistorySummary } from "./HistorySummary.js";
 import { HistoryTopStats } from "./HistoryTopStats.js";
 import { ProvidersTable } from "./ProvidersTable.js";
 import { SessionsTable } from "./SessionsTable.js";
-import { providerLabel } from "../labels.js";
 
 const { Text } = Typography;
 

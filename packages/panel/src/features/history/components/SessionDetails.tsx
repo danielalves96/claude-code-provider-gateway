@@ -31,20 +31,37 @@ export function SessionDetails({ session }: SessionDetailsProps) {
       }}
     >
       <SessionMetadataCards session={session} />
-      
+
       {usedModels.length > 0 && (
-        <div style={{ background: token.colorBgContainer, padding: token.padding, borderRadius: token.borderRadiusLG, border: `1px solid ${token.colorBorderSecondary}` }}>
+        <div
+          style={{
+            background: token.colorBgContainer,
+            padding: token.padding,
+            borderRadius: token.borderRadiusLG,
+            border: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
           <ModelsUsedTable rows={usedModels} />
         </div>
       )}
-      
+
       {requestLog.length > 0 && (
-        <div style={{ background: token.colorBgContainer, padding: token.padding, borderRadius: token.borderRadiusLG, border: `1px solid ${token.colorBorderSecondary}` }}>
+        <div
+          style={{
+            background: token.colorBgContainer,
+            padding: token.padding,
+            borderRadius: token.borderRadiusLG,
+            border: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
           <RequestLogTable entries={requestLog} />
         </div>
       )}
 
-      <Text type="secondary" style={{ fontFamily: "monospace", fontSize: token.fontSizeSM - 1, alignSelf: "flex-end" }}>
+      <Text
+        type="secondary"
+        style={{ fontFamily: "monospace", fontSize: token.fontSizeSM - 1, alignSelf: "flex-end" }}
+      >
         session id: {session.id}
       </Text>
     </Flex>

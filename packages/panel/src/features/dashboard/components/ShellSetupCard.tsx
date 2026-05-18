@@ -84,7 +84,9 @@ export function ShellSetupCard({
           >
             <CodeOutlined />
           </div>
-          <Text strong style={{ fontSize: 16 }}>Terminal Integration</Text>
+          <Text strong style={{ fontSize: 16 }}>
+            Terminal Integration
+          </Text>
         </Flex>
       }
       extra={

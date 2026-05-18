@@ -1,4 +1,4 @@
-import { Alert, Card, Col, Flex, Row, theme } from "antd";
+import { Alert, Col, Flex, Row, theme } from "antd";
 import { LoadingState } from "../../../shared/components/LoadingState.js";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { SaveButton } from "../../../shared/components/SaveButton.js";
@@ -18,31 +18,31 @@ export default function RoutingPage() {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
       <Flex vertical gap={token.paddingLG} style={{ flex: 1, paddingBottom: token.paddingLG * 2 }}>
         <PageHeader
-        title="Routing"
-        description="Override which provider and model handles each Claude tier. When disabled, requests pass through unchanged."
-      />
-
-      {options.length === 0 && (
-        <Alert
-          type="warning"
-          showIcon
-          message="No providers enabled"
-          description="Enable and configure a provider on the Providers page before setting up routing."
+          title="Routing"
+          description="Override which provider and model handles each Claude tier. When disabled, requests pass through unchanged."
         />
-      )}
 
-      <Row gutter={[token.paddingLG, token.paddingLG]} align="stretch">
-        {TIERS.map((tier) => (
-          <Col xs={24} xl={12} key={tier} style={{ display: "flex" }}>
-            <TierCard
-              tier={tier}
-              rule={rules[tier]}
-              options={options}
-              onChange={(patch) => updateRule(tier, patch)}
-            />
-          </Col>
-        ))}
-      </Row>
+        {options.length === 0 && (
+          <Alert
+            type="warning"
+            showIcon
+            message="No providers enabled"
+            description="Enable and configure a provider on the Providers page before setting up routing."
+          />
+        )}
+
+        <Row gutter={[token.paddingLG, token.paddingLG]} align="stretch">
+          {TIERS.map((tier) => (
+            <Col xs={24} xl={12} key={tier} style={{ display: "flex" }}>
+              <TierCard
+                tier={tier}
+                rule={rules[tier]}
+                options={options}
+                onChange={(patch) => updateRule(tier, patch)}
+              />
+            </Col>
+          ))}
+        </Row>
       </Flex>
 
       <div

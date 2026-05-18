@@ -1,5 +1,5 @@
 import { CodeOutlined, CopyOutlined } from "@ant-design/icons";
-import { Button, Card, Empty, Flex, Tag, Tooltip, Typography, theme } from "antd";
+import { Card, Empty, Flex, Tooltip, Typography, theme } from "antd";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
 import type { LaunchItem } from "../types.js";
 
@@ -46,7 +46,9 @@ export function QuickLaunchCard({ items, error }: QuickLaunchCardProps) {
           >
             <CodeOutlined />
           </div>
-          <Text strong style={{ fontSize: 16 }}>Quick Launch</Text>
+          <Text strong style={{ fontSize: 16 }}>
+            Quick Launch
+          </Text>
         </Flex>
       }
     >
@@ -120,7 +122,8 @@ function QuickLaunchTag({
 
   return (
     <Tooltip title={copied ? "Copied!" : `Click to copy`}>
-      <div
+      <button
+        type="button"
         onClick={() => onCopy(item.id, item.cmd)}
         style={{
           cursor: "pointer",
@@ -132,6 +135,7 @@ function QuickLaunchTag({
           alignItems: "center",
           gap: 12,
           transition: "all 0.2s",
+          fontFamily: "inherit",
         }}
       >
         <Text
@@ -145,7 +149,7 @@ function QuickLaunchTag({
           {item.badge}
         </Text>
         <CopyOutlined style={{ color: copied ? token.colorSuccess : token.colorTextTertiary }} />
-      </div>
+      </button>
     </Tooltip>
   );
 }

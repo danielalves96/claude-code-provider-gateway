@@ -1,6 +1,11 @@
-import { CaretRightOutlined, SyncOutlined, CloseCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import {
+  CaretRightOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  SyncOutlined,
+} from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
-import { Tag, Card, Space, Table, Typography, theme } from "antd";
+import { Card, Space, Table, Tag, Typography, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import { commandFor, formatDate, topModel } from "../format.js";
 import { providerLabel } from "../labels.js";
@@ -25,12 +30,24 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
       width: 130,
       render: (_, s) => {
         if (s.status === "running") {
-          return <Tag icon={<SyncOutlined spin />} color="blue" bordered={false}>RUNNING</Tag>;
+          return (
+            <Tag icon={<SyncOutlined spin />} color="blue" bordered={false}>
+              RUNNING
+            </Tag>
+          );
         }
         if (s.status === "crashed") {
-          return <Tag icon={<CloseCircleOutlined />} color="error" bordered={false}>CRASHED</Tag>;
+          return (
+            <Tag icon={<CloseCircleOutlined />} color="error" bordered={false}>
+              CRASHED
+            </Tag>
+          );
         }
-        return <Tag icon={<CheckCircleOutlined />} color="success" bordered={false}>COMPLETED</Tag>;
+        return (
+          <Tag icon={<CheckCircleOutlined />} color="success" bordered={false}>
+            COMPLETED
+          </Tag>
+        );
       },
     },
     {
@@ -43,7 +60,10 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
             {commandFor(s)}
           </Text>
           <Space size="small">
-            <Tag color="default" style={{ margin: 0, border: `1px solid ${token.colorBorderSecondary}` }}>
+            <Tag
+              color="default"
+              style={{ margin: 0, border: `1px solid ${token.colorBorderSecondary}` }}
+            >
               {s.modelMode === "all" ? "all-providers" : "single"}
             </Tag>
             {s.modelMode !== "all" && (
@@ -145,17 +165,20 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
           onExpand: (expanded, record) => onToggleExpanded(record.id, expanded),
           expandedRowRender: (record) => <SessionDetails session={record} />,
           expandIcon: ({ expanded, onExpand, record }) => (
-            <div
+            <button
+              type="button"
               style={{
                 width: 28,
                 height: 28,
                 borderRadius: "50%",
                 background: expanded ? token.colorFillSecondary : "transparent",
+                border: "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
+                padding: 0,
               }}
               onClick={(e) => onExpand(record, e)}
             >
@@ -167,7 +190,7 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
                   fontSize: 16,
                 }}
               />
-            </div>
+            </button>
           ),
         }}
       />

@@ -1,5 +1,6 @@
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { Alert, Card, Flex, Select, Space, Switch, Tag, Typography, theme } from "antd";
+import type { GlobalToken } from "antd/es/theme/interface";
 import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { TIER_META } from "../constants.js";
 import type { RoutingOption, RoutingRule, Tier } from "../types.js";
@@ -59,7 +60,7 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
             {TIER_META[tier].description}
           </Text>
         </Space>
-        
+
         <Space size="small">
           <Text
             type={isEnabled ? "success" : "secondary"}
@@ -99,7 +100,9 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 22 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 22 }}
+        >
           <ArrowRightOutlined style={{ color: token.colorTextQuaternary, fontSize: 16 }} />
         </div>
 
@@ -143,7 +146,7 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
   );
 }
 
-function getGlowColor(tier: Tier, token: any) {
+function getGlowColor(tier: Tier, token: GlobalToken) {
   switch (tier) {
     case "opus":
       return "#722ed1"; // Ant Design Purple

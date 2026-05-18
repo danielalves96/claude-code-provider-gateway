@@ -11,7 +11,13 @@ interface SettingsSectionProps {
   isLast?: boolean;
 }
 
-export function SettingsSection({ title, description, icon, children, isLast }: SettingsSectionProps) {
+export function SettingsSection({
+  title,
+  description,
+  icon,
+  children,
+  isLast,
+}: SettingsSectionProps) {
   const { token } = theme.useToken();
 
   return (

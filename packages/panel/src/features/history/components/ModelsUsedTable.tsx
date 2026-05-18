@@ -1,8 +1,8 @@
-import { Flex, Table, Tooltip, Typography, theme, Tag } from "antd";
+import { Flex, Table, Tag, Tooltip, Typography, theme } from "antd";
+import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { formatNumber } from "../format.js";
 import { providerLabel } from "../labels.js";
 import type { ModelStat } from "../types.js";
-import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { SectionLabel } from "./SectionLabel.js";
 
 const { Text } = Typography;
@@ -47,13 +47,20 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
             ellipsis: true,
             render: ([, s]: Row) => {
               if (!s.lastProviderId) {
-                return <Text style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>—</Text>;
+                return (
+                  <Text style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>—</Text>
+                );
               }
               return (
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <ProviderLogo providerId={s.lastProviderId} label={providerLabel(s.lastProviderId)} size={16} />
+                  <ProviderLogo
+                    providerId={s.lastProviderId}
+                    label={providerLabel(s.lastProviderId)}
+                    size={16}
+                  />
                   <Text style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
-                    {providerLabel(s.lastProviderId)}{s.lastProviderModel ? `/${s.lastProviderModel}` : ""}
+                    {providerLabel(s.lastProviderId)}
+                    {s.lastProviderModel ? `/${s.lastProviderModel}` : ""}
                   </Text>
                 </div>
               );
@@ -100,7 +107,11 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
             render: ([, s]: Row) =>
               s.errors > 0 ? (
                 <Tooltip title={s.lastError ?? ""}>
-                  <Tag color="error" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
+                  <Tag
+                    color="error"
+                    bordered={false}
+                    style={{ margin: 0, fontFamily: "monospace" }}
+                  >
                     {s.errors}
                   </Tag>
                 </Tooltip>

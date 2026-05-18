@@ -1,5 +1,5 @@
 import { VerticalAlignBottomOutlined } from "@ant-design/icons";
-import { Button, Flex, Typography, theme, Tag } from "antd";
+import { Button, Flex, Tag, Typography, theme } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { detectLogLevel } from "../hooks/useServerLogs.js";
 
@@ -54,13 +54,16 @@ export function LogViewer({ logs, paused, wrapLines, showLineNumbers }: LogViewe
         }}
       >
         {logs.length === 0 ? (
-          <Text style={{ opacity: 0.4, color: "#a0a0a0" }}>
-            Waiting for log activity…
-          </Text>
+          <Text style={{ opacity: 0.4, color: "#a0a0a0" }}>Waiting for log activity…</Text>
         ) : (
           logs.map((line, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: append-only buffer
-            <LogLine key={i} line={line} index={i} showLineNumber={showLineNumbers} wrap={wrapLines} />
+            <LogLine
+              key={i}
+              line={line}
+              index={i}
+              showLineNumber={showLineNumbers}
+              wrap={wrapLines}
+            />
           ))
         )}
       </div>
@@ -131,7 +134,12 @@ function LogLine({
         minHeight: 22,
         padding: "2px 8px",
         borderRadius: 4,
-        background: level === "error" ? "rgba(255, 77, 79, 0.1)" : level === "warn" ? "rgba(250, 173, 20, 0.05)" : "transparent",
+        background:
+          level === "error"
+            ? "rgba(255, 77, 79, 0.1)"
+            : level === "warn"
+              ? "rgba(250, 173, 20, 0.05)"
+              : "transparent",
         marginBottom: 2,
         transition: "background 0.2s ease",
       }}
@@ -184,13 +192,31 @@ function LogLine({
               {parsed.level}
             </Tag>
             <span style={{ color: "#3fb950", marginRight: 8 }}>[{parsed.module}]</span>
-            <span style={{ color: level === "error" ? token.colorError : level === "warn" ? token.colorWarning : "#d4d4d4" }}>
+            <span
+              style={{
+                color:
+                  level === "error"
+                    ? token.colorError
+                    : level === "warn"
+                      ? token.colorWarning
+                      : "#d4d4d4",
+              }}
+            >
               {parsed.message}
             </span>
           </>
         )}
         {!parsed.time && (
-          <span style={{ color: level === "error" ? token.colorError : level === "warn" ? token.colorWarning : "#d4d4d4" }}>
+          <span
+            style={{
+              color:
+                level === "error"
+                  ? token.colorError
+                  : level === "warn"
+                    ? token.colorWarning
+                    : "#d4d4d4",
+            }}
+          >
             {parsed.message}
           </span>
         )}

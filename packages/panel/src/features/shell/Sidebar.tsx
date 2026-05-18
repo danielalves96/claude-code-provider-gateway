@@ -1,13 +1,5 @@
 import { GithubOutlined } from "@ant-design/icons";
-import {
-  ConfigProvider,
-  Flex,
-  Layout,
-  Menu,
-  Tooltip,
-  Typography,
-  theme,
-} from "antd";
+import { ConfigProvider, Flex, Layout, Menu, Tooltip, Typography, theme } from "antd";
 import { useState } from "react";
 
 const { Text } = Typography;
@@ -18,8 +10,7 @@ import { NAV_ITEMS, selectedKeyFromPath } from "./navItems.js";
 
 const { Sider } = Layout;
 
-const GITHUB_URL =
-  "https://github.com/danielalves96/claude-code-provider-gateway";
+const GITHUB_URL = "https://github.com/danielalves96/claude-code-provider-gateway";
 
 export function Sidebar() {
   const { token } = theme.useToken();
@@ -210,11 +201,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
           flexShrink: 0,
         }}
       >
-        <img
-          src="/claude-blind.png"
-          alt=""
-          style={{ height: 22, width: "auto" }}
-        />
+        <img src="/claude-blind.png" alt="" style={{ height: 22, width: "auto" }} />
       </div>
       {!collapsed && (
         <img

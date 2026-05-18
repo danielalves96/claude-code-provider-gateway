@@ -1,7 +1,6 @@
-import { TrophyOutlined, FireOutlined } from "@ant-design/icons";
-import { Card, Col, Flex, Row, Typography, theme, Tag } from "antd";
+import { FireOutlined, TrophyOutlined } from "@ant-design/icons";
+import { Card, Col, Flex, Row, Tag, Typography, theme } from "antd";
 import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
-import { providerLabel } from "../labels.js";
 
 const { Text } = Typography;
 
@@ -48,13 +47,26 @@ export function HistoryTopStats({ topProvider, topModel }: HistoryTopStatsProps)
               <TrophyOutlined />
             </div>
             <Flex vertical flex={1}>
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: token.fontSizeSM,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
                 Top Provider
               </Text>
               {topProvider ? (
                 <Flex align="center" justify="space-between" style={{ marginTop: 4 }}>
                   <Flex align="center" gap={8}>
-                    {topProvider.id && <ProviderLogo providerId={topProvider.id} label={topProvider.name} size={20} />}
+                    {topProvider.id && (
+                      <ProviderLogo
+                        providerId={topProvider.id}
+                        label={topProvider.name}
+                        size={20}
+                      />
+                    )}
                     <Text strong style={{ fontSize: 18 }}>
                       {topProvider.name}
                     </Text>
@@ -95,12 +107,22 @@ export function HistoryTopStats({ topProvider, topModel }: HistoryTopStatsProps)
               <FireOutlined />
             </div>
             <Flex vertical flex={1}>
-              <Text type="secondary" style={{ fontSize: token.fontSizeSM, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: token.fontSizeSM,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
                 Most Used Model
               </Text>
               {topModel ? (
                 <Flex align="center" justify="space-between" style={{ marginTop: 4 }}>
-                  <Text strong style={{ fontSize: 18, fontFamily: "monospace", color: token.colorWarningText }}>
+                  <Text
+                    strong
+                    style={{ fontSize: 18, fontFamily: "monospace", color: token.colorWarningText }}
+                  >
                     {topModel.name}
                   </Text>
                   <Tag color="warning" bordered={false} style={{ margin: 0 }}>

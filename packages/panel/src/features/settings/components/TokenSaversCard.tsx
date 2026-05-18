@@ -59,8 +59,12 @@ function ToggleRow({ title, description, checked, onChange }: ToggleRowProps) {
   return (
     <Flex justify="space-between" align="center" gap={16}>
       <Flex vertical>
-        <Text strong style={{ fontSize: 15 }}>{title}</Text>
-        <Text type="secondary" style={{ fontSize: 13 }}>{description}</Text>
+        <Text strong style={{ fontSize: 15 }}>
+          {title}
+        </Text>
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          {description}
+        </Text>
       </Flex>
       <Switch aria-label={title} checked={checked} onChange={onChange} />
     </Flex>

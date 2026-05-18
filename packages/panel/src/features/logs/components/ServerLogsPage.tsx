@@ -6,11 +6,23 @@ import {
   PauseCircleOutlined,
   PlayCircleOutlined,
 } from "@ant-design/icons";
-import { Badge, Button, Card, Flex, Input, Select, Space, Tag, Tooltip, Typography, theme } from "antd";
+import {
+  Badge,
+  Button,
+  Card,
+  Flex,
+  Input,
+  Select,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+  theme,
+} from "antd";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { useServerLogs } from "../hooks/useServerLogs.js";
-import { LogViewer } from "./LogViewer.js";
 import { LogsSummary } from "./LogsSummary.js";
+import { LogViewer } from "./LogViewer.js";
 
 const { Text } = Typography;
 
@@ -161,7 +173,11 @@ export default function ServerLogsPage() {
             </Space.Compact>
 
             <Tooltip title="Download full log buffer as .log file">
-              <Button icon={<DownloadOutlined />} onClick={downloadLogs} disabled={logs.length === 0}>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={downloadLogs}
+                disabled={logs.length === 0}
+              >
                 Download
               </Button>
             </Tooltip>

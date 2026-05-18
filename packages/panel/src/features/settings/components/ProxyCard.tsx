@@ -14,7 +14,9 @@ export function ProxyCard({ value, onChange }: ProxyCardProps) {
     <Flex vertical gap={token.padding}>
       <Flex justify="space-between" align="center" gap={16}>
         <Flex vertical>
-          <Text strong style={{ fontSize: 15 }}>Enable outbound proxy</Text>
+          <Text strong style={{ fontSize: 15 }}>
+            Enable outbound proxy
+          </Text>
           <Text type="secondary" style={{ fontSize: 13 }}>
             Route OpenAI OAuth and external provider requests through a proxy
           </Text>

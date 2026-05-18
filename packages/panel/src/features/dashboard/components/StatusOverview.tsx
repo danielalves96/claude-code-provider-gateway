@@ -19,13 +19,23 @@ export function StatusOverview({ status }: StatusOverviewProps) {
   const { token } = theme.useToken();
 
   const isRunning = status?.running;
-  const statusColor = isRunning ? token.colorSuccess : status ? token.colorError : token.colorTextTertiary;
+  const statusColor = isRunning
+    ? token.colorSuccess
+    : status
+      ? token.colorError
+      : token.colorTextTertiary;
 
   const cards = [
     {
       title: "Status",
       value: isRunning ? "Running" : status ? "Stopped" : "—",
-      icon: isRunning ? <CheckCircleFilled /> : status ? <CloseCircleFilled /> : <CheckCircleFilled />,
+      icon: isRunning ? (
+        <CheckCircleFilled />
+      ) : status ? (
+        <CloseCircleFilled />
+      ) : (
+        <CheckCircleFilled />
+      ),
       color: statusColor,
       active: isRunning,
       pulse: isRunning,
@@ -60,7 +70,7 @@ export function StatusOverview({ status }: StatusOverviewProps) {
           <Card
             styles={{ body: { padding: `${token.paddingMD}px` } }}
             style={{
-              background: c.active 
+              background: c.active
                 ? `linear-gradient(135deg, ${token.colorBgContainer} 0%, ${c.color}15 100%)`
                 : token.colorBgContainer,
               borderColor: c.active ? `${c.color}30` : token.colorBorderSecondary,
@@ -83,7 +93,10 @@ export function StatusOverview({ status }: StatusOverviewProps) {
                 {c.icon}
               </div>
               <Flex vertical flex={1}>
-                <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
                   {c.title}
                 </Text>
                 <Text

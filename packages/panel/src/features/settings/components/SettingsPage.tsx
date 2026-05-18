@@ -35,7 +35,10 @@ export default function SettingsPage() {
 
   return (
     <Flex vertical gap={token.paddingLG}>
-      <PageHeader title="Settings" description="Manage gateway configuration, integrations, and tools." />
+      <PageHeader
+        title="Settings"
+        description="Manage gateway configuration, integrations, and tools."
+      />
 
       <Row gutter={[token.paddingLG, token.paddingLG]}>
         <Col xs={24} lg={12}>

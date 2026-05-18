@@ -84,7 +84,11 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "s",
       width: 70,
       render: (v: string) => (
-        <Tag color={v === "ok" ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
+        <Tag
+          color={v === "ok" ? "success" : "error"}
+          bordered={false}
+          style={{ fontFamily: "monospace" }}
+        >
           {v}
         </Tag>
       ),
@@ -149,7 +153,11 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "has_resp",
       width: 90,
       render: (_, e) => (
-        <Tag color={e.response ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
+        <Tag
+          color={e.response ? "success" : "error"}
+          bordered={false}
+          style={{ fontFamily: "monospace" }}
+        >
           {e.response ? "yes" : "no"}
         </Tag>
       ),
@@ -161,7 +169,11 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       render: (_, e) => {
         const hasUser = !!e.prompt && e.prompt.toLowerCase().includes("[user]");
         return (
-          <Tag color={hasUser ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
+          <Tag
+            color={hasUser ? "success" : "error"}
+            bordered={false}
+            style={{ fontFamily: "monospace" }}
+          >
             {hasUser ? "yes" : "no"}
           </Tag>
         );
@@ -200,17 +212,20 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
           rowExpandable: () => true,
           expandedRowRender: (r) => <RequestDetails entry={r} />,
           expandIcon: ({ expanded, onExpand, record }) => (
-            <div
+            <button
+              type="button"
               style={{
                 width: 24,
                 height: 24,
                 borderRadius: "50%",
                 background: expanded ? token.colorFillSecondary : "transparent",
+                border: "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
+                padding: 0,
               }}
               onClick={(e) => onExpand(record, e)}
             >
@@ -222,7 +237,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
                   fontSize: 14,
                 }}
               />
-            </div>
+            </button>
           ),
         }}
       />

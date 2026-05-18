@@ -55,13 +55,21 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
     >
       <Flex gap={token.paddingLG}>
         <Flex vertical>
-          <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
+          >
             Requests
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: 600, fontFamily: "monospace" }}>{p.requests}</Text>
+          <Text style={{ fontSize: 20, fontWeight: 600, fontFamily: "monospace" }}>
+            {p.requests}
+          </Text>
         </Flex>
         <Flex vertical>
-          <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
+          >
             Avg Latency
           </Text>
           <Text style={{ fontSize: 20, fontWeight: 600, fontFamily: "monospace" }}>
@@ -69,12 +77,14 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
           </Text>
         </Flex>
       </Flex>
-      
+
       <Flex gap={token.paddingXS} style={{ marginTop: token.padding }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>Last active: {lastActivity}</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Last active: {lastActivity}
+        </Text>
         {p.lastError && (
-          <Text type="danger" style={{ fontSize: 12, marginLeft: 'auto' }}>
-            {p.lastError.length > 30 ? p.lastError.slice(0, 30) + '…' : p.lastError}
+          <Text type="danger" style={{ fontSize: 12, marginLeft: "auto" }}>
+            {p.lastError.length > 30 ? `${p.lastError.slice(0, 30)}…` : p.lastError}
           </Text>
         )}
       </Flex>

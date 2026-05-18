@@ -98,6 +98,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/panel/src/features/logs/components/LogViewer.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
     }
   ]
 }

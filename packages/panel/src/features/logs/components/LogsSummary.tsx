@@ -84,7 +84,10 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
                 >
                   {c.icon}
                 </div>
-                <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
                   {c.title}
                 </Text>
               </Flex>

@@ -1,4 +1,4 @@
-import { Flex, Table, Tooltip, Typography, Tag } from "antd";
+import { Flex, Table, Tag, Tooltip, Typography } from "antd";
 import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { formatTime } from "../format.js";
 import { providerLabel } from "../labels.js";
