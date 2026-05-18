@@ -1,5 +1,5 @@
 import type { MessageInstance } from "antd/es/message/interface.js";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { daemonControl } from "../services/daemonControl.js";
 import { type DaemonState, useDaemonStatus } from "./useDaemonStatus.js";
 
@@ -22,8 +22,13 @@ interface UseGatewayControlOptions {
 export function useGatewayControl({ message }: UseGatewayControlOptions) {
   const { state, refresh, pause, resume } = useDaemonStatus();
   const [busy, setBusy] = useState(false);
+  const lifecycleLocked = useRef(false);
 
   async function stop(): Promise<void> {
+    if (lifecycleLocked.current) {
+      return;
+    }
+    lifecycleLocked.current = true;
     setBusy(true);
     pause();
     try {
@@ -37,11 +42,16 @@ export function useGatewayControl({ message }: UseGatewayControlOptions) {
       message.error(err instanceof Error ? err.message : "Failed to stop gateway");
       resume();
     } finally {
+      lifecycleLocked.current = false;
       setBusy(false);
     }
   }
 
   async function start(): Promise<void> {
+    if (lifecycleLocked.current) {
+      return;
+    }
+    lifecycleLocked.current = true;
     setBusy(true);
     try {
       await daemonControl.start();
@@ -50,6 +60,7 @@ export function useGatewayControl({ message }: UseGatewayControlOptions) {
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Failed to start gateway");
     } finally {
+      lifecycleLocked.current = false;
       setBusy(false);
     }
   }

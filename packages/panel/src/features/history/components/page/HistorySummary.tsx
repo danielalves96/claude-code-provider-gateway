@@ -37,7 +37,7 @@ export function HistorySummary({
       value: archived,
       icon: <DatabaseOutlined />,
       color: token.colorTextSecondary,
-      active: false,
+      active: archived > 0,
     },
     {
       id: "total-requests",
