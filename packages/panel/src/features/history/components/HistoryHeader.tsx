@@ -31,10 +31,10 @@ export function HistoryHeader({
         </Text>
       </Flex>
       <Space>
-        <Button icon={<ReloadOutlined />} onClick={onRefresh}>
+        <Button type="dashed" icon={<ReloadOutlined />} onClick={onRefresh}>
           Refresh
         </Button>
-        <Button danger icon={<DeleteOutlined />} disabled={!canClear} onClick={onRequestClear}>
+        <Button danger type="text" icon={<DeleteOutlined />} disabled={!canClear} onClick={onRequestClear}>
           Clear history
         </Button>
       </Space>

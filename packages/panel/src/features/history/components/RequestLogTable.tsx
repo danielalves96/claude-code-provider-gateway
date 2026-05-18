@@ -84,7 +84,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "s",
       width: 70,
       render: (v: string) => (
-        <Tag color={v === "ok" ? "success" : "error"} style={{ fontFamily: "monospace" }}>
+        <Tag color={v === "ok" ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
           {v}
         </Tag>
       ),
@@ -109,6 +109,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
               <Tooltip title={`RTK saved ${saved}B (${pct}%) via ${ts.rtkFilters.join(", ")}`}>
                 <Tag
                   color="geekblue"
+                  bordered={false}
                   style={{
                     margin: 0,
                     fontFamily: "monospace",
@@ -123,6 +124,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
               <Tooltip title={`Caveman ${ts.cavemanLevel} injected into system prompt`}>
                 <Tag
                   color="orange"
+                  bordered={false}
                   style={{
                     margin: 0,
                     fontFamily: "monospace",
@@ -147,7 +149,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       key: "has_resp",
       width: 90,
       render: (_, e) => (
-        <Tag color={e.response ? "success" : "error"} style={{ fontFamily: "monospace" }}>
+        <Tag color={e.response ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
           {e.response ? "yes" : "no"}
         </Tag>
       ),
@@ -159,7 +161,7 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
       render: (_, e) => {
         const hasUser = !!e.prompt && e.prompt.toLowerCase().includes("[user]");
         return (
-          <Tag color={hasUser ? "success" : "error"} style={{ fontFamily: "monospace" }}>
+          <Tag color={hasUser ? "success" : "error"} bordered={false} style={{ fontFamily: "monospace" }}>
             {hasUser ? "yes" : "no"}
           </Tag>
         );
@@ -192,18 +194,35 @@ export function RequestLogTable({ entries }: RequestLogTableProps) {
         dataSource={entries}
         rowKey="id"
         size="small"
-        bordered
         pagination={false}
         columns={columns}
         expandable={{
           rowExpandable: () => true,
           expandedRowRender: (r) => <RequestDetails entry={r} />,
           expandIcon: ({ expanded, onExpand, record }) => (
-            <CaretRightOutlined
-              rotate={expanded ? 90 : 0}
-              style={{ cursor: "pointer", transition: "transform 0.15s" }}
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: expanded ? token.colorFillSecondary : "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
               onClick={(e) => onExpand(record, e)}
-            />
+            >
+              <CaretRightOutlined
+                rotate={expanded ? 90 : 0}
+                style={{
+                  color: expanded ? token.colorPrimary : token.colorTextSecondary,
+                  transition: "transform 0.2s",
+                  fontSize: 14,
+                }}
+              />
+            </div>
           ),
         }}
       />

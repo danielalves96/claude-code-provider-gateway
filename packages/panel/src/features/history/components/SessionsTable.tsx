@@ -1,6 +1,6 @@
-import { CaretRightOutlined } from "@ant-design/icons";
+import { CaretRightOutlined, SyncOutlined, CloseCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
-import { Badge, Card, Space, Table, Typography, theme } from "antd";
+import { Tag, Card, Space, Table, Typography, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import { commandFor, formatDate, topModel } from "../format.js";
 import { providerLabel } from "../labels.js";
@@ -22,28 +22,36 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
     {
       title: "Status",
       key: "status",
-      width: 110,
-      render: (_, s) => (
-        <Badge
-          status={
-            s.status === "running" ? "processing" : s.status === "crashed" ? "error" : "default"
-          }
-          text={s.status}
-        />
-      ),
+      width: 130,
+      render: (_, s) => {
+        if (s.status === "running") {
+          return <Tag icon={<SyncOutlined spin />} color="blue" bordered={false}>RUNNING</Tag>;
+        }
+        if (s.status === "crashed") {
+          return <Tag icon={<CloseCircleOutlined />} color="error" bordered={false}>CRASHED</Tag>;
+        }
+        return <Tag icon={<CheckCircleOutlined />} color="success" bordered={false}>COMPLETED</Tag>;
+      },
     },
     {
       title: "Command",
       key: "command",
       ellipsis: true,
       render: (_, s) => (
-        <Space direction="vertical" size={2}>
+        <Space direction="vertical" size={4}>
           <Text style={{ fontFamily: "monospace", color: token.colorSuccessText }}>
             {commandFor(s)}
           </Text>
-          <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-            {s.modelMode === "all" ? "all-providers" : `single: ${providerLabel(s.activeProvider)}`}
-          </Text>
+          <Space size="small">
+            <Tag color="default" style={{ margin: 0, border: `1px solid ${token.colorBorderSecondary}` }}>
+              {s.modelMode === "all" ? "all-providers" : "single"}
+            </Tag>
+            {s.modelMode !== "all" && (
+              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                {providerLabel(s.activeProvider)}
+              </Text>
+            )}
+          </Space>
         </Space>
       ),
     },
@@ -89,9 +97,9 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
       width: 90,
       align: "right",
       render: (v: number) => (
-        <Text strong style={{ fontFamily: "monospace" }}>
+        <Tag color="blue" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
           {v}
-        </Text>
+        </Tag>
       ),
     },
     {
@@ -102,9 +110,9 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
       align: "right",
       render: (v: number) =>
         v > 0 ? (
-          <Text type="danger" strong style={{ fontFamily: "monospace" }}>
+          <Tag color="error" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
             {v}
-          </Text>
+          </Tag>
         ) : (
           <Text type="secondary" style={{ fontFamily: "monospace" }}>
             0
@@ -137,11 +145,29 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
           onExpand: (expanded, record) => onToggleExpanded(record.id, expanded),
           expandedRowRender: (record) => <SessionDetails session={record} />,
           expandIcon: ({ expanded, onExpand, record }) => (
-            <CaretRightOutlined
-              rotate={expanded ? 90 : 0}
-              style={{ cursor: "pointer", transition: "transform 0.15s" }}
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                background: expanded ? token.colorFillSecondary : "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
               onClick={(e) => onExpand(record, e)}
-            />
+            >
+              <CaretRightOutlined
+                rotate={expanded ? 90 : 0}
+                style={{
+                  color: expanded ? token.colorPrimary : token.colorTextSecondary,
+                  transition: "transform 0.2s",
+                  fontSize: 16,
+                }}
+              />
+            </div>
           ),
         }}
       />

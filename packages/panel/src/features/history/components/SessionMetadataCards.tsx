@@ -1,4 +1,4 @@
-import { Card, Col, Row, Typography, theme } from "antd";
+import { Flex, Typography, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import { formatDate } from "../format.js";
 import { providerLabel } from "../labels.js";
@@ -31,27 +31,33 @@ export function SessionMetadataCards({ session }: SessionMetadataCardsProps) {
   ];
 
   return (
-    <Row gutter={[token.paddingXS, token.paddingXS]}>
+    <Flex
+      gap={token.paddingLG * 2}
+      wrap
+      style={{
+        padding: `${token.paddingSM}px ${token.paddingLG}px`,
+        background: token.colorFillTertiary,
+        borderRadius: token.borderRadiusLG,
+        border: `1px solid ${token.colorBorderSecondary}`,
+      }}
+    >
       {items.map(({ label, value }) => (
-        <Col key={label}>
-          <Card size="small">
-            <Text
-              type="secondary"
-              style={{
-                fontSize: token.fontSizeSM - 1,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-                display: "block",
-              }}
-            >
-              {label}
-            </Text>
-            <Text ellipsis={{ tooltip: value }}>
-              {value.length > 30 ? `${value.slice(0, 30)}…` : value}
-            </Text>
-          </Card>
-        </Col>
+        <Flex vertical key={label} gap={2}>
+          <Text
+            type="secondary"
+            style={{
+              fontSize: token.fontSizeSM - 1,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            {label}
+          </Text>
+          <Text strong style={{ fontSize: token.fontSizeSM + 1 }}>
+            {value.length > 30 ? `${value.slice(0, 30)}…` : value}
+          </Text>
+        </Flex>
       ))}
-    </Row>
+    </Flex>
   );
 }

@@ -1,7 +1,8 @@
-import { Flex, Table, Tooltip, Typography, theme } from "antd";
+import { Flex, Table, Tooltip, Typography, theme, Tag } from "antd";
 import { formatNumber } from "../format.js";
 import { providerLabel } from "../labels.js";
 import type { ModelStat } from "../types.js";
+import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { SectionLabel } from "./SectionLabel.js";
 
 const { Text } = Typography;
@@ -22,7 +23,6 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
         dataSource={rows}
         rowKey={([m]) => m}
         size="small"
-        bordered
         pagination={false}
         columns={[
           {
@@ -45,18 +45,19 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
             title: "Last routed to",
             key: "r",
             ellipsis: true,
-            render: ([, s]: Row) => (
-              <Text
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: token.fontSizeSM,
-                }}
-              >
-                {s.lastProviderId
-                  ? `${providerLabel(s.lastProviderId)}/${s.lastProviderModel ?? ""}`
-                  : "—"}
-              </Text>
-            ),
+            render: ([, s]: Row) => {
+              if (!s.lastProviderId) {
+                return <Text style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>—</Text>;
+              }
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ProviderLogo providerId={s.lastProviderId} label={providerLabel(s.lastProviderId)} size={16} />
+                  <Text style={{ fontFamily: "monospace", fontSize: token.fontSizeSM }}>
+                    {providerLabel(s.lastProviderId)}{s.lastProviderModel ? `/${s.lastProviderModel}` : ""}
+                  </Text>
+                </div>
+              );
+            },
           },
           {
             title: "Requests",
@@ -64,9 +65,9 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
             width: 85,
             align: "right",
             render: ([, s]: Row) => (
-              <Text strong style={{ fontFamily: "monospace" }}>
+              <Tag color="blue" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
                 {s.requests}
-              </Text>
+              </Tag>
             ),
           },
           {
@@ -99,9 +100,9 @@ export function ModelsUsedTable({ rows }: ModelsUsedTableProps) {
             render: ([, s]: Row) =>
               s.errors > 0 ? (
                 <Tooltip title={s.lastError ?? ""}>
-                  <Text type="danger" style={{ fontFamily: "monospace" }}>
+                  <Tag color="error" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
                     {s.errors}
-                  </Text>
+                  </Tag>
                 </Tooltip>
               ) : (
                 <Text type="secondary" style={{ fontFamily: "monospace" }}>

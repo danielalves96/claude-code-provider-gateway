@@ -1,4 +1,5 @@
-import { Flex, Table, Tooltip, Typography } from "antd";
+import { Flex, Table, Tooltip, Typography, Tag } from "antd";
+import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { formatTime } from "../format.js";
 import { providerLabel } from "../labels.js";
 import type { ProviderStat } from "../types.js";
@@ -21,13 +22,17 @@ export function ProvidersTable({ rows, title = "Providers" }: ProvidersTableProp
         dataSource={rows}
         rowKey={([id]) => id}
         size="small"
-        bordered
         pagination={false}
         columns={[
           {
             title: "Provider",
             key: "n",
-            render: ([id]: Row) => providerLabel(id),
+            render: ([id]: Row) => (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ProviderLogo providerId={id} label={providerLabel(id)} size={16} />
+                <span>{providerLabel(id)}</span>
+              </div>
+            ),
           },
           {
             title: "Requests",
@@ -35,9 +40,9 @@ export function ProvidersTable({ rows, title = "Providers" }: ProvidersTableProp
             width: 85,
             align: "right",
             render: ([, s]: Row) => (
-              <Text strong style={{ fontFamily: "monospace" }}>
+              <Tag color="blue" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
                 {s.requests}
-              </Text>
+              </Tag>
             ),
           },
           {
@@ -47,9 +52,9 @@ export function ProvidersTable({ rows, title = "Providers" }: ProvidersTableProp
             align: "right",
             render: ([, s]: Row) =>
               s.errors > 0 ? (
-                <Text type="danger" style={{ fontFamily: "monospace" }}>
+                <Tag color="error" bordered={false} style={{ margin: 0, fontFamily: "monospace" }}>
                   {s.errors}
-                </Text>
+                </Tag>
               ) : (
                 <Text type="secondary" style={{ fontFamily: "monospace" }}>
                   0

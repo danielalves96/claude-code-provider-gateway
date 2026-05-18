@@ -1,11 +1,13 @@
 import { Card, Empty, Flex, Typography, theme } from "antd";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useHistory } from "../hooks/useHistory.js";
 import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { HistoryHeader } from "./HistoryHeader.js";
 import { HistorySummary } from "./HistorySummary.js";
+import { HistoryTopStats } from "./HistoryTopStats.js";
 import { ProvidersTable } from "./ProvidersTable.js";
 import { SessionsTable } from "./SessionsTable.js";
+import { providerLabel } from "../labels.js";
 
 const { Text } = Typography;
 
@@ -30,6 +32,36 @@ export default function HistoryPage() {
     setConfirmOpen(false);
   };
 
+  const topProviderInfo = useMemo(() => {
+    if (!sessions.length) return null;
+    const providerCounts: Record<string, number> = {};
+    for (const s of sessions) {
+      if (s.providerStats) {
+        for (const [provider, stat] of Object.entries(s.providerStats)) {
+          providerCounts[provider] = (providerCounts[provider] || 0) + stat.requests;
+        }
+      }
+    }
+    const sorted = Object.entries(providerCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return null;
+    return { id: sorted[0][0], name: providerLabel(sorted[0][0]), requests: sorted[0][1] };
+  }, [sessions]);
+
+  const topModelInfo = useMemo(() => {
+    if (!sessions.length) return null;
+    const modelCounts: Record<string, number> = {};
+    for (const s of sessions) {
+      if (s.modelStats) {
+        for (const [model, stat] of Object.entries(s.modelStats)) {
+          modelCounts[model] = (modelCounts[model] || 0) + stat.requests;
+        }
+      }
+    }
+    const sorted = Object.entries(modelCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return null;
+    return { name: sorted[0][0], requests: sorted[0][1] };
+  }, [sessions]);
+
   return (
     <Flex vertical gap={token.paddingLG}>
       <HistoryHeader
@@ -38,6 +70,8 @@ export default function HistoryPage() {
         canClear={canClear}
         pollIntervalMs={pollIntervalMs}
       />
+
+      <HistoryTopStats topProvider={topProviderInfo} topModel={topModelInfo} />
 
       <HistorySummary
         sessionCount={sessions.length}
