@@ -5,7 +5,7 @@ import {
   ProfileOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
-import { Card, Col, Flex, Row, Typography, theme } from "antd";
+import { Card, Flex, Typography, theme } from "antd";
 
 const { Text } = Typography;
 
@@ -59,9 +59,9 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
   ];
 
   return (
-    <Row gutter={[token.paddingSM, token.paddingSM]}>
+    <Flex gap={token.paddingSM} wrap="wrap">
       {cards.map((c) => (
-        <Col xs={12} sm={8} lg={4} key={c.title} style={{ flex: 1 }}>
+        <div key={c.title} style={{ flex: "1 1 150px", minWidth: 0 }}>
           <Card
             size="small"
             style={{
@@ -70,7 +70,6 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
                 ? `linear-gradient(145deg, ${token.colorBgContainer} 0%, ${c.color}15 100%)`
                 : token.colorBgContainer,
               transition: "all 0.3s ease",
-              boxShadow: c.active ? `0 0 16px 1px ${c.color}15` : undefined,
             }}
             styles={{ body: { padding: "8px 12px" } }}
           >
@@ -101,8 +100,8 @@ export function LogsSummary({ totalLines, errors, warns, infos, debugs }: LogsSu
               </Text>
             </Flex>
           </Card>
-        </Col>
+        </div>
       ))}
-    </Row>
+    </Flex>
   );
 }

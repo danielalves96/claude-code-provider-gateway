@@ -1,5 +1,13 @@
 import { GithubOutlined } from "@ant-design/icons";
-import { Flex, Layout, Menu, Tooltip, Typography, theme } from "antd";
+import {
+  ConfigProvider,
+  Flex,
+  Layout,
+  Menu,
+  Tooltip,
+  Typography,
+  theme,
+} from "antd";
 import { useState } from "react";
 
 const { Text } = Typography;
@@ -10,7 +18,8 @@ import { NAV_ITEMS, selectedKeyFromPath } from "./navItems.js";
 
 const { Sider } = Layout;
 
-const GITHUB_URL = "https://github.com/danielalves96/claude-code-provider-gateway";
+const GITHUB_URL =
+  "https://github.com/danielalves96/claude-code-provider-gateway";
 
 export function Sidebar() {
   const { token } = theme.useToken();
@@ -36,12 +45,32 @@ export function Sidebar() {
       }}
     >
       <Brand collapsed={collapsed} />
-      <Menu
-        mode="inline"
-        selectedKeys={[selectedKey]}
-        items={NAV_ITEMS}
-        onClick={({ key }) => navigate(key)}
-      />
+      <ConfigProvider
+        theme={{
+          components: {
+            Menu: {
+              itemBg: "transparent",
+              itemSelectedBg: `${token.colorText}08`,
+              itemSelectedColor: token.colorPrimary,
+              itemHoverBg: `${token.colorText}05`,
+              itemHoverColor: token.colorText,
+              activeBarBorderWidth: 0,
+              itemHeight: 44,
+              iconSize: 15,
+              iconMarginInlineEnd: 10,
+              itemPaddingInline: 20,
+            },
+          },
+        }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={NAV_ITEMS}
+          onClick={({ key }) => navigate(key)}
+          style={{ border: "none", paddingBlock: token.paddingSM }}
+        />
+      </ConfigProvider>
       <GitHubButton collapsed={collapsed} />
       <AppVersion collapsed={collapsed} />
     </Sider>
@@ -62,26 +91,42 @@ function GitHubButton({ collapsed }: { collapsed: boolean }) {
         display: "flex",
         alignItems: "center",
         justifyContent: collapsed ? "center" : "flex-start",
-        gap: token.paddingSM,
-        padding: `0 ${collapsed ? 0 : token.paddingLG}px`,
-        height: 48,
+        gap: 10,
+        padding: `0 ${collapsed ? 0 : 20}px`,
+        height: 44,
         color: token.colorTextSecondary,
         textDecoration: "none",
         transition: "color 0.2s, background 0.2s",
         width: "100%",
         boxSizing: "border-box",
+        fontSize: token.fontSize,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.color = token.colorText;
-        e.currentTarget.style.background = token.colorBgTextHover;
+        e.currentTarget.style.background = `${token.colorText}07`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.color = token.colorTextSecondary;
         e.currentTarget.style.background = "transparent";
       }}
     >
-      <GithubOutlined style={{ fontSize: 16, flexShrink: 0 }} />
-      {!collapsed && <span style={{ fontSize: token.fontSize }}>Star us on GitHub</span>}
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          background: `${token.colorText}08`,
+          border: `1px solid ${token.colorBorderSecondary}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          fontSize: 14,
+        }}
+      >
+        <GithubOutlined />
+      </div>
+      {!collapsed && <span>Star us on GitHub</span>}
     </a>
   );
 
@@ -89,10 +134,11 @@ function GitHubButton({ collapsed }: { collapsed: boolean }) {
     <div
       style={{
         position: "absolute",
-        bottom: 72,
+        bottom: 84,
         left: 0,
         right: 0,
         borderTop: `1px solid ${token.colorBorderSecondary}`,
+        paddingBlock: token.paddingXS,
       }}
     >
       {collapsed ? (
@@ -115,14 +161,21 @@ function AppVersion({ collapsed }: { collapsed: boolean }) {
         bottom: 48,
         left: 0,
         right: 0,
-        height: 24,
+        height: 36,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         borderTop: `1px solid ${token.colorBorderSecondary}`,
+        background: `${token.colorText}03`,
       }}
     >
-      <Text style={{ fontSize: 11, color: token.colorTextQuaternary }}>
+      <Text
+        style={{
+          fontSize: 11,
+          color: token.colorTextQuaternary,
+          fontFamily: "monospace",
+        }}
+      >
         {collapsed ? __APP_VERSION__ : `v${__APP_VERSION__}`}
       </Text>
     </div>
@@ -137,29 +190,37 @@ function Brand({ collapsed }: { collapsed: boolean }) {
       justify={collapsed ? "center" : "flex-start"}
       gap={token.paddingSM}
       style={{
-        padding: `${token.paddingMD}px ${collapsed ? 0 : token.paddingLG}px`,
+        padding: `0 ${collapsed ? 0 : token.paddingLG}px`,
         overflow: "hidden",
-        height: 64,
+        height: 56,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        background: `linear-gradient(135deg, ${token.colorBgContainer} 0%, ${token.colorPrimary}08 100%)`,
+        flexShrink: 0,
       }}
     >
-      <img
-        src="/claude-blind.png"
-        alt=""
+      <div
         style={{
-          height: 32,
-          width: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+
           flexShrink: 0,
         }}
-      />
+      >
+        <img
+          src="/claude-blind.png"
+          alt=""
+          style={{ height: 22, width: "auto" }}
+        />
+      </div>
       {!collapsed && (
         <img
           src="/logo_name.png"
           alt="Claude Code Provider Gateway"
-          style={{
-            height: 28,
-            width: "auto",
-            objectFit: "contain",
-          }}
+          style={{ height: 28, width: "auto", objectFit: "contain" }}
         />
       )}
     </Flex>

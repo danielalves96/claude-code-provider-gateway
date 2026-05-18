@@ -4,7 +4,9 @@ import {
   DatabaseOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
-import { Card, Col, Row, Space, Statistic, theme } from "antd";
+import { Card, Col, Flex, Row, Typography, theme } from "antd";
+
+const { Text } = Typography;
 
 interface HistorySummaryProps {
   sessionCount: number;
@@ -53,33 +55,49 @@ export function HistorySummary({
   ];
 
   return (
-    <Row gutter={[token.paddingLG, token.paddingLG]}>
+    <Row gutter={[token.paddingSM, token.paddingSM]}>
       {metrics.map((m) => (
-        <Col xs={12} xl={6} key={m.title}>
+        <Col xs={12} sm={12} lg={6} key={m.title} style={{ flex: 1 }}>
           <Card
-            styles={{
-              body: { padding: token.paddingLG },
-            }}
+            size="small"
             style={{
               borderColor: m.active ? `${m.color}40` : token.colorBorderSecondary,
-              boxShadow: m.active ? `0 0 12px 1px ${m.color}15` : undefined,
+              background: m.active
+                ? `linear-gradient(145deg, ${token.colorBgContainer} 0%, ${m.color}15 100%)`
+                : token.colorBgContainer,
               transition: "all 0.3s ease",
             }}
+            styles={{ body: { padding: "8px 12px" } }}
           >
-            <Statistic
-              title={
-                <Space>
-                  <span style={{ color: m.color, fontSize: 16 }}>{m.icon}</span>
-                  <span style={{ color: token.colorTextSecondary }}>{m.title}</span>
-                </Space>
-              }
-              value={m.value}
-              valueStyle={{
-                color: m.title === "Total Errors" && m.active ? token.colorError : token.colorText,
-                fontWeight: 600,
-                fontSize: 28,
-              }}
-            />
+            <Flex align="center" justify="space-between">
+              <Flex align="center" gap={6}>
+                <div
+                  style={{
+                    color: m.active ? m.color : token.colorTextTertiary,
+                    fontSize: 14,
+                    display: "flex",
+                  }}
+                >
+                  {m.icon}
+                </div>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
+                  {m.title}
+                </Text>
+              </Flex>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: m.active ? m.color : token.colorTextPrimary,
+                  fontFamily: "monospace",
+                }}
+              >
+                {m.value.toLocaleString()}
+              </Text>
+            </Flex>
           </Card>
         </Col>
       ))}
