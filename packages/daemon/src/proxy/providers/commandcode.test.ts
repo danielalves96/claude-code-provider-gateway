@@ -23,7 +23,12 @@ test("anthropicToCommandCode builds the CommandCode envelope from Anthropic mess
         role: "assistant",
         content: [
           { type: "text", text: "I will check." },
-          { type: "tool_use", id: "toolu_1", name: "Bash", input: { command: "pwd" } },
+          {
+            type: "tool_use",
+            id: "toolu_1",
+            name: "Bash",
+            input: { command: "pwd" },
+          },
         ],
       },
       {
@@ -99,14 +104,21 @@ test("anthropicToCommandCode preserves image blocks and stringifies single text 
       {
         role: "user",
         content: [
-          { type: "text", text: "Veja esta imagem" },
+          { type: "text", text: "See this image" },
           {
             type: "image",
-            source: { type: "base64", media_type: "image/png", data: "aGVsbG8=" },
+            source: {
+              type: "base64",
+              media_type: "image/png",
+              data: "aGVsbG8=",
+            },
           },
         ],
       },
-      { role: "assistant", content: [{ type: "thinking", thinking: "analisando" }] },
+      {
+        role: "assistant",
+        content: [{ type: "thinking", thinking: "analisando" }],
+      },
     ],
   });
 
@@ -114,7 +126,7 @@ test("anthropicToCommandCode preserves image blocks and stringifies single text 
     {
       role: "user",
       content: [
-        { type: "text", text: "Veja esta imagem" },
+        { type: "text", text: "See this image" },
         { type: "image", image: "data:image/png;base64,aGVsbG8=" },
       ],
     },
@@ -199,7 +211,11 @@ test("commandCodeStreamToAnthropic converts text, reasoning, tool input, finish,
       { type: "tool-input-delta", id: "call_1", delta: '{"command"' },
       { type: "tool-input-delta", id: "call_1", delta: ':"pwd"}' },
       { type: "tool-input-end", id: "call_1" },
-      { type: "finish-step", finishReason: "tool-calls", usage: { outputTokens: 9 } },
+      {
+        type: "finish-step",
+        finishReason: "tool-calls",
+        usage: { outputTokens: 9 },
+      },
       { type: "finish" },
     ]),
     { messageId: "msg_test", model: "commandcode/model", inputTokens: 7 },
@@ -226,9 +242,18 @@ test("commandCodeStreamToAnthropic converts text, reasoning, tool input, finish,
       "message_stop",
     ],
   );
-  assert.deepEqual(events[2]?.data.content_block, { type: "thinking", thinking: "" });
-  assert.deepEqual(events[3]?.data.delta, { type: "thinking_delta", thinking: "think" });
-  assert.deepEqual(events[5]?.data.delta, { type: "text_delta", text: "Hello" });
+  assert.deepEqual(events[2]?.data.content_block, {
+    type: "thinking",
+    thinking: "",
+  });
+  assert.deepEqual(events[3]?.data.delta, {
+    type: "thinking_delta",
+    thinking: "think",
+  });
+  assert.deepEqual(events[5]?.data.delta, {
+    type: "text_delta",
+    text: "Hello",
+  });
   assert.deepEqual(events[6]?.data.content_block, {
     type: "tool_use",
     id: "call_1",
@@ -250,7 +275,12 @@ test("commandCodeStreamToAnthropic converts text, reasoning, tool input, finish,
 test("commandCodeStreamToAnthropic emits a consolidated final tool-call when no input deltas arrive", async () => {
   const stream = commandCodeStreamToAnthropic(
     streamFromLines([
-      { type: "tool-call", toolCallId: "call_final", toolName: "Read", input: { path: "/tmp/a" } },
+      {
+        type: "tool-call",
+        toolCallId: "call_final",
+        toolName: "Read",
+        input: { path: "/tmp/a" },
+      },
       { type: "finish", finishReason: "stop" },
     ]),
     { messageId: "msg_test", model: "commandcode/model", inputTokens: 1 },
@@ -310,7 +340,10 @@ test("commandCodeStreamToAnthropic renders CommandCode 200 error objects as text
 
 test("CommandCodeProvider lists CommandCode models from the official docs and requires an API key", async () => {
   await assert.rejects(
-    new CommandCodeProvider({ ...commandCodeConfig(), apiKey: "" }).listModels(),
+    new CommandCodeProvider({
+      ...commandCodeConfig(),
+      apiKey: "",
+    }).listModels(),
     /Command Code API key is missing/,
   );
 

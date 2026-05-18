@@ -158,10 +158,19 @@ the daemon source of truth is:
 
 - `PROVIDER_IDS`, defaults, labels, CLI flags, and OAuth membership in
   `packages/daemon/src/config/schema.ts`
-- Provider implementation in `packages/daemon/src/proxy/providers/`
 - Registry entry in `packages/daemon/src/proxy/providers/registry.ts`
+- Declarative factories in `packages/daemon/src/proxy/providers/provider-factory.ts`
+  for simple OpenAI Chat or Anthropic Messages providers
+- Dedicated provider implementation in `packages/daemon/src/proxy/providers/`
+  only for custom behavior such as OAuth, dynamic headers, custom catalogs,
+  base URL normalization, custom streams, or dual transport dispatch
 - Focused tests for auth, model mapping, stream transformation, and custom
   parsing/refresh code
 
 Panel additions are usually limited to icons, suggested models, API key links,
 and OAuth presentation text.
+
+The current provider architecture intentionally avoids one file per provider
+when that file would only contain `id`, `label`, and `extends Transport`.
+Plain providers are registered with `createOpenAIProvider("<id>")` or
+`createAnthropicProvider("<id>")`; custom providers keep their own files.

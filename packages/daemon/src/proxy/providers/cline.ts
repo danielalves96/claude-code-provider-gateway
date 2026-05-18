@@ -8,7 +8,6 @@ import {
   refreshClineAccessToken,
   shouldRefreshClineToken,
 } from "./cline-auth.js";
-import { stripGatewayProviderPrefix } from "./model-prefix.js";
 import { OpenAIChatTransport } from "./transport-openai.js";
 
 const FALLBACK_CLINE_MODELS = [
@@ -83,10 +82,6 @@ export class ClineProvider extends OpenAIChatTransport {
 
   protected override baseUrl(): string {
     return (this.config.baseUrl ?? "https://api.cline.bot/api/v1").replace(/\/$/, "");
-  }
-
-  protected resolveModel(requestedModel: string): string {
-    return stripGatewayProviderPrefix(requestedModel, this.id);
   }
 
   private async ensureFreshToken(): Promise<void> {

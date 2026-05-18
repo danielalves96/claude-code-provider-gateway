@@ -14,13 +14,6 @@ export class GoogleProvider extends OpenAIChatTransport {
     return "Google AI (Gemini)";
   }
 
-  protected resolveModel(requestedModel: string): string {
-    // Strip "google/" prefix if routing injected it
-    const parts = requestedModel.split("/");
-    if (parts[0] === "google") return parts.slice(1).join("/");
-    return requestedModel;
-  }
-
   override async listModels(): Promise<ModelInfo[]> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       throw new Error(this.missingApiKeyMessage());

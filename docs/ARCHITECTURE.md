@@ -60,6 +60,8 @@ claude-code-provider-gateway/
 │   │   │   │   └── stream-result.ts      # Stream wrapping + response capture helpers
 │   │   │   ├── token-savers/             # RTK compression + Caveman prompt injection
 │   │   │   └── providers/               # LLM provider implementations
+│   │   │       ├── registry.ts          # Provider constructor map + lazy cache
+│   │   │       ├── provider-factory.ts  # Declarative providers for simple transports
 │   │   │       ├── copilot.ts            # GitHub Copilot (dual-transport)
 │   │   │       ├── copilot-chat-stream.ts  # OpenAI Chat stream → Anthropic SSE
 │   │   │       ├── copilot-native-anthropic.ts  # Native Anthropic protocol for claude-* models
@@ -68,7 +70,7 @@ claude-code-provider-gateway/
 │   │   │       ├── openai-account-responses.ts  # Responses API request builder
 │   │   │       ├── openai-account-stream.ts     # Responses API stream transformer
 │   │   │       ├── commandcode.ts        # Custom AI SDK v5 NDJSON → Anthropic SSE
-│   │   │       └── ...                   # Other providers (40 total)
+│   │   │       └── ...                   # Custom providers, transports, helpers, tests
 │   │   ├── runtime/                      # Daemon lifecycle, sessions, stats
 │   │   │   ├── sessions.ts               # Session orchestration (start, end, heartbeat)
 │   │   │   ├── session-types.ts          # SessionRecord, SessionModelStat, etc.
@@ -154,29 +156,33 @@ In `all` mode, provider-discovered models are exposed to Claude Code with a gate
 
 ### 3. Provider Layer (`packages/daemon/src/proxy/providers/`)
 
-Abstract class hierarchy:
+The provider layer is intentionally split between declarative providers and
+custom providers:
+
+- Simple API-compatible providers are registered in `registry.ts` with
+  `createOpenAIProvider("<id>")` or `createAnthropicProvider("<id>")`.
+- Small static differences, such as `requiresApiKey: false`, `x-api-key`
+  auth, or extra static headers, are expressed as factory options.
+- Providers get dedicated files only when they have behavior that needs code:
+  OAuth, token refresh, dynamic headers, provider-specific model catalogs,
+  base URL normalization, custom streams, or dual transport dispatch.
+
+Transport hierarchy:
 
 ```
 BaseProvider (abstract)
 │
 ├── AnthropicMessagesTransport (abstract)
 │   └── Sends POST {baseUrl}/messages with anthropic-version header
-│       ├── OpenRouter
-│       ├── DeepSeek
-│       ├── Ollama
-│       ├── LM Studio
-│       ├── llama.cpp
+│       ├── Plain providers via createAnthropicProvider()
+│       ├── DeepSeek / Ollama custom subclasses
 │       └── AnthropicPassthrough (direct Anthropic API)
 │
 ├── OpenAIChatTransport (abstract)
 │   └── Converts Anthropic → OpenAI Chat, sends POST {baseUrl}/chat/completions
-│       ├── NVIDIA NIM
-│       ├── Kimi (Moonshot)
-│       ├── Google AI (Gemini)
-│       ├── Groq, xAI, Mistral, Cerebras, Together, Fireworks
-│       ├── GLM China, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius
-│       ├── Volcengine Ark, BytePlus, Alibaba Bailian, OpenCode Go
-│       └── Xiaomi MiMo, Cohere, Blackbox, HuggingFace, Ollama Cloud
+│       ├── Plain providers via createOpenAIProvider()
+│       ├── Google AI (Gemini) custom catalog subclass
+│       └── OAuth-backed subclasses such as Kilo Code and Cline
 │
 ├── OpenAIAccountProvider
 │   └── Custom: PKCE OAuth + OpenAI Responses API + model catalog
@@ -202,10 +208,18 @@ Additional provider shapes:
 - **Command Code**: `commandcode.ts` extends `BaseProvider` directly because it
   posts to a custom `/alpha/generate` endpoint and transforms AI SDK v5 NDJSON
   events into Anthropic-compatible SSE.
-- **Regional Anthropic-compatible providers**: OpenRouter, DeepSeek, GLM,
-  Minimax, and Minimax China use `AnthropicMessagesTransport`.
+- **Declarative providers**: `provider-factory.ts` creates lightweight
+  subclasses for providers whose behavior is fully described by transport,
+  provider id, label, and static options.
+- **Regional Anthropic-compatible providers**: OpenRouter, GLM, Minimax,
+  Minimax China, LM Studio, and llama.cpp are declarative
+  `AnthropicMessagesTransport` providers. DeepSeek and Ollama keep dedicated
+  subclasses for custom model listing or base URL handling.
 
-**ProviderRegistry** (`registry.ts`) — cached factory pattern. Providers are instantiated on first access and cached until config changes trigger a cache clear.
+**ProviderRegistry** (`registry.ts`) — cached constructor map. Providers are
+instantiated on first access and cached until config changes trigger a cache
+clear. Simple providers are registered with `createOpenAIProvider()` or
+`createAnthropicProvider()` instead of one file per provider.
 
 **api-client.ts** — shared HTTP client with:
 - Configurable timeouts via `AbortController`
@@ -213,6 +227,8 @@ Additional provider shapes:
 - Model mapping (provider model → Anthropic `ModelInfo` format)
 
 **model-prefix.ts** — `stripGatewayProviderPrefix()` strips `anthropic/` or `<providerId>/` gateway prefixes from the requested model before forwarding to the provider.
+Both shared transports call it by default, so simple providers do not implement
+their own model resolver.
 
 #### Transport Protocols
 

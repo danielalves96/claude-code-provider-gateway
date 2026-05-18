@@ -66,7 +66,7 @@ This starts the desktop app, panel dev server, and hot-reload daemon. See [docs/
 - Keep end-user installation desktop-first. Do not introduce npm as the user install path unless the project direction changes explicitly.
 - Avoid storing secrets in plaintext config.
 - Include screenshots or screen recordings for visible UI changes.
-- Keep provider-specific hacks inside provider classes or transport layers.
+- Keep provider-specific behavior inside provider classes, transport layers, or the declarative provider factory/registry when it is a static option.
 
 ## Common Change Recipes
 
@@ -78,8 +78,9 @@ provider behavior; the panel should not contain hidden routing rules.
 Most provider changes touch:
 
 - `packages/daemon/src/config/schema.ts`
-- `packages/daemon/src/proxy/providers/<provider>.ts`
 - `packages/daemon/src/proxy/providers/registry.ts`
+- `packages/daemon/src/proxy/providers/provider-factory.ts` when a reusable static option is missing
+- `packages/daemon/src/proxy/providers/<provider>.ts` only for custom behavior that cannot be expressed declaratively
 - `packages/panel/public/providers/<provider_id>.png`
 - `packages/panel/src/features/providers/*` only for presentation details
 
@@ -170,9 +171,11 @@ When adding or changing a provider:
 
 1. Keep provider protocol details in `packages/daemon/src/proxy/providers/`.
 2. Add defaults, labels, and CLI flags in `packages/daemon/src/config/schema.ts`.
-3. Make `listModels()` and `testConnection()` useful; the desktop UI depends on both.
-4. Preserve Anthropic-compatible streaming semantics.
-5. Document provider limitations when tools, streaming, images, thinking, or model discovery are partial.
+3. Prefer `createOpenAIProvider()` or `createAnthropicProvider()` in the registry for simple API-compatible providers.
+4. Add a provider file only for OAuth, dynamic headers, custom catalogs, custom base URLs, custom streams, or dual transport dispatch.
+5. Make `listModels()` and `testConnection()` useful; the desktop UI depends on both.
+6. Preserve Anthropic-compatible streaming semantics.
+7. Document provider limitations when tools, streaming, images, thinking, or model discovery are partial.
 
 Provider PRs should also state:
 

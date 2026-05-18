@@ -9,10 +9,11 @@ the daemon API instead of hardcoding provider behavior wherever possible.
 
 Decide which transport shape the provider uses:
 
-| Provider API | Base class |
+| Provider API | Registry shape |
 | --- | --- |
-| Anthropic Messages compatible | `AnthropicMessagesTransport` |
-| OpenAI Chat Completions compatible | `OpenAIChatTransport` |
+| Anthropic Messages compatible with no custom behavior | `createAnthropicProvider("<id>")` |
+| OpenAI Chat Completions compatible with no custom behavior | `createOpenAIProvider("<id>")` |
+| Anthropic/OpenAI compatible with minor static options | Factory options in `provider-factory.ts` |
 | OAuth-backed OpenAI Chat provider | `OpenAIChatTransport` with OAuth credential overrides |
 | OAuth placeholder while the flow is not ported | `OAuthStubProvider` |
 | Custom auth, catalog, or streaming format | `BaseProvider` |
@@ -28,23 +29,97 @@ reference.
 
 ## Implementation Checklist
 
-1. Add the provider implementation in `packages/daemon/src/proxy/providers/<provider>.ts`.
-2. Register the provider constructor in `packages/daemon/src/proxy/providers/registry.ts`.
-3. Add the provider id to `PROVIDER_IDS` in `packages/daemon/src/config/schema.ts`.
-4. Add provider defaults in `PROVIDER_DEFAULTS`.
-5. Add the display label in `PROVIDER_LABELS`.
-6. Add a CLI flag in `CLI_FLAGS` when the provider should be launchable with `ccpg --ProviderName`.
-7. Add the provider to `OAUTH_PROVIDER_IDS` when it is OAuth-backed.
-8. Add or update panel provider metadata only when the daemon API cannot derive it:
+1. Add the provider id to `PROVIDER_IDS` in `packages/daemon/src/config/schema.ts`.
+2. Add provider defaults in `PROVIDER_DEFAULTS`.
+3. Add the display label in `PROVIDER_LABELS`.
+4. Add a CLI flag in `CLI_FLAGS` when the provider should be launchable with `ccpg --ProviderName`.
+5. Register the provider constructor in `packages/daemon/src/proxy/providers/registry.ts`.
+   - For a plain OpenAI-compatible provider, use `createOpenAIProvider("<id>")`.
+   - For a plain Anthropic-compatible provider, use `createAnthropicProvider("<id>")`.
+   - For static variations, pass factory options such as `requiresApiKey: false`, `authHeaderStyle: "x-api-key"`, or `extraHeaders`.
+   - Add a dedicated `packages/daemon/src/proxy/providers/<provider>.ts` only when factory options are not enough.
+6. Add the provider to `OAUTH_PROVIDER_IDS` when it is OAuth-backed.
+7. Add or update panel provider metadata only when the daemon API cannot derive it:
    - `packages/panel/public/providers/<id>.png` for the card icon.
    - `packages/panel/src/features/providers/constants.ts` for local, OAuth, device-flow, or coming-soon grouping.
    - `packages/panel/src/features/providers/data/suggestedModels.ts` when model discovery is empty or incomplete.
    - `packages/panel/src/features/providers/apiKeyLinks.ts` when the provider has a useful key-management page.
    - `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth labels, descriptions, and button text.
-9. Add tests before opening the PR.
+8. Add tests before opening the PR.
 
 Keep `docs/PROVIDERS.md` in sync when the provider is user-visible. If the
 change is part of a migration batch, update `PROVIDERS_MIGRATION.md` too.
+
+## Declarative Provider Pattern
+
+Most OpenAI-compatible providers should not get their own file. Put them in the
+registry:
+
+```ts
+import { createOpenAIProvider } from "./provider-factory.js";
+
+const PROVIDER_MAP = {
+  example: createOpenAIProvider("example"),
+};
+```
+
+For a plain Anthropic Messages provider:
+
+```ts
+import { createAnthropicProvider } from "./provider-factory.js";
+
+const PROVIDER_MAP = {
+  example: createAnthropicProvider("example"),
+};
+```
+
+Use factory options for small static differences:
+
+```ts
+const PROVIDER_MAP = {
+  local_example: createAnthropicProvider("local_example", { requiresApiKey: false }),
+  x_key_example: createAnthropicProvider("x_key_example", { authHeaderStyle: "x-api-key" }),
+  header_example: createOpenAIProvider("header_example", {
+    extraHeaders: { "X-Product": "ccpg" },
+  }),
+};
+```
+
+Create a dedicated provider file only when the behavior cannot be expressed
+declaratively. Good reasons include:
+
+- OAuth token refresh or non-API-key credentials.
+- Custom `baseUrl()` normalization.
+- Provider-specific `listModels()`.
+- Dynamic headers based on config.
+- Non-standard request or stream formats.
+- Dual protocol dispatch.
+
+### Dedicated Provider Pattern
+
+When a provider does need code, keep it focused:
+
+```ts
+import { OpenAIChatTransport } from "./transport-openai.js";
+
+export class ExampleProvider extends OpenAIChatTransport {
+  get id() {
+    return "example";
+  }
+
+  get label() {
+    return "Example";
+  }
+
+  protected override extraHeaders(): Record<string, string> {
+    return { "X-Example-Tenant": this.config.oauth?.orgId ?? "" };
+  }
+}
+```
+
+The shared transports already strip gateway model prefixes through
+`stripGatewayProviderPrefix()`, so most providers do not need to override
+`resolveModel()`.
 
 ## Required Tests
 
@@ -73,26 +148,15 @@ For custom stream formats, add focused tests for:
 - Error events and malformed provider chunks.
 - Model prefix stripping and manual model merging, when applicable.
 
-## Provider Implementation Pattern
-
-```ts
-import { OpenAIChatTransport } from './transport-openai.js'
-
-export class ExampleProvider extends OpenAIChatTransport {
-  get id() { return 'example' }
-  get label() { return 'Example' }
-
-  protected resolveModel(requestedModel: string): string {
-    return requestedModel
-  }
-}
-```
-
 ### Handling gateway model prefixes
 
 If your provider is listed under the `all` model mode, Claude Code will send
 requests with gateway-prefixed model names such as `anthropic/example/model-id`
-or `example/model-id`. Strip these before forwarding:
+or `example/model-id`. `OpenAIChatTransport` and `AnthropicMessagesTransport`
+strip those prefixes automatically.
+
+Only call the helper yourself when implementing a custom `BaseProvider` or a
+custom model resolver:
 
 ```ts
 import { stripGatewayProviderPrefix } from './model-prefix.js'

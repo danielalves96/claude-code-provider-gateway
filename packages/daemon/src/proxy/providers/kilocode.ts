@@ -1,4 +1,3 @@
-import { stripGatewayProviderPrefix } from "./model-prefix.js";
 import { OpenAIChatTransport } from "./transport-openai.js";
 
 export class KiloCodeProvider extends OpenAIChatTransport {
@@ -30,9 +29,5 @@ export class KiloCodeProvider extends OpenAIChatTransport {
 
   protected override baseUrl(): string {
     return (this.config.baseUrl ?? "https://api.kilo.ai/api/openrouter").replace(/\/$/, "");
-  }
-
-  protected resolveModel(requestedModel: string): string {
-    return stripGatewayProviderPrefix(requestedModel, this.id);
   }
 }

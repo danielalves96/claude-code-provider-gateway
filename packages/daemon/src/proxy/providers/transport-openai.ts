@@ -17,10 +17,12 @@ import {
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
 import type { StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
+import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
 export abstract class OpenAIChatTransport extends BaseProvider {
-  // Subclasses set the actual model name to send to the provider
-  protected abstract resolveModel(requestedModel: string): string;
+  protected resolveModel(requestedModel: string): string {
+    return stripGatewayProviderPrefix(requestedModel, this.id);
+  }
 
   async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {

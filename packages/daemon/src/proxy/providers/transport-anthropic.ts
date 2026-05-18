@@ -16,14 +16,14 @@ import {
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
 import type { StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
+import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
 // Beta features: coding UX + interleaved thinking
 const ANTHROPIC_BETA = "claude-code-20250219,interleaved-thinking-2025-05-14";
 
 export abstract class AnthropicMessagesTransport extends BaseProvider {
-  // Override to strip provider-prefixed model IDs (e.g. "glm/glm-5" → "glm-5")
   protected resolveModel(model: string): string {
-    return model;
+    return stripGatewayProviderPrefix(model, this.id);
   }
 
   // Override to switch to x-api-key auth (Anthropic standard) vs Authorization: Bearer
