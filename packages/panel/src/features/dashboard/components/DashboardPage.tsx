@@ -3,10 +3,8 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { useGatewayStatus } from "../hooks/useGatewayStatus.js";
 import { useLaunchCommands } from "../hooks/useLaunchCommands.js";
-import { useLiveLogs } from "../hooks/useLiveLogs.js";
 import { useShellSetup } from "../hooks/useShellSetup.js";
 import { EnabledProvidersCard } from "./EnabledProvidersCard.js";
-import { LiveLogsPanel } from "./LiveLogsPanel.js";
 import { QuickLaunchCard } from "./QuickLaunchCard.js";
 import { ShellSetupCard } from "./ShellSetupCard.js";
 import { StatusOverview } from "./StatusOverview.js";
@@ -18,7 +16,6 @@ export default function DashboardPage() {
   const { status, stats } = useGatewayStatus();
   const { items, error: launchError } = useLaunchCommands();
   const { setup, refresh } = useShellSetup();
-  const { logs, paused, togglePaused, clear } = useLiveLogs();
   const [setupDismissed, setSetupDismissed] = useState(
     () => window.localStorage.getItem(DISMISSED_SHELL_SETUP_KEY) === "true",
   );
@@ -51,7 +48,6 @@ export default function DashboardPage() {
       {!hasTerminalConfigured && shellSetupCard}
       <QuickLaunchCard items={items} error={launchError} />
       {hasTerminalConfigured && shellSetupCard}
-      <LiveLogsPanel logs={logs} paused={paused} onTogglePaused={togglePaused} onClear={clear} />
     </Flex>
   );
 }

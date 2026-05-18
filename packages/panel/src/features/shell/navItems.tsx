@@ -1,6 +1,7 @@
 import {
   ApiOutlined,
   DashboardOutlined,
+  FileTextOutlined,
   ForkOutlined,
   HistoryOutlined,
   SettingOutlined,
@@ -14,6 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "/providers", icon: <ApiOutlined />, label: "Providers" },
   { key: "/routing", icon: <ForkOutlined />, label: "Routing" },
   { key: "/history", icon: <HistoryOutlined />, label: "History" },
+  { key: "/logs", icon: <FileTextOutlined />, label: "Server Logs" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 
