@@ -1,9 +1,10 @@
 export function stripGatewayProviderPrefix(requestedModel: string, providerId: string): string {
-  if (requestedModel.startsWith("anthropic/")) {
-    return requestedModel.slice("anthropic/".length);
+  let model = requestedModel;
+  if (model.startsWith("anthropic/")) {
+    model = model.slice("anthropic/".length);
   }
-  if (requestedModel.startsWith(`${providerId}/`)) {
-    return requestedModel.slice(providerId.length + 1);
+  if (model.startsWith(`${providerId}/`)) {
+    return model.slice(providerId.length + 1);
   }
-  return requestedModel;
+  return model;
 }

@@ -4,6 +4,7 @@ import type { Config } from "../config/schema.js";
 import { ProviderRegistry } from "../proxy/providers/registry.js";
 
 export type OAuthFlow = {
+  provider?: "cline" | "openai_account";
   verifier: string;
   status: "pending" | "success" | "error";
   error?: string;
@@ -27,6 +28,7 @@ export class PanelRuntime {
   readonly registry: ProviderRegistry;
   readonly oauthFlows = new Map<string, OAuthFlow>();
   readonly copilotFlows = new Map<string, CopilotFlow>();
+  readonly kilocodeFlows = new Map<string, CopilotFlow>();
 
   constructor(
     initialConfig: Config,

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { writePrivateFile } from "../core/files/private-file.js";
 import { getConfigPath, getMasterKeyPath, getSecretsPath } from "./paths.js";
 import type { Config, ProviderConfig, ProviderId } from "./schema.js";
-import { PROVIDER_DEFAULTS, PROVIDER_IDS } from "./schema.js";
+import { OAUTH_PROVIDER_IDS, PROVIDER_DEFAULTS, PROVIDER_IDS } from "./schema.js";
 import { extractSecretsToStore, hydrateSecretsFromStore } from "./secrets/config-splitter.js";
 import { EncryptedFileSecretStore } from "./secrets/encrypted-file-store.js";
 import { resolveMasterKey } from "./secrets/master-key.js";
@@ -32,11 +32,12 @@ export function getSecretStore(): SecretStore {
 }
 
 function buildDefaultProviderConfig(id: ProviderId): ProviderConfig {
+  const isOAuth = OAUTH_PROVIDER_IDS.has(id);
   return {
     enabled: false,
     apiKey: "",
-    authType: id === "openai_account" || id === "copilot" ? "oauth" : "api_key",
-    oauth: id === "openai_account" || id === "copilot" ? {} : undefined,
+    authType: isOAuth ? "oauth" : "api_key",
+    oauth: isOAuth ? {} : undefined,
     baseUrl: PROVIDER_DEFAULTS[id]?.baseUrl,
     rateLimit: 40,
     rateWindow: 60,
@@ -89,6 +90,10 @@ export function buildDefaultConfig(): Config {
     },
     activeProvider: "nvidia_nim",
     modelMode: "single",
+    panelSettings: {
+      favoriteProviders: [],
+      favoritesTipDismissed: false,
+    },
   };
 }
 

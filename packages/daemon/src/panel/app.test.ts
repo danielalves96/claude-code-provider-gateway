@@ -248,6 +248,41 @@ test("PUT /api/config persists token saver settings and returns them on GET", as
   });
 });
 
+test("PUT /api/config tolerates legacy config without panel settings", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  delete (config as Partial<Config>).panelSettings;
+  const app = testPanelApp(config);
+
+  const putResponse = await app.request("/api/config", {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      panelSettings: {
+        favoriteProviders: ["openrouter"],
+      },
+    }),
+  });
+  assert.equal(putResponse.status, 200);
+
+  const getResponse = await app.request("/api/config", {
+    headers: { Authorization: "Bearer secret" },
+  });
+  const body = (await getResponse.json()) as {
+    panelSettings?: {
+      favoriteProviders: string[];
+      favoritesTipDismissed: boolean;
+    };
+  };
+  assert.deepEqual(body.panelSettings, {
+    favoriteProviders: ["openrouter"],
+    favoritesTipDismissed: false,
+  });
+});
+
 test("PUT /api/config rejects invalid proxy URL when enabled", async () => {
   const config = buildDefaultConfig();
   config.server.authToken = "secret";

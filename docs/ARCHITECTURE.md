@@ -60,6 +60,8 @@ claude-code-provider-gateway/
 │   │   │   │   └── stream-result.ts      # Stream wrapping + response capture helpers
 │   │   │   ├── token-savers/             # RTK compression + Caveman prompt injection
 │   │   │   └── providers/               # LLM provider implementations
+│   │   │       ├── registry.ts          # Provider constructor map + lazy cache
+│   │   │       ├── provider-factory.ts  # Declarative providers for simple transports
 │   │   │       ├── copilot.ts            # GitHub Copilot (dual-transport)
 │   │   │       ├── copilot-chat-stream.ts  # OpenAI Chat stream → Anthropic SSE
 │   │   │       ├── copilot-native-anthropic.ts  # Native Anthropic protocol for claude-* models
@@ -67,7 +69,8 @@ claude-code-provider-gateway/
 │   │   │       ├── openai-account.ts     # OpenAI Account provider
 │   │   │       ├── openai-account-responses.ts  # Responses API request builder
 │   │   │       ├── openai-account-stream.ts     # Responses API stream transformer
-│   │   │       └── ...                   # Other providers (10 total)
+│   │   │       ├── commandcode.ts        # Custom AI SDK v5 NDJSON → Anthropic SSE
+│   │   │       └── ...                   # Custom providers, transports, helpers, tests
 │   │   ├── runtime/                      # Daemon lifecycle, sessions, stats
 │   │   │   ├── sessions.ts               # Session orchestration (start, end, heartbeat)
 │   │   │   ├── session-types.ts          # SessionRecord, SessionModelStat, etc.
@@ -153,25 +156,33 @@ In `all` mode, provider-discovered models are exposed to Claude Code with a gate
 
 ### 3. Provider Layer (`packages/daemon/src/proxy/providers/`)
 
-Abstract class hierarchy:
+The provider layer is intentionally split between declarative providers and
+custom providers:
 
-```
+- Simple API-compatible providers are registered in `registry.ts` with
+  `createOpenAIProvider("<id>")` or `createAnthropicProvider("<id>")`.
+- Small static differences, such as `requiresApiKey: false`, `x-api-key`
+  auth, or extra static headers, are expressed as factory options.
+- Providers get dedicated files only when they have behavior that needs code:
+  OAuth, token refresh, dynamic headers, provider-specific model catalogs,
+  base URL normalization, custom streams, or dual transport dispatch.
+
+Transport hierarchy:
+
+```text
 BaseProvider (abstract)
 │
 ├── AnthropicMessagesTransport (abstract)
 │   └── Sends POST {baseUrl}/messages with anthropic-version header
-│       ├── OpenRouter
-│       ├── DeepSeek
-│       ├── Ollama
-│       ├── LM Studio
-│       ├── llama.cpp
+│       ├── Plain providers via createAnthropicProvider()
+│       ├── DeepSeek / Ollama custom subclasses
 │       └── AnthropicPassthrough (direct Anthropic API)
 │
 ├── OpenAIChatTransport (abstract)
 │   └── Converts Anthropic → OpenAI Chat, sends POST {baseUrl}/chat/completions
-│       ├── NVIDIA NIM
-│       ├── Kimi (Moonshot)
-│       └── Google AI
+│       ├── Plain providers via createOpenAIProvider()
+│       ├── Google AI (Gemini) custom catalog subclass
+│       └── OAuth-backed subclasses such as Kilo Code and Cline
 │
 ├── OpenAIAccountProvider
 │   └── Custom: PKCE OAuth + OpenAI Responses API + model catalog
@@ -184,7 +195,31 @@ BaseProvider (abstract)
         └── other models     → copilot-chat-stream.ts (OpenAI Chat stream → Anthropic SSE)
 ```
 
-**ProviderRegistry** (`registry.ts`) — cached factory pattern. Providers are instantiated on first access and cached until config changes trigger a cache clear.
+Additional provider shapes:
+
+- **OAuth OpenAI-compatible providers**: `kilocode.ts` and `cline.ts` use the
+  OpenAI Chat transport but source credentials from OAuth tokens instead of API
+  keys. Kilo Code uses device flow auth plus an optional organization header.
+  Cline uses browser authorization and refreshes access tokens before model
+  listing or streaming.
+- **OAuth placeholders**: `kiro.ts` and `iflow.ts` extend `OAuthStubProvider`.
+  They are visible in the UI as coming soon and return a clear 501 error if
+  used before their OAuth flows are ported.
+- **Command Code**: `commandcode.ts` extends `BaseProvider` directly because it
+  posts to a custom `/alpha/generate` endpoint and transforms AI SDK v5 NDJSON
+  events into Anthropic-compatible SSE.
+- **Declarative providers**: `provider-factory.ts` creates lightweight
+  subclasses for providers whose behavior is fully described by transport,
+  provider id, label, and static options.
+- **Regional Anthropic-compatible providers**: OpenRouter, GLM, Minimax,
+  Minimax China, LM Studio, and llama.cpp are declarative
+  `AnthropicMessagesTransport` providers. DeepSeek and Ollama keep dedicated
+  subclasses for custom model listing or base URL handling.
+
+**ProviderRegistry** (`registry.ts`) — cached constructor map. Providers are
+instantiated on first access and cached until config changes trigger a cache
+clear. Simple providers are registered with `createOpenAIProvider()` or
+`createAnthropicProvider()` instead of one file per provider.
 
 **api-client.ts** — shared HTTP client with:
 - Configurable timeouts via `AbortController`
@@ -192,24 +227,54 @@ BaseProvider (abstract)
 - Model mapping (provider model → Anthropic `ModelInfo` format)
 
 **model-prefix.ts** — `stripGatewayProviderPrefix()` strips `anthropic/` or `<providerId>/` gateway prefixes from the requested model before forwarding to the provider.
+Both shared transports call it by default, so simple providers do not implement
+their own model resolver.
 
 #### Transport Protocols
 
 **AnthropicMessagesTransport**:
 - Sends to `POST {baseUrl}/messages` with `anthropic-version: 2023-06-01`
 - Streams response directly as Anthropic SSE events
-- Used by: OpenRouter, DeepSeek, Ollama, LM Studio, llama.cpp
+- Used by: OpenRouter, DeepSeek, Ollama, LM Studio, llama.cpp, GLM, Minimax, Minimax China
 
 **OpenAIChatTransport**:
 - Converts Anthropic Messages → OpenAI Chat Completions format
 - Sends to `POST {baseUrl}/chat/completions`
 - Transforms OpenAI streaming chunks (delta-based) → Anthropic SSE events (block-based)
 - Handles: text content, tool calls, finish reasons (`stop` → `end_turn`, `tool_calls` → `tool_use`)
-- Used by: NVIDIA NIM, Kimi, Google AI
+- Used by: NVIDIA NIM, Kimi, Google AI (Gemini), Groq, xAI, Mistral, Cerebras, Together, Fireworks, GLM China, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, Volcengine Ark, BytePlus, Alibaba Bailian, OpenCode Go, Xiaomi MiMo, Cohere, Blackbox, HuggingFace, Ollama Cloud, Kilo Code, and Cline
 
 **Custom providers** handle their own API and auth:
 - `openai-account.ts` — OAuth token management, model fixup (`o1-mini`/`o3-mini` → actual model IDs), delegates to `openai-account-responses.ts` for request building and `openai-account-stream.ts` for the Responses API stream format
 - `copilot.ts` — dual-token lifecycle (GH OAuth token → 25-min Copilot API token), editor version headers. Routes claude-* models through native Anthropic protocol (`copilot-native-anthropic.ts`) to preserve tool_use, thinking, and citation blocks; other models go through `copilot-chat-stream.ts` (OpenAI Chat format)
+- `commandcode.ts` — custom request builder and stream transformer. It accepts API keys, exposes a fixed/fetched model list, converts Anthropic messages/tools/tool results to Command Code request blocks, and converts text, reasoning, tool-call, and finish events back to Anthropic SSE.
+
+See [Providers](PROVIDERS.md) for the complete provider catalog, provider IDs,
+auth modes, and CLI flags.
+
+### 3.1 Panel Provider Management
+
+The React panel treats the daemon as the provider source of truth, then layers
+UI behavior on top:
+
+- Provider grouping is derived from configuration type in
+  `packages/panel/src/features/providers/components/ProviderGridSection.tsx`.
+- OAuth, local, and coming-soon classifications live in
+  `packages/panel/src/features/providers/constants.ts`.
+- Favorite providers are persisted under
+  `config.panelSettings.favoriteProviders` and ordered with
+  `SortableFavoritesGrid`.
+- Suggested manual models live in
+  `packages/panel/src/features/providers/data/suggestedModels.ts`.
+- API key documentation links live in
+  `packages/panel/src/features/providers/apiKeyLinks.ts`.
+- OAuth presentation text and provider-specific UI labels live in
+  `packages/panel/src/features/providers/oauthPresentation.ts`.
+
+The provider config modal discovers models as soon as a provider is ready. If
+discovery returns no models, or if a provider already has manually configured
+models, the panel shows the manual model picker. This keeps providers with weak
+catalog APIs usable without special-casing routing in the daemon.
 
 ### 4. SSE Stream Handling (`packages/daemon/src/core/sse/writer.ts`)
 
@@ -256,6 +321,7 @@ secret.key (32-byte hex master key) or CC_GATEWAY_MASTER_KEY env var
 - **Schema** (`schema.ts`) — TypeScript types, provider defaults (base URLs, labels), CLI flag mappings
 - **Validation** (`validation.ts`) — runtime normalization with default merging
 - **Token savers** (`Config.tokenSavers`) — non-secret toggles for RTK compression and Caveman level
+- **Panel settings** (`Config.panelSettings`) — non-secret UI state, currently favorite provider order and dismissed helper tips
 - **Secret splitting** (`secrets/config-splitter.ts`) — extracts API keys, OAuth tokens, and auth token from config JSON into encrypted store
 - **Encrypted store** (`secrets/encrypted-file-store.ts`) — AES-256-GCM with random IV per write
 - **Master key** (`secrets/master-key.ts`) — resolution order: env var → stored file → generate new

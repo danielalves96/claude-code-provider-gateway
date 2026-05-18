@@ -56,6 +56,16 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
     },
     activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
+    panelSettings: {
+      favoriteProviders: normalizeProviderIdList(
+        config.panelSettings?.favoriteProviders,
+        defaults.panelSettings.favoriteProviders,
+      ),
+      favoritesTipDismissed: booleanOrDefault(
+        config.panelSettings?.favoritesTipDismissed,
+        defaults.panelSettings.favoritesTipDismissed,
+      ),
+    },
   };
 }
 
@@ -97,6 +107,10 @@ function normalizeOAuth(
     expiresAt: optionalPositiveNumber(value.expiresAt),
     accountId: optionalString(value.accountId),
     planType: optionalString(value.planType),
+    copilotToken: optionalString(value.copilotToken),
+    copilotExpiresAt: optionalPositiveNumber(value.copilotExpiresAt),
+    copilotEndpoint: optionalString(value.copilotEndpoint),
+    orgId: optionalString(value.orgId),
   };
 }
 
@@ -185,4 +199,19 @@ function cavemanLevelOrDefault(value: unknown, fallback: CavemanLevel): CavemanL
   return typeof value === "string" && CAVEMAN_LEVELS.has(value as CavemanLevel)
     ? (value as CavemanLevel)
     : fallback;
+}
+
+function normalizeProviderIdList(value: unknown, fallback: ProviderId[]): ProviderId[] {
+  if (!Array.isArray(value)) return fallback;
+  const seen = new Set<ProviderId>();
+  const out: ProviderId[] = [];
+  for (const item of value) {
+    if (typeof item === "string" && PROVIDER_ID_SET.has(item)) {
+      if (!seen.has(item as ProviderId)) {
+        seen.add(item as ProviderId);
+        out.push(item as ProviderId);
+      }
+    }
+  }
+  return out;
 }

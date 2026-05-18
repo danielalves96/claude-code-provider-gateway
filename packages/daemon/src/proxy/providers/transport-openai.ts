@@ -17,10 +17,12 @@ import {
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
 import type { StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
+import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
 export abstract class OpenAIChatTransport extends BaseProvider {
-  // Subclasses set the actual model name to send to the provider
-  protected abstract resolveModel(requestedModel: string): string;
+  protected resolveModel(requestedModel: string): string {
+    return stripGatewayProviderPrefix(requestedModel, this.id);
+  }
 
   async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
@@ -198,7 +200,17 @@ export abstract class OpenAIChatTransport extends BaseProvider {
       headers: { Authorization: this.authHeader(), ...this.extraHeaders() },
       timeoutMs: this.requestTimeoutMs(),
     });
-    return mapProviderModels(json.data ?? [], this.id, this.label);
+    const discovered = mapProviderModels(json.data ?? [], this.id, this.label);
+    const discoveredIds = new Set(discovered.map((m) => m.id));
+    const extra = (this.config.models ?? [])
+      .filter((id) => !discoveredIds.has(`anthropic/${this.id}/${id}`))
+      .map((id) => ({
+        type: "model" as const,
+        id: `anthropic/${this.id}/${id}`,
+        display_name: `${this.label} · ${id}`,
+        created_at: new Date(0).toISOString(),
+      }));
+    return [...discovered, ...extra];
   }
 
   protected extraHeaders(): Record<string, string> {

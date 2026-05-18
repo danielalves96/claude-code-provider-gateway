@@ -21,7 +21,7 @@ export function registerProviderRoutes(app: Hono, runtime: PanelRuntime): void {
         models: pc.models ?? [],
         disabledModels: pc.disabledModels ?? [],
         authType: pc.authType,
-        oauth: oauth?.accountId
+        oauth: oauth?.accessToken
           ? {
               loggedIn: true,
               accountId: oauth.accountId,

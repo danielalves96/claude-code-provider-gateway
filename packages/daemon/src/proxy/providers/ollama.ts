@@ -5,7 +5,7 @@ export class OllamaProvider extends AnthropicMessagesTransport {
     return "ollama";
   }
   get label() {
-    return "Ollama";
+    return "Ollama Local";
   }
 
   protected override baseUrl(): string {

@@ -1,4 +1,6 @@
-import { Badge, Card, Space, Switch, Tag, Typography, theme } from "antd";
+import { StarFilled, StarOutlined } from "@ant-design/icons";
+import { Badge, Button, Card, Space, Switch, Tag, Tooltip, Typography, theme } from "antd";
+import { COMING_SOON_PROVIDERS } from "../constants.js";
 import { isProviderReady } from "../status.js";
 import type { ProviderInfo, TestResult } from "../types.js";
 import { ProviderLogo } from "./ProviderLogo.js";
@@ -6,7 +8,7 @@ import { ProviderLogo } from "./ProviderLogo.js";
 const { Text } = Typography;
 
 type ProviderStatus = {
-  badge: "default" | "success" | "warning";
+  badge: "default" | "success" | "warning" | "processing";
   label: string;
   ready: boolean;
 };
@@ -16,6 +18,8 @@ interface ProviderCardProps {
   testResult?: TestResult;
   onClick: (provider: ProviderInfo) => void;
   onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (provider: ProviderInfo, event: React.MouseEvent) => void;
 }
 
 export function ProviderCard({
@@ -23,30 +27,41 @@ export function ProviderCard({
   testResult,
   onClick,
   onToggleEnabled,
+  isFavorite,
+  onToggleFavorite,
 }: ProviderCardProps) {
   const { token } = theme.useToken();
-  const status = getProviderStatus(p);
+  const comingSoon = COMING_SOON_PROVIDERS.has(p.id);
+  const status = getProviderStatus(p, comingSoon);
+  const interactive = !comingSoon;
 
   return (
     <Card
-      hoverable
-      onClick={() => onClick(p)}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClick(p);
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      aria-label={`Configure ${p.label}`}
+      hoverable={interactive}
+      onClick={interactive ? () => onClick(p) : undefined}
+      onKeyDown={
+        interactive
+          ? (event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick(p);
+              }
+            }
+          : undefined
+      }
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : -1}
+      aria-label={interactive ? `Configure ${p.label}` : `${p.label} — coming soon`}
+      aria-disabled={!interactive}
       style={{
         width: "100%",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         borderColor: p.enabled && !status.ready ? token.colorWarningBorder : undefined,
+        cursor: interactive ? "pointer" : "not-allowed",
+        opacity: comingSoon ? 0.65 : 1,
       }}
       styles={{
         body: {
@@ -68,7 +83,7 @@ export function ProviderCard({
               display: "flex",
               flexDirection: "column",
               minWidth: 0,
-              opacity: p.enabled ? 1 : 0.6,
+              opacity: p.enabled || comingSoon ? 1 : 0.6,
               transition: "opacity 0.2s",
             }}
           >
@@ -81,7 +96,7 @@ export function ProviderCard({
                 status={status.badge}
                 text={<span style={{ fontSize: 12 }}>{status.label}</span>}
               />
-              {testResult && (
+              {!comingSoon && testResult && (
                 <Tag
                   color={testResult.ok ? "success" : "error"}
                   style={{ margin: 0, fontSize: 11 }}
@@ -92,20 +107,50 @@ export function ProviderCard({
             </Space>
           </div>
         </div>
-        <Switch
-          checked={p.enabled}
-          onClick={(_, event) => event.stopPropagation()}
-          onChange={() => onToggleEnabled(p.id, p.enabled)}
-          size="small"
-          aria-label={`${p.enabled ? "Disable" : "Enable"} ${p.label}`}
-        />
+        {comingSoon ? (
+          <Tooltip title="OAuth flow not yet implemented">
+            <Switch checked={false} disabled size="small" aria-label={`${p.label} — coming soon`} />
+          </Tooltip>
+        ) : (
+          <Space size={8}>
+            {onToggleFavorite && (
+              <Button
+                type="text"
+                size="small"
+                icon={
+                  isFavorite ? (
+                    <StarFilled style={{ color: token.colorWarning }} />
+                  ) : (
+                    <StarOutlined style={{ color: token.colorTextQuaternary }} />
+                  )
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorite(p, e);
+                }}
+                aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              />
+            )}
+            <Switch
+              checked={p.enabled}
+              onClick={(_, event) => event.stopPropagation()}
+              onChange={() => onToggleEnabled(p.id, p.enabled)}
+              size="small"
+              aria-label={`${p.enabled ? "Disable" : "Enable"} ${p.label}`}
+            />
+          </Space>
+        )}
       </div>
     </Card>
   );
 }
 
-function getProviderStatus(provider: ProviderInfo): ProviderStatus {
+function getProviderStatus(provider: ProviderInfo, comingSoon: boolean): ProviderStatus {
   const ready = isProviderReady(provider);
+
+  if (comingSoon) {
+    return { badge: "processing", label: "Coming soon", ready: false };
+  }
 
   if (!provider.enabled) {
     return { badge: "default", label: "Disabled", ready };

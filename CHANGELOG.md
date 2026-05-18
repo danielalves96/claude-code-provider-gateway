@@ -17,7 +17,7 @@ The first public release is planned as **v0.1.0** with desktop installers attach
 
 - Desktop-first Tauri app with daemon sidecar.
 - Local Anthropic-compatible proxy for Claude Code.
-- Provider support for OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, and llama.cpp.
+- Provider support for OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, NVIDIA NIM, Kimi, Google AI (Gemini), Ollama, LM Studio, and llama.cpp.
 - Provider routing for single-provider mode and all-providers model discovery mode.
 - Tier routing for Claude `opus`, `sonnet`, and `haiku` model classes.
 - Local session history with request metadata, prompt capture, response preview, token counts, latency, and errors.

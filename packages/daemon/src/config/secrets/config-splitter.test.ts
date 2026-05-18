@@ -6,7 +6,7 @@ import {
   hydrateSecretsFromStore,
   jsonStillHasSecrets,
 } from "./config-splitter.js";
-import type { SecretStore } from "./store.js";
+import { SECRET_KEYS, type SecretStore } from "./store.js";
 
 class MemoryStore implements SecretStore {
   private map = new Map<string, string>();
@@ -57,6 +57,28 @@ test("hydrate restores secrets back into config from store", () => {
 
   assert.equal(fresh.providers.openrouter.apiKey, "sk-or-secret");
   assert.ok(fresh.server.authToken.length > 0);
+});
+
+test("extract deletes provider secrets when credentials are cleared", () => {
+  const store = new MemoryStore();
+  const cfg = buildDefaultConfig();
+  cfg.providers.openrouter.apiKey = "sk-or-secret";
+  cfg.providers.copilot.oauth = {
+    accessToken: "github-token",
+    refreshToken: "refresh-token",
+    copilotToken: "copilot-token",
+  };
+  extractSecretsToStore(cfg, store);
+
+  const cleared = buildDefaultConfig();
+  cleared.providers.openrouter.apiKey = "";
+  cleared.providers.copilot.oauth = {};
+  extractSecretsToStore(cleared, store);
+
+  assert.equal(store.get(SECRET_KEYS.providerApiKey("openrouter")), null);
+  assert.equal(store.get(SECRET_KEYS.providerOAuthAccessToken("copilot")), null);
+  assert.equal(store.get(SECRET_KEYS.providerOAuthRefreshToken("copilot")), null);
+  assert.equal(store.get(SECRET_KEYS.providerOAuthCopilotToken("copilot")), null);
 });
 
 test("jsonStillHasSecrets detects unmigrated config", () => {

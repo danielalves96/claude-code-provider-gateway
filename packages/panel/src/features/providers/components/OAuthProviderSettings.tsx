@@ -3,6 +3,8 @@ import { ExtraModelsSection } from "./ExtraModelsSection.js";
 import { OAuthSection } from "./OAuthSection.js";
 import type { ProviderConfigHandlers } from "./ProviderConfigContent.js";
 
+const EXTRA_MODELS_OAUTH_PROVIDERS = new Set(["openai_account", "kilocode", "cline"]);
+
 interface OAuthProviderSettingsProps {
   provider: ProviderInfo;
   busy: boolean;
@@ -18,11 +20,12 @@ export function OAuthProviderSettings({
   copilotFlow,
   handlers,
 }: OAuthProviderSettingsProps) {
+  const showExtraModels = EXTRA_MODELS_OAUTH_PROVIDERS.has(provider.id);
+
   return (
     <>
       <OAuthSection
-        providerId={provider.id}
-        oauth={provider.oauth}
+        provider={provider}
         busy={busy}
         error={error}
         copilotFlow={copilotFlow}
@@ -30,9 +33,10 @@ export function OAuthProviderSettings({
         onLogout={() => handlers.onOAuthLogout(provider.id)}
         onCancelFlow={handlers.onCancelOAuthFlow}
       />
-      {provider.id !== "copilot" && (
+      {showExtraModels && (
         <ExtraModelsSection
           models={provider.models ?? []}
+          placeholder={provider.id === "openai_account" ? "gpt-5.6-codex" : "provider/model-id"}
           onAdd={(model) => handlers.onAddModel(provider, model)}
           onRemove={(model) => handlers.onRemoveModel(provider, model)}
         />

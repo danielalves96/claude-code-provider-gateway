@@ -16,22 +16,38 @@ import {
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
 import type { StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
+import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
 export abstract class AnthropicMessagesTransport extends BaseProvider {
+  protected resolveModel(model: string): string {
+    return stripGatewayProviderPrefix(model, this.id);
+  }
+
+  // Override to switch to x-api-key auth (Anthropic standard) vs Authorization: Bearer
+  protected authHeaders(): Record<string, string> {
+    return { Authorization: this.authHeader() };
+  }
+
+  protected anthropicBetaHeader(): string | null {
+    return null;
+  }
+
   async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       return { error: { status: 401, message: this.missingApiKeyMessage() } };
     }
 
+    const anthropicBeta = this.anthropicBetaHeader();
     const result = await postProviderStream({
       url: `${this.baseUrl()}/messages`,
       headers: {
         "Content-Type": "application/json",
-        Authorization: this.authHeader(),
+        ...this.authHeaders(),
         "anthropic-version": "2023-06-01",
+        ...(anthropicBeta ? { "anthropic-beta": anthropicBeta } : {}),
         ...this.extraHeaders(),
       },
-      body: { ...req, stream: true },
+      body: { ...req, model: this.resolveModel(req.model), stream: true },
       timeoutMs: this.requestTimeoutMs(),
     });
 
@@ -136,10 +152,20 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
       data?: Array<{ id: string; name?: string; created?: number }>;
     }>({
       url,
-      headers: { Authorization: this.authHeader(), ...this.extraHeaders() },
+      headers: { ...this.authHeaders(), ...this.extraHeaders() },
       timeoutMs: this.requestTimeoutMs(),
     });
-    return mapProviderModels(json.data ?? [], this.id, this.label);
+    const discovered = mapProviderModels(json.data ?? [], this.id, this.label);
+    const discoveredIds = new Set(discovered.map((m) => m.id));
+    const extra = (this.config.models ?? [])
+      .filter((id) => !discoveredIds.has(`anthropic/${this.id}/${id}`))
+      .map((id) => ({
+        type: "model" as const,
+        id: `anthropic/${this.id}/${id}`,
+        display_name: `${this.label} · ${id}`,
+        created_at: new Date(0).toISOString(),
+      }));
+    return [...discovered, ...extra];
   }
 
   protected extraHeaders(): Record<string, string> {

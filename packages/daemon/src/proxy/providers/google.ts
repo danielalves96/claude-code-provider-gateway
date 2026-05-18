@@ -11,14 +11,7 @@ export class GoogleProvider extends OpenAIChatTransport {
     return "google";
   }
   get label() {
-    return "Google AI";
-  }
-
-  protected resolveModel(requestedModel: string): string {
-    // Strip "google/" prefix if routing injected it
-    const parts = requestedModel.split("/");
-    if (parts[0] === "google") return parts.slice(1).join("/");
-    return requestedModel;
+    return "Google AI (Gemini)";
   }
 
   override async listModels(): Promise<ModelInfo[]> {
@@ -28,7 +21,9 @@ export class GoogleProvider extends OpenAIChatTransport {
 
     // The OpenAI-compat /models endpoint returns the standard {data:[]} shape
     const url = `${this.baseUrl()}/models`;
-    const json = await fetchProviderJson<{ data?: Array<{ id: string; created?: number }> }>({
+    const json = await fetchProviderJson<{
+      data?: Array<{ id: string; created?: number }>;
+    }>({
       url,
       headers: {
         Authorization: this.authHeader(),

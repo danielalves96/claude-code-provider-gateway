@@ -12,16 +12,18 @@ export function extractSecretsToStore(config: Config, store: SecretStore): void 
     const provider = config.providers[id];
     if (!provider) continue;
 
-    writeIfPresent(store, SECRET_KEYS.providerApiKey(id), provider.apiKey);
+    writeOrDelete(store, SECRET_KEYS.providerApiKey(id), provider.apiKey);
     provider.apiKey = "";
 
     if (provider.oauth) {
-      writeIfPresent(store, SECRET_KEYS.providerOAuthAccessToken(id), provider.oauth.accessToken);
-      writeIfPresent(store, SECRET_KEYS.providerOAuthRefreshToken(id), provider.oauth.refreshToken);
-      writeIfPresent(store, SECRET_KEYS.providerOAuthCopilotToken(id), provider.oauth.copilotToken);
+      writeOrDelete(store, SECRET_KEYS.providerOAuthAccessToken(id), provider.oauth.accessToken);
+      writeOrDelete(store, SECRET_KEYS.providerOAuthRefreshToken(id), provider.oauth.refreshToken);
+      writeOrDelete(store, SECRET_KEYS.providerOAuthCopilotToken(id), provider.oauth.copilotToken);
       provider.oauth.accessToken = undefined;
       provider.oauth.refreshToken = undefined;
       provider.oauth.copilotToken = undefined;
+    } else {
+      clearProviderOAuthSecrets(store, id);
     }
   }
 }
@@ -51,6 +53,17 @@ export function hydrateSecretsFromStore(config: Config, store: SecretStore): voi
 function writeIfPresent(store: SecretStore, key: string, value: string | undefined | null): void {
   if (!value) return;
   store.set(key, value);
+}
+
+function writeOrDelete(store: SecretStore, key: string, value: string | undefined | null): void {
+  if (value) store.set(key, value);
+  else store.delete(key);
+}
+
+export function clearProviderOAuthSecrets(store: SecretStore, id: string): void {
+  store.delete(SECRET_KEYS.providerOAuthAccessToken(id));
+  store.delete(SECRET_KEYS.providerOAuthRefreshToken(id));
+  store.delete(SECRET_KEYS.providerOAuthCopilotToken(id));
 }
 
 // True iff the on-disk JSON still carries any secret field. Drives the

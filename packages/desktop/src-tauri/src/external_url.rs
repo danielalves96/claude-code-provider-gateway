@@ -3,7 +3,41 @@ use tauri_plugin_shell::ShellExt;
 use thiserror::Error;
 use url::Url;
 
-const ALLOWED_EXTERNAL_URL_HOSTS: &[&str] = &["auth.openai.com", "github.com"];
+const ALLOWED_EXTERNAL_URL_HOSTS: &[&str] = &[
+    "aistudio.google.com",
+    "api.together.ai",
+    "app.hyperbolic.xyz",
+    "auth.openai.com",
+    "api.cline.bot",
+    "bailian.console.alibabacloud.com",
+    "bailian.console.aliyun.com",
+    "bigmodel.cn",
+    "build.nvidia.com",
+    "chutes.ai",
+    "cloud.cerebras.ai",
+    "cloud.siliconflow.cn",
+    "commandcode.ai",
+    "console.byteplus.com",
+    "console.groq.com",
+    "console.mistral.ai",
+    "console.volcengine.com",
+    "console.x.ai",
+    "dashboard.cohere.com",
+    "fireworks.ai",
+    "github.com",
+    "huggingface.co",
+    "ollama.com",
+    "opencode.ai",
+    "openrouter.ai",
+    "platform.deepseek.com",
+    "platform.mimodel.ai",
+    "platform.minimaxi.com",
+    "platform.moonshot.ai",
+    "studio.nebius.com",
+    "www.blackbox.ai",
+    "www.perplexity.ai",
+    "z.ai",
+];
 
 #[derive(Debug, Error)]
 pub enum ExternalUrlError {
@@ -87,6 +121,10 @@ mod tests {
         assert!(validate("https://github.com/danielalves96/claude-code-provider-gateway").is_ok());
         assert!(validate("https://github.com/login/device").is_ok());
         assert!(validate("https://auth.openai.com/oauth/authorize?state=abc").is_ok());
+        assert!(validate("https://api.cline.bot/api/v1/auth/authorize").is_ok());
+        assert!(validate("https://commandcode.ai/studio").is_ok());
+        assert!(validate("https://openrouter.ai/settings/keys").is_ok());
+        assert!(validate("https://console.groq.com/keys").is_ok());
     }
 
     #[test]

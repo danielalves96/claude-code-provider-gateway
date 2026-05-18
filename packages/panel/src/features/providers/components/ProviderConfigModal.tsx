@@ -1,4 +1,7 @@
+import { ExportOutlined } from "@ant-design/icons";
 import { Button, Modal, Switch } from "antd";
+import { openExternal } from "../../../shared/openExternal.js";
+import { getApiKeyLink } from "../apiKeyLinks.js";
 import { canTestProvider } from "../status.js";
 import type { CopilotFlow, ProviderInfo } from "../types.js";
 import { ProviderConfigContent, type ProviderConfigHandlers } from "./ProviderConfigContent.js";
@@ -72,6 +75,8 @@ function ProviderConfigTitle({
   provider: ProviderInfo;
   onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
 }) {
+  const apiKeyUrl = getApiKeyLink(provider.id);
+
   return (
     <div
       style={{
@@ -85,12 +90,19 @@ function ProviderConfigTitle({
         <ProviderLogo providerId={provider.id} label={provider.label} size={28} />
         <span style={{ fontSize: 18 }}>{provider.label} Configuration</span>
       </div>
-      <Switch
-        size="small"
-        checked={provider.enabled}
-        onChange={() => onToggleEnabled(provider.id, provider.enabled)}
-        aria-label={`${provider.enabled ? "Disable" : "Enable"} ${provider.label}`}
-      />
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {apiKeyUrl && (
+          <Button size="small" icon={<ExportOutlined />} onClick={() => openExternal(apiKeyUrl)}>
+            Get API Key
+          </Button>
+        )}
+        <Switch
+          size="small"
+          checked={provider.enabled}
+          onChange={() => onToggleEnabled(provider.id, provider.enabled)}
+          aria-label={`${provider.enabled ? "Disable" : "Enable"} ${provider.label}`}
+        />
+      </div>
     </div>
   );
 }
