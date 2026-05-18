@@ -4,7 +4,7 @@
 
 **Claude Code, your provider, one local desktop gateway.**
 
-Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, and many other providers while keeping the Claude Code workflow intact.
+Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, and many other providers, while keeping the Claude Code workflow intact.
 
 [![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
