@@ -1,7 +1,15 @@
-import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
-import { Card, Col, Row, Statistic, theme } from "antd";
+import {
+  CheckCircleFilled,
+  ClockCircleOutlined,
+  CloseCircleFilled,
+  CodeOutlined,
+  DesktopOutlined,
+} from "@ant-design/icons";
+import { Card, Col, Flex, Row, Typography, theme } from "antd";
 import { formatUptime } from "../../../shared/utils/time.js";
 import type { GatewayStatus } from "../types.js";
+
+const { Text } = Typography;
 
 interface StatusOverviewProps {
   status: GatewayStatus | null;
@@ -10,41 +18,90 @@ interface StatusOverviewProps {
 export function StatusOverview({ status }: StatusOverviewProps) {
   const { token } = theme.useToken();
 
-  const statusValue = status?.running ? "Running" : status ? "Stopped" : "—";
-  const statusColor = status?.running ? token.colorSuccess : status ? token.colorError : undefined;
-  const statusIcon = status?.running ? (
-    <CheckCircleFilled />
-  ) : status ? (
-    <CloseCircleFilled />
-  ) : undefined;
+  const isRunning = status?.running;
+  const statusColor = isRunning ? token.colorSuccess : status ? token.colorError : token.colorTextTertiary;
+
+  const cards = [
+    {
+      title: "Status",
+      value: isRunning ? "Running" : status ? "Stopped" : "—",
+      icon: isRunning ? <CheckCircleFilled /> : status ? <CloseCircleFilled /> : <CheckCircleFilled />,
+      color: statusColor,
+      active: isRunning,
+      pulse: isRunning,
+    },
+    {
+      title: "Uptime",
+      value: status ? formatUptime(status.uptimeMs) : "—",
+      icon: <ClockCircleOutlined />,
+      color: token.colorPrimary,
+      active: !!status,
+    },
+    {
+      title: "Model Mode",
+      value: status?.modelMode ?? "—",
+      icon: <CodeOutlined />,
+      color: token.colorInfo,
+      active: !!status,
+    },
+    {
+      title: "Daemon PID",
+      value: status?.pid?.toString() ?? "—",
+      icon: <DesktopOutlined />,
+      color: token.colorWarning,
+      active: !!status,
+    },
+  ];
 
   return (
-    <Row gutter={[token.padding, token.padding]}>
-      <Col span={6}>
-        <Card>
-          <Statistic
-            title="Status"
-            value={statusValue}
-            valueStyle={{ color: statusColor }}
-            prefix={statusIcon}
-          />
-        </Card>
-      </Col>
-      <Col span={6}>
-        <Card>
-          <Statistic title="Uptime" value={status ? formatUptime(status.uptimeMs) : "—"} />
-        </Card>
-      </Col>
-      <Col span={6}>
-        <Card>
-          <Statistic title="Model Mode" value={status?.modelMode ?? "—"} />
-        </Card>
-      </Col>
-      <Col span={6}>
-        <Card>
-          <Statistic title="PID" value={status?.pid?.toString() ?? "—"} groupSeparator="" />
-        </Card>
-      </Col>
+    <Row gutter={[token.paddingSM, token.paddingSM]}>
+      {cards.map((c) => (
+        <Col xs={12} sm={12} lg={6} key={c.title} style={{ flex: 1 }}>
+          <Card
+            styles={{ body: { padding: `${token.paddingMD}px` } }}
+            style={{
+              background: c.active 
+                ? `linear-gradient(135deg, ${token.colorBgContainer} 0%, ${c.color}15 100%)`
+                : token.colorBgContainer,
+              borderColor: c.active ? `${c.color}30` : token.colorBorderSecondary,
+            }}
+          >
+            <Flex align="center" gap={token.padding}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  background: c.active ? `${c.color}20` : token.colorFillQuaternary,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+                  color: c.active ? c.color : token.colorTextTertiary,
+                }}
+              >
+                {c.icon}
+              </div>
+              <Flex vertical flex={1}>
+                <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {c.title}
+                </Text>
+                <Text
+                  strong
+                  style={{
+                    fontSize: 18,
+                    color: c.active ? c.color : token.colorTextPrimary,
+                    fontFamily: "monospace",
+                    marginTop: 2,
+                  }}
+                >
+                  {c.value}
+                </Text>
+              </Flex>
+            </Flex>
+          </Card>
+        </Col>
+      ))}
     </Row>
   );
 }

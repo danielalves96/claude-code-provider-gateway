@@ -1,5 +1,5 @@
 import { ThunderboltOutlined } from "@ant-design/icons";
-import { Card, Col, Empty, Row, Space, Tag, Typography, theme } from "antd";
+import { Card, Col, Empty, Flex, Row, Tag, Typography, theme } from "antd";
 import { Link as RouterLink } from "react-router-dom";
 import type { StatsResponse } from "../types.js";
 import { ProviderStatCard } from "./ProviderStatCard.js";
@@ -16,16 +16,50 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
 
   return (
     <Card
+      style={{
+        borderColor: token.colorBorderSecondary,
+        boxShadow: token.boxShadow,
+      }}
+      styles={{
+        header: {
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          padding: `${token.padding}px ${token.paddingLG}px`,
+        },
+        body: { padding: token.paddingLG },
+      }}
       title={
-        <Space>
-          <ThunderboltOutlined style={{ color: token.colorPrimary }} />
-          <span>Current Session — Enabled Providers</span>
-          {stats && <Tag color={count > 0 ? "processing" : "default"}>{count} enabled</Tag>}
-        </Space>
+        <Flex align="center" gap={token.paddingSM}>
+          <div
+            style={{
+              color: token.colorPrimary,
+              fontSize: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: `linear-gradient(135deg, ${token.colorPrimary}20 0%, ${token.colorBgContainer} 100%)`,
+              border: `1px solid ${token.colorPrimary}30`,
+              boxShadow: `0 0 10px ${token.colorPrimary}10`,
+            }}
+          >
+            <ThunderboltOutlined />
+          </div>
+          <Text strong style={{ fontSize: 16 }}>Current Session — Enabled Providers</Text>
+          {stats && (
+            <Tag
+              color={count > 0 ? "processing" : "default"}
+              style={{ border: "none", marginLeft: token.paddingSM, fontWeight: 500 }}
+            >
+              {count} ENABLED
+            </Tag>
+          )}
+        </Flex>
       }
       extra={
-        <Text type="secondary">
-          Stats reset on daemon restart · <ThemedLink to="/history">History</ThemedLink>
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          Stats reset on restart · <ThemedLink to="/history">History</ThemedLink>
         </Text>
       }
     >
@@ -39,7 +73,7 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
           }
         />
       ) : (
-        <Row gutter={[token.padding, token.padding]}>
+        <Row gutter={[token.paddingLG, token.paddingLG]}>
           {stats?.providers.map((p) => (
             <Col xs={24} sm={12} xl={8} key={p.id}>
               <ProviderStatCard provider={p} />
@@ -54,7 +88,7 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
 function ThemedLink({ to, children }: { to: string; children: React.ReactNode }) {
   const { token } = theme.useToken();
   return (
-    <RouterLink to={to} style={{ color: token.colorPrimary }}>
+    <RouterLink to={to} style={{ color: token.colorPrimary, fontWeight: 500 }}>
       {children}
     </RouterLink>
   );

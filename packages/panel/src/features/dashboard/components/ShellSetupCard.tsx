@@ -1,10 +1,13 @@
-import { App, Button, Card, Flex, Space, theme } from "antd";
+import { CodeOutlined } from "@ant-design/icons";
+import { App, Button, Card, Flex, Space, Typography, theme } from "antd";
 import { useEffect, useState } from "react";
 import { useCopyToClipboard } from "../../../shared/hooks/useCopyToClipboard.js";
 import { dashboardService } from "../dashboardService.js";
 import type { InstallResult, ShellName, ShellSetup } from "../types.js";
 import { ShellInstallActions, ShellInstallSummary } from "./ShellInstallActions.js";
 import { ShellSetupManualCommand } from "./ShellSetupManualCommand.js";
+
+const { Text } = Typography;
 
 interface ShellSetupCardProps {
   setup: ShellSetup;
@@ -48,27 +51,58 @@ export function ShellSetupCard({
 
   return (
     <Card
-      title="Terminal shortcut"
+      style={{
+        borderColor: token.colorBorderSecondary,
+        boxShadow: token.boxShadow,
+      }}
+      styles={{
+        header: {
+          borderBottom: open ? `1px solid ${token.colorBorderSecondary}` : 0,
+          padding: `${token.padding}px ${token.paddingLG}px`,
+        },
+        body: {
+          display: open ? undefined : "none",
+          padding: token.paddingLG,
+        },
+      }}
+      title={
+        <Flex align="center" gap={token.paddingSM}>
+          <div
+            style={{
+              color: token.colorInfo,
+              fontSize: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: `linear-gradient(135deg, ${token.colorInfo}20 0%, ${token.colorBgContainer} 100%)`,
+              border: `1px solid ${token.colorInfo}30`,
+              boxShadow: `0 0 10px ${token.colorInfo}10`,
+            }}
+          >
+            <CodeOutlined />
+          </div>
+          <Text strong style={{ fontSize: 16 }}>Terminal Integration</Text>
+        </Flex>
+      }
       extra={
         <Space>
           <ShellInstallSummary shells={setup.shells} />
           {canDismiss && (
             <Button type="text" size="small" onClick={onDismiss}>
-              Dismiss configuration message
+              Dismiss
             </Button>
           )}
-          <Button type="text" size="small" onClick={() => setOpen((v) => !v)}>
-            {open ? "Hide" : "Configure"}
+          <Button type="primary" ghost size="small" onClick={() => setOpen((v) => !v)}>
+            {open ? "Hide Details" : "Configure"}
           </Button>
         </Space>
       }
-      styles={{
-        header: { borderBottom: open ? undefined : 0 },
-        body: { display: open ? undefined : "none" },
-      }}
     >
       {open && (
-        <Flex vertical gap={token.paddingMD}>
+        <Flex vertical gap={token.paddingLG}>
           <ShellInstallActions
             shells={setup.shells}
             installingShell={installingShell}
