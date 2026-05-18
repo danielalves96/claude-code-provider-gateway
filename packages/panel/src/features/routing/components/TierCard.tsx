@@ -1,4 +1,6 @@
-import { Alert, Card, Col, Row, Select, Space, Switch, Tag, Typography, theme } from "antd";
+import { ArrowRightOutlined } from "@ant-design/icons";
+import { Alert, Card, Flex, Select, Space, Switch, Tag, Typography, theme } from "antd";
+import { ProviderLogo } from "../../providers/components/ProviderLogo.js";
 import { TIER_META } from "../constants.js";
 import type { RoutingOption, RoutingRule, Tier } from "../types.js";
 
@@ -21,51 +23,87 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
     !providerOpts.models.some((m) => m.id === rule.model);
   const canEnable = !!rule.providerId && !!rule.model;
 
+  const isEnabled = rule.enabled;
+  const glowColor = isEnabled ? getGlowColor(tier, token) : token.colorBorderSecondary;
+
   return (
     <Card
-      style={{ width: "100%", display: "flex", flexDirection: "column" }}
-      styles={{
-        body: { flex: 1, display: "flex", flexDirection: "column" },
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderColor: glowColor,
+        transition: "all 0.3s ease",
+        boxShadow: isEnabled ? `0 0 16px 1px ${glowColor}25` : undefined,
       }}
-      title={
-        <Space>
+      styles={{
+        body: { flex: 1, display: "flex", flexDirection: "column", padding: token.paddingLG },
+      }}
+    >
+      <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
+        <Space size="middle" align="center">
           <Tag
             color={TIER_META[tier].color}
-            style={{ fontFamily: "monospace", textTransform: "capitalize" }}
+            style={{
+              fontFamily: "monospace",
+              textTransform: "capitalize",
+              margin: 0,
+              fontSize: 14,
+              padding: "4px 8px",
+              border: `1px solid ${isEnabled ? glowColor : token.colorBorderSecondary}`,
+            }}
           >
             {tier}
           </Tag>
-          <Text type="secondary">{TIER_META[tier].description}</Text>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            {TIER_META[tier].description}
+          </Text>
         </Space>
-      }
-      extra={
-        <Space>
-          <Text type={rule.enabled ? "success" : "secondary"}>
-            {rule.enabled ? "Enabled" : "Disabled"}
+        
+        <Space size="small">
+          <Text
+            type={isEnabled ? "success" : "secondary"}
+            strong
+            style={{ fontSize: 12, letterSpacing: 0.5 }}
+          >
+            {isEnabled ? "ACTIVE" : "INACTIVE"}
           </Text>
           <Switch
-            checked={rule.enabled}
+            checked={isEnabled}
             disabled={!canEnable}
             onChange={(v) => onChange({ enabled: v })}
             title={!canEnable ? "Select a provider and model first" : undefined}
           />
         </Space>
-      }
-    >
-      <Row gutter={token.padding}>
-        <Col span={12}>
+      </Flex>
+
+      <Flex align="center" gap={token.padding} style={{ flex: 1 }}>
+        <div style={{ flex: 1 }}>
           <FieldLabel>Provider</FieldLabel>
           <Select
             style={{ width: "100%" }}
             value={rule.providerId || undefined}
             placeholder="Select provider"
             onChange={(v) => onChange({ providerId: v, model: "" })}
-            options={options.map((p) => ({ value: p.id, label: p.label }))}
+            options={options.map((p) => ({
+              value: p.id,
+              label: (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ProviderLogo providerId={p.id} label={p.label} size={16} />
+                  <span>{p.label}</span>
+                </div>
+              ),
+            }))}
             allowClear
             onClear={() => onChange({ providerId: "", model: "", enabled: false })}
           />
-        </Col>
-        <Col span={12}>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 22 }}>
+          <ArrowRightOutlined style={{ color: token.colorTextQuaternary, fontSize: 16 }} />
+        </div>
+
+        <div style={{ flex: 1 }}>
           <FieldLabel>Model</FieldLabel>
           <Select
             style={{ width: "100%" }}
@@ -90,24 +128,47 @@ export function TierCard({ tier, rule, options, onChange }: TierCardProps) {
             allowClear
             onClear={() => onChange({ model: "", enabled: false })}
           />
-        </Col>
-      </Row>
+        </div>
+      </Flex>
+
       {modelMissing && (
         <Alert
           type="warning"
           message="This model is not in the provider's enabled list"
           showIcon
-          style={{ marginTop: token.paddingSM }}
+          style={{ marginTop: token.paddingLG }}
         />
       )}
     </Card>
   );
 }
 
+function getGlowColor(tier: Tier, token: any) {
+  switch (tier) {
+    case "opus":
+      return "#722ed1"; // Ant Design Purple
+    case "sonnet":
+      return "#1677ff"; // Ant Design Blue
+    case "haiku":
+      return "#13c2c2"; // Ant Design Cyan
+    default:
+      return token.colorTextSecondary;
+  }
+}
+
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const { token } = theme.useToken();
   return (
-    <Text type="secondary" style={{ display: "block", marginBottom: token.marginXS }}>
+    <Text
+      type="secondary"
+      style={{
+        display: "block",
+        marginBottom: token.marginXS,
+        fontSize: 12,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+      }}
+    >
       {children}
     </Text>
   );

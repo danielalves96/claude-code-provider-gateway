@@ -15,8 +15,9 @@ export default function RoutingPage() {
   if (!loaded) return <LoadingState />;
 
   return (
-    <Flex vertical gap={token.paddingLG}>
-      <PageHeader
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
+      <Flex vertical gap={token.paddingLG} style={{ flex: 1, paddingBottom: token.paddingLG * 2 }}>
+        <PageHeader
         title="Routing"
         description="Override which provider and model handles each Claude tier. When disabled, requests pass through unchanged."
       />
@@ -42,13 +43,28 @@ export default function RoutingPage() {
           </Col>
         ))}
       </Row>
+      </Flex>
 
-      <Card>
-        <Flex justify="space-between" align="center">
-          <ThinkingToggle checked={thinking} onChange={setThinking} />
-          <SaveButton onClick={save} saving={saving} saved={saved} label="Save routing" />
-        </Flex>
-      </Card>
-    </Flex>
+      <div
+        style={{
+          position: "sticky",
+          bottom: -token.paddingLG,
+          marginTop: "auto",
+          padding: `${token.padding}px ${token.paddingLG}px`,
+          margin: `0 -${token.paddingLG}px -${token.paddingLG}px -${token.paddingLG}px`,
+          background: "rgba(38, 38, 36, 0.8)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderTop: `1px solid ${token.colorBorderSecondary}`,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <ThinkingToggle checked={thinking} onChange={setThinking} />
+        <SaveButton onClick={save} saving={saving} saved={saved} label="Save routing" />
+      </div>
+    </div>
   );
 }
