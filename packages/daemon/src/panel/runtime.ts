@@ -27,6 +27,7 @@ export class PanelRuntime {
   readonly registry: ProviderRegistry;
   readonly oauthFlows = new Map<string, OAuthFlow>();
   readonly copilotFlows = new Map<string, CopilotFlow>();
+  readonly kilocodeFlows = new Map<string, CopilotFlow>();
 
   constructor(
     initialConfig: Config,

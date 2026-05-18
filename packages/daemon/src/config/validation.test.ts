@@ -109,3 +109,38 @@ test("normalizeConfig preserves valid token saver settings", () => {
   assert.equal(normalized.tokenSavers.cavemanEnabled, true);
   assert.equal(normalized.tokenSavers.cavemanLevel, "ultra");
 });
+
+test("normalizeConfig preserves OAuth provider metadata", () => {
+  const defaults = buildDefaultConfig();
+  const config = {
+    ...defaults,
+    providers: {
+      ...defaults.providers,
+      copilot: {
+        ...defaults.providers.copilot,
+        oauth: {
+          accessToken: "github-token",
+          copilotToken: "copilot-token",
+          copilotExpiresAt: Date.now() + 60_000,
+          copilotEndpoint: "https://api.individual.githubcopilot.com",
+        },
+      },
+      kilocode: {
+        ...defaults.providers.kilocode,
+        oauth: {
+          accessToken: "kilo-token",
+          orgId: "org_123",
+        },
+      },
+    },
+  };
+
+  const normalized = normalizeConfig(config, defaults);
+
+  assert.equal(normalized.providers.copilot.oauth?.copilotToken, "copilot-token");
+  assert.equal(
+    normalized.providers.copilot.oauth?.copilotEndpoint,
+    "https://api.individual.githubcopilot.com",
+  );
+  assert.equal(normalized.providers.kilocode.oauth?.orgId, "org_123");
+});

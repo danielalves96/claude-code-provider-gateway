@@ -1,8 +1,12 @@
 import { Divider, Flex } from "antd";
+import { useEffect } from "react";
+import { SUGGESTED_MODELS } from "../data/suggestedModels.js";
+import { useProviderModels } from "../hooks/useProviderModels.js";
 import { getProviderKind, isProviderReady } from "../status.js";
 import type { CopilotFlow, ProviderInfo } from "../types.js";
 import { ApiKeySection } from "./ApiKeySection.js";
 import { BaseUrlSection } from "./BaseUrlSection.js";
+import { ModelPickerSection } from "./ModelPickerSection.js";
 import { ModelSelector } from "./ModelSelector.js";
 import { OAuthProviderSettings } from "./OAuthProviderSettings.js";
 
@@ -35,6 +39,24 @@ export function ProviderConfigContent({
   handlers,
 }: ProviderConfigContentProps) {
   const providerKind = getProviderKind(provider);
+  const ready = isProviderReady(provider);
+  const { models, loading, load } = useProviderModels(provider.id);
+
+  // Eagerly discover models as soon as the provider is ready so we know
+  // whether to show the model picker (discovery empty = picker needed).
+  useEffect(() => {
+    if (ready) void load();
+  }, [ready, load]);
+
+  const discoveryDone = !loading && models !== null;
+  const discoveredEmpty = discoveryDone && models.length === 0;
+
+  // Show picker when: API key provider, ready, discovery returned nothing.
+  // Also always show if already has manually configured models (so they're editable).
+  const showPicker =
+    providerKind === "api-key" &&
+    ready &&
+    (discoveredEmpty || (provider.models ?? []).length > 0);
 
   return (
     <Flex vertical gap="large" style={{ marginTop: 24 }}>
@@ -58,6 +80,16 @@ export function ProviderConfigContent({
         />
       )}
 
+      {showPicker && (
+        <ModelPickerSection
+          models={provider.models ?? []}
+          suggestions={SUGGESTED_MODELS[provider.id as keyof typeof SUGGESTED_MODELS]}
+          placeholder="provider/model-id"
+          onAdd={(model) => handlers.onAddModel(provider, model)}
+          onRemove={(model) => handlers.onRemoveModel(provider, model)}
+        />
+      )}
+
       {providerKind === "local" && (
         <BaseUrlSection
           baseUrl={provider.baseUrl}
@@ -69,9 +101,10 @@ export function ProviderConfigContent({
         <>
           <Divider style={{ margin: 0 }} />
           <ModelSelector
-            providerId={provider.id}
+            models={models}
+            loading={loading}
             disabledModels={provider.disabledModels ?? []}
-            ready={isProviderReady(provider)}
+            ready={ready}
             onDisabledModelsChange={(disabled) =>
               handlers.onDisabledModelsChange(provider.id, disabled)
             }

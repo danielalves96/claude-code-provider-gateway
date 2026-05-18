@@ -13,6 +13,8 @@ Decide which transport shape the provider uses:
 | --- | --- |
 | Anthropic Messages compatible | `AnthropicMessagesTransport` |
 | OpenAI Chat Completions compatible | `OpenAIChatTransport` |
+| OAuth-backed OpenAI Chat provider | `OpenAIChatTransport` with OAuth credential overrides |
+| OAuth placeholder while the flow is not ported | `OAuthStubProvider` |
 | Custom auth, catalog, or streaming format | `BaseProvider` |
 
 Prefer an existing transport unless the provider truly needs custom auth,
@@ -32,8 +34,17 @@ reference.
 4. Add provider defaults in `PROVIDER_DEFAULTS`.
 5. Add the display label in `PROVIDER_LABELS`.
 6. Add a CLI flag in `CLI_FLAGS` when the provider should be launchable with `ccpg --ProviderName`.
-7. Add or update panel provider metadata only when the daemon API cannot derive it.
-8. Add tests before opening the PR.
+7. Add the provider to `OAUTH_PROVIDER_IDS` when it is OAuth-backed.
+8. Add or update panel provider metadata only when the daemon API cannot derive it:
+   - `packages/panel/public/providers/<id>.png` for the card icon.
+   - `packages/panel/src/features/providers/constants.ts` for local, OAuth, device-flow, or coming-soon grouping.
+   - `packages/panel/src/features/providers/data/suggestedModels.ts` when model discovery is empty or incomplete.
+   - `packages/panel/src/features/providers/apiKeyLinks.ts` when the provider has a useful key-management page.
+   - `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth labels, descriptions, and button text.
+9. Add tests before opening the PR.
+
+Keep `docs/PROVIDERS.md` in sync when the provider is user-visible. If the
+change is part of a migration batch, update `PROVIDERS_MIGRATION.md` too.
 
 ## Required Tests
 
@@ -54,6 +65,13 @@ Use existing tests as patterns:
 For custom OAuth/device flows, add focused tests around pure parsing, expiry,
 refresh, and error classification code. Avoid tests that require live provider
 accounts.
+
+For custom stream formats, add focused tests for:
+
+- Request conversion from Anthropic messages, tools, and tool results.
+- Stream event conversion into valid Anthropic SSE.
+- Error events and malformed provider chunks.
+- Model prefix stripping and manual model merging, when applicable.
 
 ## Provider Implementation Pattern
 
@@ -127,6 +145,48 @@ async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamR
 For providers with a static or filtered model list, keep that logic inside the
 provider class. For provider-wide HTTP concerns, prefer extending the shared
 client or transport instead of duplicating fetch code.
+
+### OAuth-backed OpenAI-compatible providers
+
+When a provider uses OAuth but exposes an OpenAI-compatible API, extend
+`OpenAIChatTransport` and override the credential hooks instead of adding a new
+transport:
+
+```ts
+export class ExampleOAuthProvider extends OpenAIChatTransport {
+  get id() { return 'example_oauth' }
+  get label() { return 'Example OAuth' }
+
+  protected override hasApiKey(): boolean {
+    return !!this.config.oauth?.accessToken
+  }
+
+  protected override missingApiKeyMessage(): string {
+    return `${this.label} is not logged in. Sign in via the Providers page.`
+  }
+
+  protected override authHeader(): string {
+    return `Bearer ${this.config.oauth?.accessToken ?? ''}`
+  }
+}
+```
+
+If the UI card should exist before the OAuth flow is implemented, use
+`OAuthStubProvider` and add the id to `COMING_SOON_PROVIDERS`. The stub should
+make the state explicit to users instead of silently behaving like a broken API
+key provider.
+
+### Manual model picker support
+
+Some providers do not expose a reliable `/models` endpoint. In that case:
+
+1. Return an empty model list or a small fallback list from the provider.
+2. Add useful suggestions in `suggestedModels.ts`.
+3. Let users add extra models through the provider modal.
+4. Store any user-added models in `config.providers.<id>.models`.
+
+Do not hardcode panel-only model routing. The daemon must still own the final
+model list and request routing.
 
 ## Local Verification
 

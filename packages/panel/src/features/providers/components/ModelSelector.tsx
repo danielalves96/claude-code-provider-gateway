@@ -1,21 +1,22 @@
 import { CaretDownOutlined, CaretRightOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Col, Flex, Input, Row, Space, Spin, Tag, Typography, theme } from "antd";
 import { useMemo, useState } from "react";
-import { useProviderModels } from "../hooks/useProviderModels.js";
 import type { ModelInfo } from "../types.js";
 import { stripModelPrefix } from "../utils.js";
 
 const { Text } = Typography;
 
 interface ModelSelectorProps {
-  providerId: string;
+  models: ModelInfo[] | null;
+  loading: boolean;
   disabledModels: string[];
   ready: boolean;
   onDisabledModelsChange: (disabled: string[]) => void;
 }
 
 export function ModelSelector({
-  providerId,
+  models,
+  loading,
   disabledModels,
   ready,
   onDisabledModelsChange,
@@ -23,7 +24,6 @@ export function ModelSelector({
   const { token } = theme.useToken();
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState("");
-  const { models, loading, load } = useProviderModels(providerId);
 
   const disabledSet = useMemo(() => new Set(disabledModels), [disabledModels]);
   const total = models?.length ?? 0;
@@ -39,10 +39,7 @@ export function ModelSelector({
   const allDisabled = total > 0 && disabledSet.size === total;
   const someDisabled = disabledSet.size > 0 && disabledSet.size < total;
 
-  const toggle = () => {
-    if (!expanded) void load();
-    setExpanded((v) => !v);
-  };
+  const toggle = () => setExpanded((v) => !v);
 
   const toggleModel = (id: string, checked: boolean) => {
     const next = new Set(disabledSet);

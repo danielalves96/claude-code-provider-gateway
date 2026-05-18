@@ -69,6 +69,16 @@ claude-code-provider-gateway/
 └── package.json              # npm workspaces root
 ```
 
+## Documentation Map
+
+| Document | Use it for |
+|---|---|
+| [Architecture](ARCHITECTURE.md) | Runtime layers, request flow, provider transports, config, storage, and security model. |
+| [Providers](PROVIDERS.md) | Supported provider catalog, auth modes, CLI flags, model discovery, and provider UI behavior. |
+| [Adding a Provider](ADDING_PROVIDER.md) | Implementation checklist for new provider support. |
+| [Contributing](../CONTRIBUTING.md) | Issue/PR expectations and project contribution workflow. |
+| [Security](../SECURITY.md) | Local threat model and vulnerability reporting. |
+
 ## Package Details
 
 ### Daemon (`packages/daemon/`)
@@ -205,6 +215,53 @@ Manual validation path:
 5. Check daemon logs for an `rtk` line showing bytes saved.
 
 Caveman can be validated with a normal chat request after enabling **Caveman mode**. The session prompt should include the injected terse-response guidance, and responses should become shorter according to the selected level.
+
+### Provider development
+
+Provider source of truth lives in the daemon:
+
+- `packages/daemon/src/config/schema.ts` for provider IDs, defaults, labels,
+  OAuth membership, CLI flags, and panel settings defaults.
+- `packages/daemon/src/proxy/providers/` for provider implementations and
+  shared transports.
+- `packages/daemon/src/proxy/providers/registry.ts` for provider construction.
+
+Panel provider support is intentionally thinner:
+
+- `packages/panel/public/providers/` for provider icons.
+- `packages/panel/src/features/providers/constants.ts` for local, OAuth,
+  device-flow, and coming-soon grouping.
+- `packages/panel/src/features/providers/data/suggestedModels.ts` for manual
+  model suggestions when discovery is missing or incomplete.
+- `packages/panel/src/features/providers/apiKeyLinks.ts` for key-management
+  shortcuts.
+- `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth copy
+  and provider-specific sign-in presentation.
+
+Useful focused checks while working on providers:
+
+```bash
+npm test --workspace @claude-code-provider-gateway/daemon
+npm run typecheck
+```
+
+For a single daemon test file:
+
+```bash
+cd packages/daemon
+node --import tsx --test src/proxy/providers/commandcode.test.ts
+```
+
+Manual provider validation path:
+
+1. Start the desktop dev app with `npm run dev:desk`.
+2. Open **Providers**.
+3. Search for the provider, configure auth or base URL, and click **Test**.
+4. Check the model list and disable any models that should not be exposed.
+5. Launch Claude Code with the provider flag, or use `ccpg --all` to validate
+   gateway-prefixed routing.
+6. Inspect **History** and daemon logs for routed model, provider errors,
+   prompt serialization, and response previews.
 
 ## Build Pipeline
 

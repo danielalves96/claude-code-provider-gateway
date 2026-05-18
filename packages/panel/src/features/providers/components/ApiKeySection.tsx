@@ -60,32 +60,34 @@ export function ApiKeySection({
               API Key Authentication
             </Space>
           </Text>
-          {hasKey && !editing ? (
-            <Space>
-              <Button
-                size="small"
-                type="text"
-                icon={<EditOutlined />}
-                onClick={() => {
-                  setEditing(true);
-                  setDraft("");
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                size="small"
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={onRequestRemove}
-              >
-                Remove
-              </Button>
-            </Space>
-          ) : editing ? (
-            <Button size="small" type="text" icon={<CloseOutlined />} onClick={close} />
-          ) : null}
+          <Space wrap>
+            {hasKey && !editing ? (
+              <>
+                <Button
+                  size="small"
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setEditing(true);
+                    setDraft("");
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="small"
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={onRequestRemove}
+                >
+                  Remove
+                </Button>
+              </>
+            ) : editing ? (
+              <Button size="small" type="text" icon={<CloseOutlined />} onClick={close} />
+            ) : null}
+          </Space>
         </div>
 
         {!showInput ? (

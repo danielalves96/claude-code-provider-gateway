@@ -6,11 +6,17 @@ const { Text } = Typography;
 
 interface ExtraModelsSectionProps {
   models: string[];
+  placeholder?: string;
   onAdd: (model: string) => void;
   onRemove: (model: string) => void;
 }
 
-export function ExtraModelsSection({ models, onAdd, onRemove }: ExtraModelsSectionProps) {
+export function ExtraModelsSection({
+  models,
+  placeholder = "provider/model-id",
+  onAdd,
+  onRemove,
+}: ExtraModelsSectionProps) {
   const [draft, setDraft] = useState("");
   const trimmed = draft.trim();
   const alreadyAdded = models.includes(trimmed);
@@ -33,7 +39,7 @@ export function ExtraModelsSection({ models, onAdd, onRemove }: ExtraModelsSecti
         <Space.Compact style={{ width: "100%" }}>
           <Input
             value={draft}
-            placeholder="gpt-5.6-codex"
+            placeholder={placeholder}
             style={{ fontFamily: "monospace" }}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {

@@ -8,10 +8,17 @@ const { Text, Link } = Typography;
 
 interface CopilotDevicePromptProps {
   flow: CopilotFlow;
+  waitingText: string;
+  approvalSite: string;
   onCancel: () => void;
 }
 
-export function CopilotDevicePrompt({ flow, onCancel }: CopilotDevicePromptProps) {
+export function CopilotDevicePrompt({
+  flow,
+  waitingText,
+  approvalSite,
+  onCancel,
+}: CopilotDevicePromptProps) {
   const { token } = theme.useToken();
   const { copiedKey, copy } = useCopyToClipboard();
   const copied = copiedKey === flow.flowId;
@@ -27,7 +34,7 @@ export function CopilotDevicePrompt({ flow, onCancel }: CopilotDevicePromptProps
       }}
     >
       <Text type="secondary">
-        Step 1 — Enter this code on the GitHub authorization page (already opened in a new tab):
+        Step 1 — Enter this code on {approvalSite} (already opened in a new tab):
       </Text>
       <Space>
         <Text
@@ -61,10 +68,7 @@ export function CopilotDevicePrompt({ flow, onCancel }: CopilotDevicePromptProps
         </Link>
       </Text>
       <Space>
-        <Badge
-          status="processing"
-          text={<Text type="secondary">Waiting for GitHub approval…</Text>}
-        />
+        <Badge status="processing" text={<Text type="secondary">{waitingText}</Text>} />
         <Button onClick={onCancel}>Cancel</Button>
       </Space>
     </Flex>

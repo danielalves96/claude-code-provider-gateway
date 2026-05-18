@@ -64,6 +64,8 @@ function requiresLocalToken(path: string, method: string): boolean {
     return true;
   return (
     method === "POST" &&
-    /^\/api\/providers\/(?:openai_account|copilot)\/oauth\/(?:start|logout)$/.test(path)
+    /^\/api\/providers\/(?:openai_account|copilot|kilocode|cline)\/oauth\/(?:start|logout)$/.test(
+      path,
+    )
   );
 }

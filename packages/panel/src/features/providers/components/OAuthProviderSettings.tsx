@@ -21,8 +21,7 @@ export function OAuthProviderSettings({
   return (
     <>
       <OAuthSection
-        providerId={provider.id}
-        oauth={provider.oauth}
+        provider={provider}
         busy={busy}
         error={error}
         copilotFlow={copilotFlow}
@@ -30,9 +29,10 @@ export function OAuthProviderSettings({
         onLogout={() => handlers.onOAuthLogout(provider.id)}
         onCancelFlow={handlers.onCancelOAuthFlow}
       />
-      {provider.id !== "copilot" && (
+      {provider.id === "openai_account" && (
         <ExtraModelsSection
           models={provider.models ?? []}
+          placeholder="gpt-5.6-codex"
           onAdd={(model) => handlers.onAddModel(provider, model)}
           onRemove={(model) => handlers.onRemoveModel(provider, model)}
         />

@@ -1,5 +1,5 @@
 import { Col, Flex, Row, Typography, theme } from "antd";
-import { LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
+import { COMING_SOON_PROVIDERS, LOCAL_PROVIDERS, OAUTH_PROVIDERS } from "../constants.js";
 import type { ProviderInfo, TestResult } from "../types.js";
 import { ProviderCard } from "./ProviderCard.js";
 
@@ -16,6 +16,8 @@ interface ProviderGridSectionProps {
   testResults: Record<string, TestResult>;
   onProviderSelect: (provider: ProviderInfo) => void;
   onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
+  favorites?: string[];
+  onToggleFavorite?: (provider: ProviderInfo, event: React.MouseEvent) => void;
 }
 
 export function ProviderGridSection({
@@ -24,6 +26,8 @@ export function ProviderGridSection({
   testResults,
   onProviderSelect,
   onToggleEnabled,
+  favorites = [],
+  onToggleFavorite,
 }: ProviderGridSectionProps) {
   const { token } = theme.useToken();
 
@@ -42,6 +46,8 @@ export function ProviderGridSection({
               testResult={testResults[provider.id]}
               onClick={onProviderSelect}
               onToggleEnabled={onToggleEnabled}
+              isFavorite={favorites.includes(provider.id)}
+              onToggleFavorite={onToggleFavorite}
             />
           </Col>
         ))}
@@ -54,19 +60,32 @@ export function groupProvidersByConfiguration(providers: ProviderInfo[]): Provid
   return [
     {
       title: "Local Providers",
-      providers: providers.filter((provider) => LOCAL_PROVIDERS.has(provider.id)),
+      providers: sortProvidersByLabel(
+        providers.filter((provider) => LOCAL_PROVIDERS.has(provider.id)),
+      ),
     },
     {
       title: "OAuth Providers",
-      providers: providers.filter((provider) => OAUTH_PROVIDERS.has(provider.id)),
+      providers: sortProvidersByLabel(
+        providers.filter((provider) => OAUTH_PROVIDERS.has(provider.id)),
+      ),
     },
     {
       title: "API Key Providers",
-      providers: providers.filter((provider) => isApiKeyProvider(provider)),
+      providers: sortProvidersByLabel(providers.filter((provider) => isApiKeyProvider(provider))),
     },
   ].filter((group) => group.providers.length > 0);
 }
 
 function isApiKeyProvider(provider: ProviderInfo) {
   return !LOCAL_PROVIDERS.has(provider.id) && !OAUTH_PROVIDERS.has(provider.id);
+}
+
+function sortProvidersByLabel(providers: ProviderInfo[]) {
+  return [...providers].sort(
+    (a, b) =>
+      Number(COMING_SOON_PROVIDERS.has(a.id)) - Number(COMING_SOON_PROVIDERS.has(b.id)) ||
+      a.label.localeCompare(b.label, undefined, { sensitivity: "base" }) ||
+      a.id.localeCompare(b.id),
+  );
 }

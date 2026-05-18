@@ -1,6 +1,6 @@
-// Google AI (Gemini) provider — uses the OpenAI-compatible endpoint
+// Google AI (Gemini) (Gemini) provider — uses the OpenAI-compatible endpoint
 // Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
-// Auth: static API key from Google AI Studio (aistudio.google.com)
+// Auth: static API key from Google AI (Gemini) Studio (aistudio.google.com)
 
 import type { ModelInfo } from "../../core/anthropic/types.js";
 import { fetchProviderJson, mapProviderModels } from "./api-client.js";
@@ -11,7 +11,7 @@ export class GoogleProvider extends OpenAIChatTransport {
     return "google";
   }
   get label() {
-    return "Google AI";
+    return "Google AI (Gemini)";
   }
 
   protected resolveModel(requestedModel: string): string {
@@ -28,7 +28,9 @@ export class GoogleProvider extends OpenAIChatTransport {
 
     // The OpenAI-compat /models endpoint returns the standard {data:[]} shape
     const url = `${this.baseUrl()}/models`;
-    const json = await fetchProviderJson<{ data?: Array<{ id: string; created?: number }> }>({
+    const json = await fetchProviderJson<{
+      data?: Array<{ id: string; created?: number }>;
+    }>({
       url,
       headers: {
         Authorization: this.authHeader(),

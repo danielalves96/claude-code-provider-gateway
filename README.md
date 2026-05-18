@@ -4,12 +4,12 @@
 
 **Claude Code, your provider, one local desktop gateway.**
 
-Run Claude Code through OpenRouter, DeepSeek, OpenAI Account, GitHub Copilot, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, llama.cpp, or Anthropic itself, while keeping the Claude Code workflow intact.
+Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, and many other providers while keeping the Claude Code workflow intact.
 
 [![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
-[![Providers](https://img.shields.io/badge/providers-10-2563eb?style=for-the-badge)](#supported-providers)
+[![Providers](https://img.shields.io/badge/providers-40-2563eb?style=for-the-badge)](#supported-providers)
 <br />
 [![Platforms](https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-f97316?style=for-the-badge)](#system-requirements)
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-0f172a?style=for-the-badge)](#pricing)
@@ -91,6 +91,7 @@ The next documentation step is a separate official docs site repository. Until t
 
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Providers](docs/PROVIDERS.md)
 - [Development](docs/DEVELOPMENT.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
@@ -99,12 +100,13 @@ The next documentation step is a separate official docs site repository. Until t
 ## Features
 
 - **Desktop app, not a terminal science project** - Tauri app for macOS, Windows, and Linux with provider setup, connection tests, routing, logs, and history in one UI.
-- **10 providers out of the box** - OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, NVIDIA NIM, Kimi, Google AI, Ollama, LM Studio, and llama.cpp.
+- **40 providers out of the box** - OAuth, API key, cloud, and local providers, including OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, and llama.cpp.
 - **Anthropic-compatible local proxy** - Claude Code sends Anthropic Messages API requests to `127.0.0.1`; CCPG translates and routes them.
 - **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
-- **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot uses Device Flow. Tokens refresh automatically.
+- **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
+- **Provider management UI** - search providers, filter active/inactive cards, favorite and reorder frequently used providers, edit custom model lists, and hide noisy discovered models.
 - **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
@@ -167,17 +169,32 @@ Use `--all` when you want to choose models from multiple providers inside one Cl
 
 ## Supported Providers
 
-### Cloud
+### OAuth
 
 | Provider | Auth | Notes |
 |---|---|---|
 | OpenAI Account | OAuth PKCE | Uses your OpenAI account session from the desktop app. |
 | GitHub Copilot | OAuth Device Flow | Uses Copilot model access available to your GitHub account. |
+| Kilo Code | OAuth Device Flow | Uses a Kilo Code account token and organization id when provided. |
+| Cline | OAuth authorization code | Uses the Cline account flow and refreshes tokens when possible. |
+| Kiro AI | OAuth placeholder | Visible as coming soon; the OAuth flow is not implemented yet. |
+| iFlow AI | OAuth placeholder | Visible as coming soon; the OAuth flow is not implemented yet. |
+
+### API Key Cloud
+
+| Provider | Auth | Notes |
+|---|---|---|
 | OpenRouter | API key | Broad model catalog through one provider. |
 | DeepSeek | API key | Anthropic-compatible endpoint. |
 | NVIDIA NIM | API key | OpenAI-compatible endpoint, translated by CCPG. |
 | Kimi (Moonshot) | API key | OpenAI-compatible endpoint, translated by CCPG. |
-| Google AI | API key | OpenAI-compatible Gemini endpoint, translated by CCPG. |
+| Google AI (Gemini) | API key | OpenAI-compatible Gemini endpoint, translated by CCPG. |
+| Groq, xAI, Mistral, Cerebras, Together AI, Fireworks AI | API key | OpenAI-compatible endpoints, translated by CCPG. |
+| GLM, GLM China, SiliconFlow, Hyperbolic, Chutes AI, Perplexity, Nebius AI | API key | Regional and aggregator providers with model prefix routing. |
+| Volcengine Ark, BytePlus ModelArk, Alibaba Bailian, Alibaba Bailian Intl | API key | OpenAI-compatible regional cloud providers. |
+| Minimax, Minimax China | API key | Anthropic-compatible endpoints. |
+| OpenCode Go, Xiaomi MiMo, Xiaomi MiMo Token Plan, Cohere, Blackbox AI, HuggingFace Router, Ollama Cloud | API key | Additional hosted model catalogs. |
+| Command Code | API key | Custom provider transport that converts AI SDK v5 NDJSON streams into Anthropic SSE. |
 
 ### Local
 
@@ -190,6 +207,8 @@ Use `--all` when you want to choose models from multiple providers inside one Cl
 ### Anthropic Passthrough
 
 CCPG can also pass native Claude requests through to Anthropic when credentials are available. This is useful when you want Claude models and non-Anthropic models in the same gateway workflow.
+
+See [docs/PROVIDERS.md](docs/PROVIDERS.md) for the complete provider ID list, CLI flags, auth behavior, and contributor notes.
 
 ## System Requirements
 
@@ -249,10 +268,41 @@ ccpg --Ollama --continue
 | `--DeepSeek` | DeepSeek models |
 | `--NvidiaNim` | NVIDIA NIM models |
 | `--Kimi` | Kimi models |
-| `--Google` or `--GoogleAI` | Google AI models |
+| `--Google` or `--GoogleAI` | Google AI (Gemini) models |
 | `--Ollama` | Ollama local models |
 | `--LMStudio` | LM Studio local models |
 | `--LlamaCpp` | llama.cpp local models |
+| `--Groq` | Groq models |
+| `--XAI` or `--Grok` | xAI models |
+| `--Mistral` | Mistral models |
+| `--Cerebras` | Cerebras models |
+| `--Together` | Together AI models |
+| `--Fireworks` | Fireworks AI models |
+| `--GLM` or `--ZAI` | GLM models |
+| `--SiliconFlow` | SiliconFlow models |
+| `--Hyperbolic` | Hyperbolic models |
+| `--Chutes` | Chutes AI models |
+| `--Perplexity` | Perplexity models |
+| `--Nebius` | Nebius AI models |
+| `--GLMCN` | GLM China models |
+| `--VolcengineArk` or `--Ark` | Volcengine Ark models |
+| `--BytePlus` | BytePlus ModelArk models |
+| `--Alicode` or `--Bailian` | Alibaba Bailian models |
+| `--AlicodeIntl` | Alibaba Bailian Intl models |
+| `--Minimax` | Minimax models |
+| `--MinimaxCN` | Minimax China models |
+| `--OpenCodeGo` | OpenCode Go models |
+| `--XiaomiMimo` or `--MiMo` | Xiaomi MiMo models |
+| `--XiaomiTokenPlan` | Xiaomi MiMo Token Plan models |
+| `--Cohere` | Cohere models |
+| `--Blackbox` | Blackbox AI models |
+| `--HuggingFace` or `--HF` | HuggingFace Router models |
+| `--OllamaCloud` | Ollama Cloud models |
+| `--KiloCode` | Kilo Code models |
+| `--Cline` | Cline models |
+| `--Kiro` | Kiro AI placeholder |
+| `--IFlow` | iFlow AI placeholder |
+| `--CommandCode` | Command Code models |
 | `--all` or `--a` | All enabled providers in one model catalog |
 
 Flags are case-insensitive in the shell setup flow.
@@ -326,6 +376,7 @@ Runtime files live in:
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) - system layers, request lifecycle, routing, security model, storage.
+- [Providers](docs/PROVIDERS.md) - provider catalog, auth modes, CLI flags, model discovery, and panel behavior.
 - [Development](docs/DEVELOPMENT.md) - source setup, desktop dev, tests, builds, release flow.
 - [Contributing](CONTRIBUTING.md) - issues, PRs, conventions, contribution workflow.
 - [Security](SECURITY.md) - local threat model and vulnerability reporting.

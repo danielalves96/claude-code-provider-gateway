@@ -19,7 +19,7 @@ export function LiveLogsPanel({ logs, paused, onTogglePaused, onClear }: LiveLog
     if (!paused && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [logs, paused]);
+  }, [paused]);
 
   return (
     <Card

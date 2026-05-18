@@ -46,6 +46,7 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     }
     if (update.activeProvider) merged.activeProvider = update.activeProvider;
     if (update.modelMode) merged.modelMode = update.modelMode;
+    if (update.panelSettings) Object.assign(merged.panelSettings, update.panelSettings);
 
     runtime.saveAndUpdateConfig(normalizeConfig(merged, config));
     return c.json({ ok: true });
