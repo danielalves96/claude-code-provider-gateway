@@ -1,6 +1,6 @@
-// Google AI (Gemini) (Gemini) provider — uses the OpenAI-compatible endpoint
+// Google AI (Gemini) provider — uses the OpenAI-compatible endpoint
 // Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
-// Auth: static API key from Google AI (Gemini) Studio (aistudio.google.com)
+// Auth: static API key from Google AI Studio (aistudio.google.com)
 
 import type { ModelInfo } from "../../core/anthropic/types.js";
 import { fetchProviderJson, mapProviderModels } from "./api-client.js";
