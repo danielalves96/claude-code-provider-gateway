@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSaveFeedback } from "../../../shared/hooks/useSaveFeedback.js";
-import { EMPTY_RULE, TIERS } from "../constants.js";
-import { routingService } from "../routingService.js";
-import type { RoutingMap, RoutingOption, RoutingRule, Tier } from "../types.js";
+import { EMPTY_RULE, TIERS } from "../domain/constants.js";
+import type { RoutingMap, RoutingOption, RoutingRule, Tier } from "../domain/types.js";
+import { routingService } from "../services/routingService.js";
 
 const emptyMap = (): RoutingMap => ({
   default: { ...EMPTY_RULE },

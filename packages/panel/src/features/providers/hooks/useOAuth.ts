@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { openExternal } from "../../../shared/openExternal.js";
-import { DEVICE_FLOW_PROVIDERS } from "../constants.js";
-import { providersService } from "../providersService.js";
-import type { CopilotFlow } from "../types.js";
+import { DEVICE_FLOW_PROVIDERS } from "../domain/constants.js";
+import type { CopilotFlow } from "../domain/types.js";
+import { providersService } from "../services/providersService.js";
 
 const BROWSER_FLOW_TIMEOUT_MS = 5 * 60 * 1000;
 const BROWSER_FLOW_POLL_MS = 1200;

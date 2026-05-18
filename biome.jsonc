@@ -100,7 +100,7 @@
       }
     },
     {
-      "includes": ["packages/panel/src/features/logs/components/LogViewer.tsx"],
+      "includes": ["packages/panel/src/features/logs/components/terminal/LogViewer.tsx"],
       "linter": {
         "rules": {
           "suspicious": {

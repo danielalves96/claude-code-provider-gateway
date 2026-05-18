@@ -1,8 +1,8 @@
 import { App } from "antd";
 import { useCallback, useEffect, useState } from "react";
-import { providersService } from "../providersService.js";
-import type { ProviderInfo, TestResult } from "../types.js";
-import { mergeModelLists } from "../utils.js";
+import type { ProviderInfo, TestResult } from "../domain/types.js";
+import { mergeModelLists } from "../domain/utils.js";
+import { providersService } from "../services/providersService.js";
 
 export function useProviders() {
   const { message } = App.useApp();

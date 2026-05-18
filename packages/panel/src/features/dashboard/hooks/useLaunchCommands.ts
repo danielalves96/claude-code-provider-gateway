@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { dashboardService } from "../dashboardService.js";
-import type { LaunchItem, QuickLaunch } from "../types.js";
+import type { LaunchItem, QuickLaunch } from "../domain/types.js";
+import { dashboardService } from "../services/dashboardService.js";
 
 export function useLaunchCommands() {
   const [launch, setLaunch] = useState<QuickLaunch | null>(null);
