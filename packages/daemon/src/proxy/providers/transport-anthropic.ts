@@ -18,9 +18,6 @@ import type { StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
 import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
-// Beta features: coding UX + interleaved thinking
-const ANTHROPIC_BETA = "claude-code-20250219,interleaved-thinking-2025-05-14";
-
 export abstract class AnthropicMessagesTransport extends BaseProvider {
   protected resolveModel(model: string): string {
     return stripGatewayProviderPrefix(model, this.id);
@@ -31,18 +28,23 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     return { Authorization: this.authHeader() };
   }
 
+  protected anthropicBetaHeader(): string | null {
+    return null;
+  }
+
   async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       return { error: { status: 401, message: this.missingApiKeyMessage() } };
     }
 
+    const anthropicBeta = this.anthropicBetaHeader();
     const result = await postProviderStream({
       url: `${this.baseUrl()}/messages`,
       headers: {
         "Content-Type": "application/json",
         ...this.authHeaders(),
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": ANTHROPIC_BETA,
+        ...(anthropicBeta ? { "anthropic-beta": anthropicBeta } : {}),
         ...this.extraHeaders(),
       },
       body: { ...req, model: this.resolveModel(req.model), stream: true },

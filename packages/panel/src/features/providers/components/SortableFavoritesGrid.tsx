@@ -4,6 +4,7 @@ import {
   type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  type PointerSensorOptions,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -18,6 +19,32 @@ import { CSS } from "@dnd-kit/utilities";
 import { Col, Row } from "antd";
 import type { ProviderInfo, TestResult } from "../types.js";
 import { ProviderCard } from "./ProviderCard.js";
+
+const DRAG_BLOCKING_TARGET_SELECTOR = [
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "[contenteditable='true']",
+  ".ant-btn",
+  ".ant-switch",
+].join(",");
+
+function isDragBlockingTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest(DRAG_BLOCKING_TARGET_SELECTOR));
+}
+
+class ProviderCardPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: "onPointerDown" as const,
+      handler: (event: React.PointerEvent, options: PointerSensorOptions) => {
+        if (isDragBlockingTarget(event.nativeEvent.target)) return false;
+        return PointerSensor.activators[0].handler(event, options);
+      },
+    },
+  ];
+}
 
 interface SortableProviderCardProps {
   provider: ProviderInfo;
@@ -78,7 +105,7 @@ export function SortableFavoritesGrid({
   onReorder,
 }: SortableFavoritesGridProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(ProviderCardPointerSensor, {
       activationConstraint: {
         distance: 5,
       },

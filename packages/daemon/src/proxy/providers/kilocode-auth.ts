@@ -72,6 +72,8 @@ export async function pollKiloCodeDeviceFlow(deviceCode: string): Promise<KiloCo
   if (data.status === "approved" && data.token) {
     return { status: "success", token: data.token, userEmail: data.userEmail };
   }
+  if (data.status === "denied") return { status: "denied" };
+  if (data.status === "expired") return { status: "expired" };
   return { status: "pending" };
 }
 

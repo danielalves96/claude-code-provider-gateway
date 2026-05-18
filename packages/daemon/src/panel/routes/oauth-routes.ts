@@ -1,4 +1,4 @@
-import type { ServerResponse } from "node:http";
+import type { Server, ServerResponse } from "node:http";
 import type { Context, Hono } from "hono";
 import {
   CLINE_REDIRECT_URI,
@@ -139,10 +139,7 @@ async function startOpenAIAccountFlow(c: Context, runtime: PanelRuntime) {
       await completeOpenAIAccountFlow(runtime, activeFlow, code, res);
     });
 
-    await new Promise<void>((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(1455, "127.0.0.1", () => resolve());
-    });
+    await listenOnLocalhost(server, 1455, "OpenAI");
 
     flow.server = server;
     flow.timer = setTimeout(() => timeoutOpenAIFlow(runtime, state), 5 * 60 * 1000);
@@ -427,10 +424,7 @@ async function startClineFlow(c: Context, runtime: PanelRuntime) {
       await completeClineFlow(runtime, activeFlow, code, res);
     });
 
-    await new Promise<void>((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(1456, "127.0.0.1", () => resolve());
-    });
+    await listenOnLocalhost(server, 1456, "Cline");
 
     flow.server = server;
     flow.timer = setTimeout(() => timeoutBrowserOAuthFlow(runtime, state, "Cline"), 5 * 60 * 1000);
@@ -440,6 +434,49 @@ async function startClineFlow(c: Context, runtime: PanelRuntime) {
   }
 
   return c.json({ state, url: createClineAuthorizationUrl(state) });
+}
+
+async function listenOnLocalhost(
+  server: Server,
+  port: number,
+  providerLabel: string,
+): Promise<void> {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const onError = (err: Error) => {
+        server.off("listening", onListening);
+        reject(err);
+      };
+      const onListening = () => {
+        server.off("error", onError);
+        resolve();
+      };
+
+      server.once("error", onError);
+      server.once("listening", onListening);
+      server.listen(port, "127.0.0.1");
+    });
+  } catch (err) {
+    throw describeCallbackServerListenError(err, providerLabel, port);
+  }
+}
+
+function describeCallbackServerListenError(
+  err: unknown,
+  providerLabel: string,
+  port: number,
+): Error {
+  if (isNodeError(err) && err.code === "EADDRINUSE") {
+    return new Error(
+      `${providerLabel} OAuth callback port ${port} is already in use. Close the other process using 127.0.0.1:${port} and try logging in again.`,
+    );
+  }
+
+  return err instanceof Error ? err : new Error(String(err));
+}
+
+function isNodeError(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && "code" in err;
 }
 
 async function completeClineFlow(

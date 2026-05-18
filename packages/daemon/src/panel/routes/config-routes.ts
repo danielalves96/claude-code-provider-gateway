@@ -46,9 +46,13 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     }
     if (update.activeProvider) merged.activeProvider = update.activeProvider;
     if (update.modelMode) merged.modelMode = update.modelMode;
-    if (update.panelSettings) Object.assign(merged.panelSettings, update.panelSettings);
+    merged.panelSettings ??= { favoriteProviders: [], favoritesTipDismissed: false };
+    if (update.panelSettings) {
+      Object.assign(merged.panelSettings, update.panelSettings);
+    }
 
-    runtime.saveAndUpdateConfig(normalizeConfig(merged, config));
+    const defaults = config.panelSettings ? config : { ...config, panelSettings: merged.panelSettings };
+    runtime.saveAndUpdateConfig(normalizeConfig(merged, defaults));
     return c.json({ ok: true });
   });
 }
