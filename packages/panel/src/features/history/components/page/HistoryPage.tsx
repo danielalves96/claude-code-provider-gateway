@@ -1,5 +1,6 @@
 import { Card, Col, Empty, Flex, Row, Skeleton, Typography, theme } from "antd";
 import { useHistoryPage } from "../../hooks/useHistoryPage.js";
+import { ProvidersTable } from "../tables/ProvidersTable.js";
 import { SessionsTable } from "../tables/SessionsTable.js";
 import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { HistoryHeader } from "./HistoryHeader.js";
@@ -93,13 +94,18 @@ export default function HistoryPage() {
           <Empty description={<Text type="secondary">No sessions recorded yet.</Text>} />
         </Card>
       ) : (
-        <SessionsTable
-          sessions={page.sessions}
-          expandedKeys={page.expandedKeys}
-          onToggleExpanded={page.toggleExpanded}
-          onDeleteSession={page.deleteSession}
-          deletingId={page.deletingId}
-        />
+        <>
+          {page.globalProviderRows.length > 0 && (
+            <ProvidersTable rows={page.globalProviderRows} />
+          )}
+          <SessionsTable
+            sessions={page.sessions}
+            expandedKeys={page.expandedKeys}
+            onToggleExpanded={page.toggleExpanded}
+            onDeleteSession={page.deleteSession}
+            deletingId={page.deletingId}
+          />
+        </>
       )}
 
       <ClearHistoryModal

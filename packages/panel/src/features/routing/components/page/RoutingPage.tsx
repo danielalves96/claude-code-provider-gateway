@@ -12,6 +12,11 @@ export default function RoutingPage() {
   const { rules, thinking, setThinking, options, updateRule, loaded, saving, saved, save } =
     useRouting();
 
+  function handleSave() {
+    if (!loaded) return;
+    save();
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
       <Flex vertical gap={token.paddingLG} style={{ flex: 1, paddingBottom: token.paddingLG * 2 }}>
@@ -49,26 +54,28 @@ export default function RoutingPage() {
         )}
       </Flex>
 
-      <div
-        style={{
-          position: "sticky",
-          bottom: -token.paddingLG,
-          marginTop: "auto",
-          padding: `${token.padding}px ${token.paddingLG}px`,
-          margin: `0 -${token.paddingLG}px -${token.paddingLG}px -${token.paddingLG}px`,
-          background: "rgba(38, 38, 36, 0.8)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          borderTop: `1px solid ${token.colorBorderSecondary}`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          zIndex: 10,
-        }}
-      >
-        <ThinkingToggle checked={thinking} onChange={setThinking} />
-        <SaveButton onClick={save} saving={saving} saved={saved} label="Save routing" />
-      </div>
+      {loaded && (
+        <div
+          style={{
+            position: "sticky",
+            bottom: -token.paddingLG,
+            marginTop: "auto",
+            padding: `${token.padding}px ${token.paddingLG}px`,
+            margin: `0 -${token.paddingLG}px -${token.paddingLG}px -${token.paddingLG}px`,
+            background: "rgba(38, 38, 36, 0.8)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            zIndex: 10,
+          }}
+        >
+          <ThinkingToggle checked={thinking} onChange={setThinking} />
+          <SaveButton onClick={handleSave} saving={saving} saved={saved} label="Save routing" />
+        </div>
+      )}
     </div>
   );
 }

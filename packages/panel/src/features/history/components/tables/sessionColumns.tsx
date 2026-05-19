@@ -100,6 +100,8 @@ export function useSessionColumns({
               danger
               icon={<DeleteOutlined />}
               loading={deletingId === session.id}
+              aria-label={`Delete session ${session.id}`}
+              title={`Delete session ${session.id}`}
             />
           </Popconfirm>
         </div>
