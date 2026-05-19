@@ -70,7 +70,11 @@ export function registerProviderRoutes(app: Hono, runtime: PanelRuntime): void {
     if (!parsed.ok) return c.json({ error: parsed.error }, 400);
 
     const config = structuredClone(runtime.currentConfig());
-    if (config.providers[parsed.slug]) {
+    if (RESERVED_CUSTOM_SLUGS.has(parsed.slug)) {
+      return c.json({ error: `Provider slug "${parsed.slug}" is reserved` }, 409);
+    }
+    const existingLower = Object.keys(config.providers).map((k) => k.toLowerCase());
+    if (existingLower.includes(parsed.slug)) {
       return c.json({ error: `Provider slug "${parsed.slug}" already exists` }, 409);
     }
 
@@ -170,6 +174,9 @@ export function registerProviderRoutes(app: Hono, runtime: PanelRuntime): void {
   });
 }
 
+const RESERVED_CUSTOM_SLUGS = new Set(["anthropic", "chain", "fallback"]);
+const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+
 type CustomFields = Record<string, unknown>;
 
 function parseCustomProviderFields(fields: CustomFields):
@@ -182,7 +189,7 @@ function parseCustomProviderFields(fields: CustomFields):
     }
   | { ok: false; error: string } {
   const label = stringField(fields.name)?.trim();
-  const slug = normalizeSlug(stringField(fields.slug));
+  const slug = normalizeSlug(stringField(fields.slug))?.toLowerCase() ?? null;
   const baseUrl = stringField(fields.baseUrl)?.trim().replace(/\/+$/, "");
   const apiKey = stringField(fields.apiKey)?.trim();
   const compatibility = parseCompatibility(fields.compatibility);
@@ -229,6 +236,7 @@ function parseCompatibility(value: unknown): "openai" | "anthropic" {
 
 async function saveProviderLogo(slug: string, value: unknown): Promise<string | undefined> {
   if (!(value instanceof File) || value.size === 0) return undefined;
+  if (value.size > MAX_LOGO_BYTES) throw new Error("Logo file must not exceed 5 MB");
   if (value.type !== "image/png" && value.type !== "image/webp") {
     throw new Error("Logo must be a PNG or WebP image");
   }

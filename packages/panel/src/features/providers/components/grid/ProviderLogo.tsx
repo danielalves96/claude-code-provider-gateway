@@ -10,9 +10,10 @@ interface ProviderLogoProps {
 
 export function ProviderLogo({ providerId, label, size, logoUrl }: ProviderLogoProps) {
   const { token } = theme.useToken();
-  const [failedProviderId, setFailedProviderId] = useState<string | null>(null);
+  const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
+  const src = logoUrl ?? `/providers/${providerId}.webp`;
 
-  if (failedProviderId === providerId) {
+  if (failedLogoSrc === src) {
     return (
       <Avatar
         shape="square"
@@ -28,7 +29,7 @@ export function ProviderLogo({ providerId, label, size, logoUrl }: ProviderLogoP
 
   return (
     <img
-      src={logoUrl ?? `/providers/${providerId}.webp`}
+      src={src}
       alt=""
       aria-hidden="true"
       style={{
@@ -37,7 +38,7 @@ export function ProviderLogo({ providerId, label, size, logoUrl }: ProviderLogoP
         objectFit: "contain",
         flexShrink: 0,
       }}
-      onError={() => setFailedProviderId(providerId)}
+      onError={() => setFailedLogoSrc(src)}
     />
   );
 }

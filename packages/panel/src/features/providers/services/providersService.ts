@@ -44,7 +44,7 @@ export const providersService = {
     if (draft.logo) form.set("logo", draft.logo);
     return http.post<{ ok: boolean; id: string }>("/custom-providers", form);
   },
-  deleteCustom: (id: string) => http.delete(`/custom-providers/${id}`),
+  deleteCustom: (id: string) => http.delete(`/custom-providers/${encodeURIComponent(id)}`),
   listModels: (id: string) => http.get<ModelInfo[]>(`/models/${id}`),
 
   setEnabled: (id: string, enabled: boolean) => patchConfig(id, { enabled }),

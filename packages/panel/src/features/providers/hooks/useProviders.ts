@@ -173,9 +173,13 @@ export function useProviders() {
     async (draft: CustomProviderDraft) => {
       try {
         const result = await providersService.createCustom(draft);
-        message.success("Custom provider added");
-        refresh();
-        return result.id;
+        if (result.ok) {
+          message.success("Custom provider added");
+          refresh();
+          return result.id;
+        }
+        message.error("Failed to add custom provider");
+        return null;
       } catch {
         message.error("Failed to add custom provider");
         return null;

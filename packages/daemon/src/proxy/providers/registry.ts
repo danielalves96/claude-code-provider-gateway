@@ -101,12 +101,16 @@ export class ProviderRegistry {
   }
 
   private constructorFor(id: string, providerConfig: ProviderConfig): ProviderConstructor | null {
+    if (providerConfig.custom) {
+      if ((PROVIDER_IDS as readonly string[]).includes(id)) return null;
+      if (providerConfig.custom.compatibility === "openai") return createCustomOpenAIProvider(id);
+      if (providerConfig.custom.compatibility === "anthropic") {
+        return createCustomAnthropicProvider(id);
+      }
+      return null;
+    }
     if ((PROVIDER_IDS as readonly string[]).includes(id)) {
       return PROVIDER_MAP[id as BuiltInProviderId];
-    }
-    if (providerConfig.custom?.compatibility === "openai") return createCustomOpenAIProvider(id);
-    if (providerConfig.custom?.compatibility === "anthropic") {
-      return createCustomAnthropicProvider(id);
     }
     return null;
   }
