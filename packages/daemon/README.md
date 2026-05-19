@@ -80,7 +80,7 @@ All `/v1/*` routes require the gateway auth token in the `x-api-key` header.
 | `GET` | `/api/status` | Daemon status and provider list. |
 | `GET`/`POST` | `/api/sessions` | Active session and session history. |
 | `GET`/`POST` | `/api/config` | Read and write gateway configuration. |
-| `GET`/`POST` | `/api/providers` | Provider management — test connections, fetch models, manage OAuth. |
+| `GET`/`POST` | `/api/providers` and `/api/custom-providers/*` | Provider management — test connections, fetch models, manage OAuth, create/test/delete custom providers, and serve uploaded custom logos. |
 | `GET`/`POST` | `/api/oauth/*` | OAuth flow endpoints for OpenAI Account, GitHub Copilot, Kilo Code, and Cline. |
 | `POST` | `/api/shell/*` | Shell setup — install/uninstall the `ccpg` command wrapper. |
 
@@ -106,7 +106,7 @@ export type { Config, ProviderConfig, ProviderId, RoutingRule } from "./config/s
 
 ### Provider system
 
-The daemon supports **41 providers** (cloud API key, OAuth, and local) via a provider registry. Each provider implements a transport adapter — either Anthropic-native passthrough or OpenAI-format translation. Provider implementations live in `src/proxy/providers/`.
+The daemon ships with a built-in provider catalog (cloud API key, OAuth, and local) and can add user-created OpenAI-compatible or Anthropic-compatible providers at runtime. Each provider implements a transport adapter — either Anthropic-native passthrough or OpenAI-format translation. Built-in provider implementations live in `src/proxy/providers/`; custom providers are stored in config under their slug and instantiated dynamically from their compatibility mode.
 
 OAuth providers (`openai_account`, `copilot`, `kiro`, `iflow`, `kilocode`, `cline`) include built-in token refresh logic.
 

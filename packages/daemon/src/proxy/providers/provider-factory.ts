@@ -1,4 +1,4 @@
-import type { Config, ProviderConfig, ProviderId } from "../../config/schema.js";
+import type { BuiltInProviderId, Config, ProviderConfig } from "../../config/schema.js";
 import { PROVIDER_LABELS } from "../../config/schema.js";
 import type { BaseProvider } from "./base.js";
 import { AnthropicMessagesTransport } from "./transport-anthropic.js";
@@ -13,7 +13,7 @@ interface ProviderFactoryOptions {
 }
 
 export function createOpenAIProvider(
-  id: ProviderId,
+  id: BuiltInProviderId,
   options: ProviderFactoryOptions = {},
 ): ProviderConstructor {
   return class ConfiguredOpenAIProvider extends OpenAIChatTransport {
@@ -36,7 +36,7 @@ export function createOpenAIProvider(
 }
 
 export function createAnthropicProvider(
-  id: ProviderId,
+  id: BuiltInProviderId,
   options: ProviderFactoryOptions = {},
 ): ProviderConstructor {
   return class ConfiguredAnthropicProvider extends AnthropicMessagesTransport {

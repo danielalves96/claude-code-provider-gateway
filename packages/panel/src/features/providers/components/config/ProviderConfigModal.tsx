@@ -9,6 +9,7 @@ import { ProviderConfigContent, type ProviderConfigHandlers } from "./ProviderCo
 
 export interface ProviderConfigModalHandlers extends ProviderConfigHandlers {
   onTest: (id: string) => void;
+  onRequestDeleteProvider: (id: string) => void;
 }
 
 export interface ProviderConfigModalProps {
@@ -42,6 +43,11 @@ export function ProviderConfigModal({
       open={open}
       onCancel={onClose}
       footer={[
+        p.custom && (
+          <Button key="delete" danger onClick={() => handlers.onRequestDeleteProvider(p.id)}>
+            Delete Provider
+          </Button>
+        ),
         <Button
           key="test"
           loading={testing}
@@ -87,7 +93,12 @@ function ProviderConfigTitle({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <ProviderLogo providerId={provider.id} label={provider.label} size={28} />
+        <ProviderLogo
+          providerId={provider.id}
+          label={provider.label}
+          logoUrl={provider.logoUrl}
+          size={28}
+        />
         <span style={{ fontSize: 18 }}>{provider.label} Configuration</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

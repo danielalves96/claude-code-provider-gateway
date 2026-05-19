@@ -51,7 +51,8 @@ export const OAUTH_PROVIDER_IDS = new Set<ProviderId>([
   "cline",
 ]);
 
-export type ProviderId = (typeof PROVIDER_IDS)[number];
+export type BuiltInProviderId = (typeof PROVIDER_IDS)[number];
+export type ProviderId = BuiltInProviderId | string;
 
 export interface ProviderOAuthConfig {
   accessToken?: string;
@@ -79,6 +80,12 @@ export interface ProviderConfig {
   rateWindow: number;
   maxConcurrency: number;
   requestTimeoutMs?: number;
+  custom?: {
+    label: string;
+    slug: string;
+    logoFile?: string;
+    compatibility: "openai" | "anthropic";
+  };
 }
 
 export type ModelMode = "single" | "all" | "chains";
@@ -142,56 +149,58 @@ export interface Config {
   };
 }
 
-export const PROVIDER_DEFAULTS: Record<ProviderId, Partial<ProviderConfig> & { baseUrl?: string }> =
-  {
-    openai_account: { baseUrl: "https://chatgpt.com/backend-api", models: [] },
-    copilot: { baseUrl: "https://api.individual.githubcopilot.com", models: [] },
-    nvidia_nim: { baseUrl: "https://integrate.api.nvidia.com/v1" },
-    openrouter: { baseUrl: "https://openrouter.ai/api/v1" },
-    deepseek: { baseUrl: "https://api.deepseek.com/anthropic" },
-    kimi: { baseUrl: "https://api.moonshot.ai/v1" },
-    google: {
-      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    },
-    ollama: { baseUrl: "http://localhost:11434" },
-    lmstudio: { baseUrl: "http://localhost:1234/v1" },
-    llamacpp: { baseUrl: "http://localhost:8080/v1" },
-    groq: { baseUrl: "https://api.groq.com/openai/v1" },
-    xai: { baseUrl: "https://api.x.ai/v1" },
-    mistral: { baseUrl: "https://api.mistral.ai/v1" },
-    cerebras: { baseUrl: "https://api.cerebras.ai/v1" },
-    together: { baseUrl: "https://api.together.xyz/v1" },
-    fireworks: { baseUrl: "https://api.fireworks.ai/inference/v1" },
-    glm: { baseUrl: "https://api.z.ai/api/anthropic/v1" },
-    siliconflow: { baseUrl: "https://api.siliconflow.cn/v1" },
-    hyperbolic: { baseUrl: "https://api.hyperbolic.xyz/v1" },
-    chutes: { baseUrl: "https://llm.chutes.ai/v1" },
-    perplexity: { baseUrl: "https://api.perplexity.ai" },
-    nebius: { baseUrl: "https://api.studio.nebius.com/v1" },
-    glm_cn: { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4" },
-    volcengine_ark: { baseUrl: "https://ark.cn-beijing.volces.com/api/v3" },
-    byteplus: { baseUrl: "https://ark.ap-southeast.bytepluses.com/api/v3" },
-    alicode: { baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" },
-    alicode_intl: {
-      baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    },
-    minimax: { baseUrl: "https://api.minimax.io/anthropic/v1" },
-    minimax_cn: { baseUrl: "https://api.minimaxi.com/anthropic/v1" },
-    opencode_go: { baseUrl: "https://opencode.ai/zen/go/v1" },
-    xiaomi_mimo: { baseUrl: "https://api.xiaomimimo.com/v1" },
-    xiaomi_tokenplan: { baseUrl: "https://token-plan-sgp.xiaomimimo.com/v1" },
-    cohere: { baseUrl: "https://api.cohere.ai/compatibility/v1" },
-    blackbox: { baseUrl: "https://api.blackbox.ai" },
-    huggingface: { baseUrl: "https://router.huggingface.co/v1" },
-    kiro: { baseUrl: "" },
-    iflow: { baseUrl: "https://apis.iflow.cn/v1" },
-    kilocode: { baseUrl: "https://api.kilo.ai/api/openrouter" },
-    cline: { baseUrl: "https://api.cline.bot/api/v1" },
-    ollama_cloud: { baseUrl: "https://ollama.com" },
-    commandcode: { baseUrl: "https://api.commandcode.ai/alpha/generate", models: [] },
-  };
+export const PROVIDER_DEFAULTS: Record<
+  BuiltInProviderId,
+  Partial<ProviderConfig> & { baseUrl?: string }
+> = {
+  openai_account: { baseUrl: "https://chatgpt.com/backend-api", models: [] },
+  copilot: { baseUrl: "https://api.individual.githubcopilot.com", models: [] },
+  nvidia_nim: { baseUrl: "https://integrate.api.nvidia.com/v1" },
+  openrouter: { baseUrl: "https://openrouter.ai/api/v1" },
+  deepseek: { baseUrl: "https://api.deepseek.com/anthropic" },
+  kimi: { baseUrl: "https://api.moonshot.ai/v1" },
+  google: {
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+  },
+  ollama: { baseUrl: "http://localhost:11434" },
+  lmstudio: { baseUrl: "http://localhost:1234/v1" },
+  llamacpp: { baseUrl: "http://localhost:8080/v1" },
+  groq: { baseUrl: "https://api.groq.com/openai/v1" },
+  xai: { baseUrl: "https://api.x.ai/v1" },
+  mistral: { baseUrl: "https://api.mistral.ai/v1" },
+  cerebras: { baseUrl: "https://api.cerebras.ai/v1" },
+  together: { baseUrl: "https://api.together.xyz/v1" },
+  fireworks: { baseUrl: "https://api.fireworks.ai/inference/v1" },
+  glm: { baseUrl: "https://api.z.ai/api/anthropic/v1" },
+  siliconflow: { baseUrl: "https://api.siliconflow.cn/v1" },
+  hyperbolic: { baseUrl: "https://api.hyperbolic.xyz/v1" },
+  chutes: { baseUrl: "https://llm.chutes.ai/v1" },
+  perplexity: { baseUrl: "https://api.perplexity.ai" },
+  nebius: { baseUrl: "https://api.studio.nebius.com/v1" },
+  glm_cn: { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4" },
+  volcengine_ark: { baseUrl: "https://ark.cn-beijing.volces.com/api/v3" },
+  byteplus: { baseUrl: "https://ark.ap-southeast.bytepluses.com/api/v3" },
+  alicode: { baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" },
+  alicode_intl: {
+    baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+  },
+  minimax: { baseUrl: "https://api.minimax.io/anthropic/v1" },
+  minimax_cn: { baseUrl: "https://api.minimaxi.com/anthropic/v1" },
+  opencode_go: { baseUrl: "https://opencode.ai/zen/go/v1" },
+  xiaomi_mimo: { baseUrl: "https://api.xiaomimimo.com/v1" },
+  xiaomi_tokenplan: { baseUrl: "https://token-plan-sgp.xiaomimimo.com/v1" },
+  cohere: { baseUrl: "https://api.cohere.ai/compatibility/v1" },
+  blackbox: { baseUrl: "https://api.blackbox.ai" },
+  huggingface: { baseUrl: "https://router.huggingface.co/v1" },
+  kiro: { baseUrl: "" },
+  iflow: { baseUrl: "https://apis.iflow.cn/v1" },
+  kilocode: { baseUrl: "https://api.kilo.ai/api/openrouter" },
+  cline: { baseUrl: "https://api.cline.bot/api/v1" },
+  ollama_cloud: { baseUrl: "https://ollama.com" },
+  commandcode: { baseUrl: "https://api.commandcode.ai/alpha/generate", models: [] },
+};
 
-export const PROVIDER_LABELS: Record<ProviderId, string> = {
+export const PROVIDER_LABELS: Record<BuiltInProviderId, string> = {
   openai_account: "OpenAI Account",
   copilot: "GitHub Copilot",
   nvidia_nim: "NVIDIA NIM",
@@ -235,7 +244,7 @@ export const PROVIDER_LABELS: Record<ProviderId, string> = {
   commandcode: "Command Code",
 };
 
-export const CLI_FLAGS: Record<string, ProviderId> = {
+export const CLI_FLAGS: Record<string, BuiltInProviderId> = {
   "--OpenAIAccount": "openai_account",
   "--Copilot": "copilot",
   "--GitHubCopilot": "copilot",

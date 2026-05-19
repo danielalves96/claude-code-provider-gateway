@@ -74,7 +74,9 @@ export function prepareLaunch(
     config.modelMode = "all";
     config.activeModelFallbackSlug = null;
     if (!config.providers[config.activeProvider]?.enabled) {
-      const fallbackProvider = PROVIDER_IDS.find((id) => config.providers[id]?.enabled);
+      const fallbackProvider = Object.keys(config.providers).find(
+        (id) => config.providers[id]?.enabled,
+      );
       if (fallbackProvider) config.activeProvider = fallbackProvider;
     }
     saveConfig(config);
@@ -93,7 +95,7 @@ export function prepareLaunch(
     };
   }
 
-  const providerId = resolveProviderFlag(flag);
+  const providerId = resolveProviderFlag(flag) ?? resolveCustomProviderFlag(config, flag);
   if (!providerId) {
     const fallback = resolveFallbackFlag(config, flag);
     if (!fallback) {
@@ -144,6 +146,15 @@ export function prepareLaunch(
     shellScript: buildShellExports(config, session.id),
     envVars: buildEnvVars(config, session.id),
   };
+}
+
+function resolveCustomProviderFlag(config: Config, flag: string): ProviderId | null {
+  if (!flag.startsWith("--")) return null;
+  const target = flag.slice(2).toLowerCase();
+  const match = Object.keys(config.providers).find(
+    (id) => id.toLowerCase() === target && config.providers[id]?.custom,
+  );
+  return match ?? null;
 }
 
 function isModelChainFlag(flag: string): boolean {

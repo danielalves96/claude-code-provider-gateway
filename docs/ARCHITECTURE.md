@@ -227,6 +227,11 @@ Additional provider shapes:
 - **Declarative providers**: `provider-factory.ts` creates lightweight
   subclasses for providers whose behavior is fully described by transport,
   provider id, label, and static options.
+- **User-created custom providers**: the provider registry can instantiate
+  config-defined providers whose `custom.compatibility` is `"openai"` or
+  `"anthropic"` without adding a built-in provider ID. These use the shared
+  OpenAI Chat or Anthropic Messages transports and are addressed by their
+  user-chosen slug.
 - **Regional Anthropic-compatible providers**: OpenRouter, GLM, Minimax,
   Minimax China, LM Studio, and llama.cpp are declarative
   `AnthropicMessagesTransport` providers. DeepSeek and Ollama keep dedicated
@@ -258,9 +263,9 @@ their own model resolver.
 - Sends to `POST {baseUrl}/chat/completions`
 - Transforms OpenAI streaming chunks (delta-based) → Anthropic SSE events (block-based)
 - Handles: text content, tool calls, finish reasons (`stop` → `end_turn`, `tool_calls` → `tool_use`)
-- Used by: NVIDIA NIM, Kimi, Google AI (Gemini), Groq, xAI, Mistral, Cerebras, Together, Fireworks, GLM China, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, Volcengine Ark, BytePlus, Alibaba Bailian, OpenCode Go, Xiaomi MiMo, Cohere, Blackbox, HuggingFace, Ollama Cloud, Kilo Code, and Cline
+- Used by: NVIDIA NIM, Kimi, Google AI (Gemini), Groq, xAI, Mistral, Cerebras, Together, Fireworks, GLM China, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, Volcengine Ark, BytePlus, Alibaba Bailian, OpenCode Go, Xiaomi MiMo, Cohere, Blackbox, HuggingFace, Ollama Cloud, Kilo Code, Cline, and OpenAI-compatible custom providers
 
-**Custom providers** handle their own API and auth:
+**Special hand-written providers** handle their own API and auth:
 - `openai-account.ts` — OAuth token management, model fixup (`o1-mini`/`o3-mini` → actual model IDs), delegates to `openai-account-responses.ts` for request building and `openai-account-stream.ts` for the Responses API stream format
 - `copilot.ts` — dual-token lifecycle (GH OAuth token → 25-min Copilot API token), editor version headers. Routes claude-* models through native Anthropic protocol (`copilot-native-anthropic.ts`) to preserve tool_use, thinking, and citation blocks; other models go through `copilot-chat-stream.ts` (OpenAI Chat format)
 - `commandcode.ts` — custom request builder and stream transformer. It accepts API keys, exposes a fixed/fetched model list, converts Anthropic messages/tools/tool results to Command Code request blocks, and converts text, reasoning, tool-call, and finish events back to Anthropic SSE.
@@ -286,11 +291,16 @@ UI behavior on top:
   `packages/panel/src/features/providers/domain/apiKeyLinks.ts`.
 - OAuth presentation text and provider-specific UI labels live in
   `packages/panel/src/features/providers/domain/oauthPresentation.ts`.
+- Custom OpenAI/Anthropic-compatible providers are created from tab-level
+  actions on the Providers page. Their cards render in a dedicated section at
+  the end of the All Providers tab, while uploaded logos are served by the
+  daemon from the local config directory.
 
 The provider config modal discovers models as soon as a provider is ready. If
 discovery returns no models, or if a provider already has manually configured
-models, the panel shows the manual model picker. This keeps providers with weak
-catalog APIs usable without special-casing routing in the daemon.
+models, the panel shows the manual model picker. Custom providers always expose
+that picker as **Manual models**. This keeps providers with weak catalog APIs
+usable without special-casing routing in the daemon.
 
 ### 4. SSE Stream Handling (`packages/daemon/src/core/sse/writer.ts`)
 
@@ -333,7 +343,7 @@ secrets.enc.json (AES-256-GCM encrypted JSON)
 secret.key (32-byte hex master key) or CC_GATEWAY_SECRET_KEY env var
 ```
 
-- **Paths** (`paths.ts`) — centralized functions for all config directory paths: `getConfigDir()`, `getConfigPath()`, `getPidPath()`, `getLogPath()`, `getSecretsPath()`, `getMasterKeyPath()`, `getCurrentSessionPath()`, `getSessionArchivePath()`. Handles the Windows `%APPDATA%` path on Win32.
+- **Paths** (`paths.ts`) — centralized functions for all config directory paths: `getConfigDir()`, `getConfigPath()`, `getPidPath()`, `getLogPath()`, `getSecretsPath()`, `getMasterKeyPath()`, `getProviderLogoDir()`, `getCurrentSessionPath()`, `getSessionArchivePath()`. Handles the Windows `%APPDATA%` path on Win32.
 - **Schema** (`schema.ts`) — TypeScript types, provider defaults (base URLs, labels), CLI flag mappings
 - **Validation** (`validation.ts`) — runtime normalization with default merging
 - **Token savers** (`Config.tokenSavers`) — non-secret toggles for RTK compression and Caveman level
@@ -388,7 +398,7 @@ Hono-based REST API for the web panel. The panel module is composed of:
 |---|---|
 | `status-routes.ts` | `GET /api/status`, `POST /api/control/shutdown`, `GET /api/stats`, `GET /api/logs` (SSE) |
 | `config-routes.ts` | `GET /api/config`, `PUT /api/config` |
-| `provider-routes.ts` | `GET /api/providers`, `POST /api/providers/:id/test`, `GET /api/models/:providerId`, `GET /api/routing/options` |
+| `provider-routes.ts` | `GET /api/providers`, `POST /api/providers/:id/test`, custom provider create/test/delete, custom logo serving, `GET /api/models/:providerId`, `GET /api/routing/options` |
 | `session-routes.ts` | `GET /api/sessions`, `DELETE /api/sessions`, `POST /api/launch/end`, `POST /api/launch/heartbeat`, `POST /api/launch/attach` |
 | `shell-routes.ts` | `GET /api/quick-launch`, `GET /api/launch-commands`, `GET /api/launch-command`, `GET /api/shell-setup`, `GET /api/shell-setup/snippet/:shell`, `POST /api/shell-setup/install`, `POST /api/launch/prepare` |
 | `oauth-routes.ts` | OpenAI Account PKCE routes, GitHub Copilot device-flow routes, Kilo Code device-flow routes, and Cline browser authorization routes |
@@ -401,7 +411,7 @@ Panel also serves the React SPA static files (built by Vite to `packages/daemon/
 React 19 SPA built with Vite 6 + Ant Design 5 + Zustand 5.
 
 - **Dashboard** — live session view with provider cards, SSE log feed, quick-launch buttons
-- **Providers** — toggle providers, edit API keys, OAuth login, test connections, add extra models
+- **Providers** — toggle providers, edit API keys, OAuth login, test connections, add extra/manual models, create/delete custom OpenAI/Anthropic-compatible providers
 - **Model Chain** — create, edit, reorder, enable, and launch ordered fallback chains built from active provider models
 - **Routing** — tier-based model routing UI
 - **History** — session archive with per-request drill-down
@@ -620,6 +630,7 @@ Desktop Build (GitHub Actions — .github/workflows/desktop-build.yml, on tag pu
 │                             # Providers, routing, Model Chains, token savers
 ├── secrets.enc.json         # AES-256-GCM encrypted secrets
 ├── secret.key               # Master encryption key (32-byte hex)
+├── provider-logos/          # Uploaded custom provider PNG/WebP logos
 ├── daemon.pid               # Process ID
 ├── daemon.log               # Log output (rotating buffer)
 ├── current-session.json     # Active session (checkpointed every 10s)

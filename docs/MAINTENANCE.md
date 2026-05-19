@@ -9,7 +9,7 @@
 | Area | Why it matters | Suggested direction |
 |---|---|---|
 | Config reload | The proxy reloads config from disk on each request, which keeps settings fresh but adds synchronous file I/O to the hot path. | Cache parsed config and invalidate it with file watching or a short TTL. Only refresh provider instances whose config changed. |
-| Provider registry invalidation | Clearing the full provider cache after every config reload can recreate providers unnecessarily. | Compare provider config snapshots or hashes and invalidate specific providers. |
+| Provider registry invalidation | Clearing the full provider cache after every config reload can recreate providers unnecessarily, especially now that runtime custom providers are created from config. | Compare provider config snapshots or hashes and invalidate specific providers. |
 | Session persistence | Session checkpoints and archive operations use local JSON files and can become expensive as request logs grow. | Add pagination/lazy loading for request logs, atomic archive writes, and clearer retention controls. |
 | Request history privacy | Prompt and response previews are useful for debugging but are stored locally in plain JSON session records. | Add a config toggle for prompt/response capture, retention policy controls, and consider encrypted session archives. |
 | Panel test coverage | The daemon has focused tests; the React panel currently relies mostly on manual validation. | Start with tests for shared hooks/services and critical flows like provider config, Model Chain setup, history, and shell setup. |
@@ -26,6 +26,7 @@
 | `packages/daemon/src/proxy/providers/commandcode.ts` | Custom provider with request conversion, catalog handling, and NDJSON/SSE stream transformation. | Split new behavior into helper modules where possible and keep tests close to the stream state machine. |
 | `packages/daemon/src/runtime/session-store.ts` | Reads, writes, archives, and deletes session JSON/JSONL files. | Prefer atomic writes, explicit logging on failure, and temp-directory tests for file operations. |
 | `packages/daemon/src/config/secrets/` | Encrypts and hydrates API keys, OAuth tokens, and gateway auth token. | Treat changes as security-sensitive. Preserve backward compatibility and test corrupted/missing store cases. |
+| `packages/daemon/src/panel/routes/provider-routes.ts` | Owns provider config updates plus custom provider create/test/delete and logo serving. | Verify deletion cleans config, encrypted API keys, routing refs, Model Chain refs, favorites, active provider fallback, and uploaded logos. |
 | `packages/desktop/src-tauri/src/daemon_supervisor.rs` | Owns sidecar lifecycle in the desktop app. | Add tests around pure policy code and manually validate start/stop/restart behavior on the target OS. |
 
 ## Security Review Checklist
@@ -37,6 +38,7 @@ or storage:
 - Does every proxy API request still require the gateway auth token?
 - Does any new panel API route need auth or origin handling updates?
 - Are provider API keys and OAuth tokens kept out of `config.json`, logs, and docs?
+- Do custom provider deletion paths remove encrypted API keys and uploaded logos?
 - Are provider error messages sanitized before being shown or logged?
 - Does any new file containing prompts, responses, tokens, or account data need
   retention controls or encryption?

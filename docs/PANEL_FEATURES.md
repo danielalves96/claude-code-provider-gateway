@@ -383,38 +383,39 @@ type RoutingOption = {
 
 ## Feature: Providers (`features/providers/`)
 
-The most feature-rich module. Manages all LLM providers: API key configuration, OAuth login, model selection, connection testing, and favorites.
+The most feature-rich module. Manages built-in and user-created LLM providers: API key configuration, OAuth login, custom OpenAI/Anthropic-compatible provider creation, model selection, connection testing, and favorites.
 
 ### Components
 
 | Component | Purpose |
 |---|---|
-| `ProvidersPage` | Main page: search bar, status filter, provider grid grouped by configuration type (Local/OAuth/API Key), favorites toolbar. |
-| `ProviderToolbar` | Search input + status filter (all/enabled/disabled/configured/unconfigured) + favorites tip. |
-| `ProviderTabs` | Tab bar with "Favorites" and "All Providers" tabs. |
-| `ProviderGridSection` | Renders a group of provider cards with a section title. |
+| `ProvidersPage` | Main page: search bar, status filter, provider grid grouped by configuration type, custom provider section, favorites toolbar, and custom-provider modal state. |
+| `ProviderToolbar` | Search input + status filter (all/enabled/disabled/configured/unconfigured). |
+| `ProviderTabs` | Tab bar with "Favorites" and "All Providers" tabs plus right-aligned tab actions for adding OpenAI- or Anthropic-compatible custom providers. |
+| `ProviderGridSection` | Renders a group of provider cards with a section title. Built-in groups render first; the custom provider section renders last on the All Providers tab. |
 | `SortableFavoritesGrid` | Drag-and-drop grid for favorite providers using `@dnd-kit`. |
 | `ProviderCard` | Individual provider card: logo, label, enabled switch, test button, status indicator, favorite star. |
 | `ProviderCardSkeleton` | Loading skeleton for a provider card. |
-| `ProviderLogo` | Provider logo image (80+ provider logos in `packages/panel/public/providers/`). |
-| `ProviderConfigModal` | Full-featured configuration modal. Contains sections for API key, OAuth, base URL, model picker, and extra models. |
-| `ProviderConfigContent` | Modal content orchestrator — renders the appropriate sections based on provider type. |
+| `ProviderLogo` | Provider logo image. Built-ins load from `packages/panel/public/providers/`; custom providers can use daemon-served `logoUrl` files uploaded by the user. |
+| `AddCustomProviderModal` | Creates OpenAI-compatible or Anthropic-compatible custom providers from name, immutable slug, base URL, API key, optional PNG/WebP logo, and a connection test that can return discovered models. |
+| `ProviderConfigModal` | Full-featured configuration modal. Contains sections for API key, OAuth, base URL, model picker, manual/extra models, and custom-provider deletion. |
+| `ProviderConfigContent` | Modal content orchestrator — renders the appropriate sections based on provider type. Custom providers show Custom Base URL, API Key Authentication, then Manual models before the shared sections. |
 | `ApiKeySection` | API key input with preview, reveal/hide, and remove. |
 | `OAuthSection` | OAuth login/logout buttons with status display. |
 | `OAuthProviderSettings` | OAuth-specific UI for device flow providers (GitHub Copilot, Kilo Code) showing user code and verification URI. |
 | `BaseUrlSection` | Custom base URL override input. |
 | `ModelPickerSection` | Enabled/disabled model toggle list with search. Uses `useModelSelector`. |
-| `ExtraModelsSection` | Add/remove additional model IDs not in the auto-discovered list. |
+| `ExtraModelsSection` | Add/remove additional model IDs not in the auto-discovered list. Custom providers label this surface as **Manual models**. |
 | `ModelSelector` | Dual-list model picker: search, toggle individual models, toggle all, expand/collapse. |
-| `ConfirmModal` | Confirmation dialog for destructive actions (replace/remove key, change URL). |
+| `ConfirmModal` | Confirmation dialog for destructive actions (replace/remove key, change URL, delete custom provider). |
 | `CopilotDevicePrompt` | Prompts the user to enter their device code when the daemon returns a Copilot device flow. |
 
 ### Hooks
 
 | Hook | Purpose |
 |---|---|
-| `useProviders` | Core hook: fetches `GET /api/providers`, manages `test()`, `toggleEnabled()`, `saveKey()`, `removeKey()`, `saveBaseUrl()`, `addModel()`, `removeModel()`, `setDisabledModels()`. |
-| `useProvidersPage` | Page orchestrator: composes `useProviders`, `useOAuth`, `useFavorites`. Manages search, status filter, selected provider for modal, confirm action state. |
+| `useProviders` | Core hook: fetches `GET /api/providers`, manages `test()`, `toggleEnabled()`, `saveKey()`, `removeKey()`, `saveBaseUrl()`, `addModel()`, `removeModel()`, `setDisabledModels()`, `testCustom()`, `createCustom()`, and `deleteCustom()`. |
+| `useProvidersPage` | Page orchestrator: composes `useProviders`, `useOAuth`, `useFavorites`. Manages search, status filter, selected provider for modal, custom-provider compatibility modal, and confirm action state. |
 | `useOAuth` | Manages OAuth flows: `startBrowserFlow(id)` and `startDeviceFlow(id)`. Polls `GET /api/providers/:id/oauth/status/:key` until login completes or times out. Handles `logout()`. Device flow opens verification URI in external browser. |
 | `useFavorites` | Persists favorite provider order to backend via `GET /api/config` and `PUT /api/config` (panel settings). Handles `toggleFavorite()`, `reorderFavorites()`, `dismissTip()`. |
 | `useModelSelector` | Model selection logic: search filtering, toggle individual/all, counts (active/total). |
@@ -424,16 +425,16 @@ The most feature-rich module. Manages all LLM providers: API key configuration, 
 
 | Service | Endpoints Used |
 |---|---|
-| `providersService` | `GET /api/providers`, `POST /api/providers/:id/test`, `GET /api/models/:id`, `PUT /api/config` (provider config), OAuth endpoints (`/providers/:id/oauth/start`, `/providers/:id/oauth/status/:key`, `/providers/:id/oauth/logout`) |
+| `providersService` | `GET /api/providers`, `POST /api/providers/:id/test`, `GET /api/models/:id`, `PUT /api/config` (provider config), custom provider endpoints (`POST /api/custom-providers/test`, `POST /api/custom-providers`, `DELETE /api/custom-providers/:id`), OAuth endpoints (`/providers/:id/oauth/start`, `/providers/:id/oauth/status/:key`, `/providers/:id/oauth/logout`) |
 
 ### Domain
 
 | File | Purpose |
 |---|---|
-| `types.ts` | Type aliases: `ProviderInfo`, `ModelInfo`, `TestResult`, `OAuthInfo`, `OAuthStatusResponse`, `CopilotFlow`, `ConfirmAction`. |
+| `types.ts` | Type aliases: `ProviderInfo` (including `custom`, `customCompatibility`, and `logoUrl`), `ModelInfo`, `TestResult`, `OAuthInfo`, `OAuthStatusResponse`, `CopilotFlow`, `ConfirmAction`. |
 | `constants.ts` | Provider classification: `LOCAL_PROVIDERS` (ollama, lmstudio, llamacpp), `OAUTH_PROVIDERS` (openai_account, copilot, kiro, iflow, kilocode, cline), `DEVICE_FLOW_PROVIDERS` (copilot, kilocode), `COMING_SOON_PROVIDERS` (kiro, iflow). |
 | `status.ts` | `getProviderKind(provider)` — "local" / "oauth" / "api-key". `isProviderReady(provider)` — whether the provider is configured and ready to use. `canTestProvider(provider)` — whether test is possible (enabled + ready). |
-| `providerGroups.ts` | `groupProvidersByConfiguration(providers)` — sorts providers into Local / OAuth / API Key groups, sorted by label. |
+| `providerGroups.ts` | `groupProvidersByConfiguration(providers)` — sorts built-in providers into Local / OAuth / API Key groups, sorted by label. Custom providers are rendered separately at the end of All Providers. |
 | `providerFilters.ts` | `filterProviders(providers, { searchTerm, status })` — filters by search text and status. |
 | `utils.ts` | `mergeModelLists(value)` — deduplicates and trims model IDs. `stripModelPrefix(displayName)` — removes `"provider · "` prefix. |
 | `oauthPresentation.ts` | Presentation helpers for OAuth provider labels and descriptions. |

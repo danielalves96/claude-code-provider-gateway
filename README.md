@@ -4,12 +4,12 @@
 
 **Claude Code, your provider, one local desktop gateway.**
 
-Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, and many other providers, while keeping the Claude Code workflow intact.
+Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, custom OpenAI/Anthropic-compatible endpoints, and many other providers, while keeping the Claude Code workflow intact.
 
 [![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
-[![Providers](https://img.shields.io/badge/providers-41-2563eb?style=for-the-badge)](#supported-providers)
+[![Providers](https://img.shields.io/badge/providers-40%2B-2563eb?style=for-the-badge)](#supported-providers)
 <br />
 [![Platforms](https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-f97316?style=for-the-badge)](#system-requirements)
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-0f172a?style=for-the-badge)](#pricing)
@@ -55,7 +55,7 @@ Everything runs locally. There is no hosted CCPG service, no telemetry, no accou
 
 1. Download the desktop installer for your OS.
 2. Open CCPG. The daemon starts automatically.
-3. Add one provider in **Providers** and click **Test**.
+3. Add one built-in or custom provider in **Providers** and click **Test**.
 4. Install the `ccpg` shell command from **Dashboard -> Shell Setup**.
 5. Launch Claude Code:
 
@@ -102,14 +102,14 @@ The next documentation step is a separate official docs site repository. Until t
 ## Features
 
 - **Desktop app, not a terminal science project** - Tauri app for macOS, Windows, and Linux with provider setup, connection tests, routing, logs, and history in one UI.
-- **41 provider cards out of the box** - OAuth, API key, cloud, local, and coming-soon providers, including OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, and llama.cpp.
+- **Built-in and custom provider cards** - OAuth, API key, cloud, local, and coming-soon providers out of the box, plus user-created OpenAI-compatible and Anthropic-compatible providers with custom slugs and logos.
 - **Anthropic-compatible local proxy** - Claude Code sends Anthropic Messages API requests to `127.0.0.1`; CCPG translates and routes them.
 - **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
 - **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, or runs out of credits.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
-- **Provider management UI** - search providers, filter active/inactive cards, favorite and reorder frequently used providers, edit custom model lists, and hide noisy discovered models.
+- **Provider management UI** - search providers, filter active/inactive cards, add custom OpenAI/Anthropic-compatible providers, favorite and reorder frequently used providers, edit manual model lists, and hide noisy discovered models.
 - **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
@@ -231,6 +231,7 @@ chain.
 | Minimax, Minimax China | API key | Anthropic-compatible endpoints. |
 | OpenCode Go, Xiaomi MiMo, Xiaomi MiMo Token Plan, Cohere, Blackbox AI, HuggingFace Router, Ollama Cloud | API key | Additional hosted model catalogs. |
 | Command Code | API key | Custom provider transport that converts AI SDK v5 NDJSON streams into Anthropic SSE. |
+| Custom OpenAI/Anthropic compatible | API key | Add self-hosted or third-party compatible endpoints from the Providers tab with a custom slug, base URL, optional PNG/WebP logo, and manual models when discovery is unavailable. |
 
 ### Local
 
@@ -342,6 +343,7 @@ ccpg --Ollama --continue
 | `--all` or `--a` | All enabled providers in one model catalog |
 | `--ModelChain`, `--ModelChains`, or `--chains` | All enabled Model Chains |
 | `--<chain-slug>` | One enabled Model Chain with the matching slug |
+| `--<custom-provider-slug>` | One user-created custom provider with the matching slug |
 
 Flags are case-insensitive in the shell setup flow.
 
@@ -409,6 +411,7 @@ Runtime files live in:
 | `config.json` | Non-sensitive provider settings, routing rules, Model Chains, token saver settings, ports, and model mode. |
 | `secrets.enc.json` | API keys, OAuth tokens, and auth token encrypted with AES-256-GCM. |
 | `secret.key` | Local master key, unless `CC_GATEWAY_SECRET_KEY` is provided. |
+| `provider-logos/` | Uploaded PNG/WebP logos for user-created custom providers. |
 | `daemon.pid` | PID marker used by the daemon and desktop supervisor. |
 | `daemon.log` | Local daemon log file. May include provider errors and request diagnostics. |
 | `current-session.json` | Active session checkpoint. |

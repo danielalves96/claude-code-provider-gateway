@@ -77,7 +77,7 @@ export function ProviderCard({
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-          <ProviderLogo providerId={p.id} label={p.label} size={42} />
+          <ProviderLogo providerId={p.id} label={p.label} logoUrl={p.logoUrl} size={42} />
           <div
             style={{
               display: "flex",

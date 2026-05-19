@@ -14,7 +14,7 @@ CCPG protects against accidental network exposure and casual local misuse, but i
 |---|---|
 | Network binding | Proxy and panel bind to `127.0.0.1`. |
 | Proxy auth | Claude Code requests must include the generated gateway auth token. |
-| Secret storage | Provider API keys, OAuth tokens, and gateway auth token are stored in `secrets.enc.json` with AES-256-GCM. |
+| Secret storage | Built-in and custom provider API keys, OAuth tokens, and gateway auth token are stored in `secrets.enc.json` with AES-256-GCM. |
 | Master key | A local `secret.key` is generated unless `CC_GATEWAY_MASTER_KEY` is provided. |
 | Session history | Prompts, response previews, token counts, latency, and errors are stored locally for the History UI. |
 | Telemetry | No project-owned telemetry service is used. |
@@ -31,6 +31,7 @@ Do not share these files publicly:
 - `secrets.enc.json`
 - `secret.key`
 - `config.json`
+- `provider-logos/` if uploaded custom logos reveal private infrastructure names
 - `current-session.json`
 - `sessions.jsonl`
 - daemon logs containing provider errors or prompts

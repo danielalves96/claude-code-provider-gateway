@@ -1,5 +1,4 @@
 import type { Hono } from "hono";
-import type { ProviderId } from "../../config/schema.js";
 import { PROVIDER_LABELS } from "../../config/schema.js";
 import { addLogListener, getLogBuffer } from "../../observability/log.js";
 import { getDaemonStatus } from "../../runtime/process.js";
@@ -31,13 +30,11 @@ export function registerStatusRoutes(app: Hono, runtime: PanelRuntime): void {
   app.get("/api/stats", (c) => {
     const config = runtime.currentConfig();
     const runtimeStats = getStats();
-    const providers = (
-      Object.entries(config.providers) as [ProviderId, (typeof config.providers)[ProviderId]][]
-    )
+    const providers = Object.entries(config.providers)
       .filter(([, pc]) => pc.enabled)
       .map(([id, pc]) => ({
         id,
-        label: PROVIDER_LABELS[id] ?? id,
+        label: pc.custom?.label ?? PROVIDER_LABELS[id as keyof typeof PROVIDER_LABELS] ?? id,
         baseUrl: pc.baseUrl,
         hasKey: !!pc.apiKey,
         ...(runtimeStats[id] ?? {

@@ -269,11 +269,13 @@ Provider source of truth lives in the daemon:
 
 - `packages/daemon/src/config/schema.ts` — controls provider IDs, defaults,
   labels, OAuth membership, CLI flags, and panel settings defaults. Adding a new
-  provider ID or changing its defaults starts here.
+  built-in provider ID or changing its defaults starts here.
 - `packages/daemon/src/proxy/providers/registry.ts` — **the authoritative
   registry for provider construction**. Declarative factory registration via
   this registry is the preferred way to add a provider. Most providers can be
   fully expressed as a registry entry without a dedicated implementation file.
+  Runtime custom providers are also constructed here from
+  `config.providers.<slug>.custom.compatibility`.
 - `packages/daemon/src/proxy/providers/` — provider implementation files.
   Create a dedicated file here **only** for non-declarative or edge-case
   behavior (custom stream handling, bespoke auth logic, dual-transport dispatch,
@@ -290,6 +292,9 @@ Panel provider support is intentionally thinner:
   shortcuts.
 - `packages/panel/src/features/providers/domain/oauthPresentation.ts` for OAuth copy
   and provider-specific sign-in presentation.
+- Custom provider UI lives in `packages/panel/src/features/providers/components/config/AddCustomProviderModal.tsx`
+  plus the Providers page tab actions. Custom provider logos are uploaded to the
+  daemon config directory instead of `packages/panel/public/providers/`.
 
 Useful focused checks while working on providers:
 
@@ -309,7 +314,9 @@ Manual provider validation path:
 
 1. Start the desktop dev app with `npm run dev:desk`.
 2. Open **Providers**.
-3. Search for the provider, configure auth or base URL, and click **Test**.
+3. Search for the provider, configure auth or base URL, and click **Test**. For
+   a runtime custom provider, use **Add OpenAI Compatible** or **Add Anthropic
+   Compatible**, test discovery in the creation modal, then save it.
 4. Check the model list and disable any models that should not be exposed.
 5. Launch Claude Code with the provider flag, or use `ccpg --all` to validate
    gateway-prefixed routing.
@@ -404,12 +411,14 @@ The `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1` flag is required for Claude C
 Use the provider checklist in [Adding a Provider](ADDING_PROVIDER.md). Short
 version:
 
-1. Create `packages/daemon/src/proxy/providers/<provider>.ts`
-2. Extend `BaseProvider` (or `AnthropicMessagesTransport`/`OpenAIChatTransport` if applicable)
-3. Implement `streamResponse()` and `listModels()`
-4. Add to `ProviderRegistry` in `registry.ts`
-5. Add defaults, labels, and CLI flags in `config/schema.ts`
-6. Add focused daemon tests before opening the PR
+1. Prefer a runtime custom provider from the UI when the endpoint is plain
+   OpenAI Chat Completions-compatible or Anthropic Messages-compatible.
+2. For a new built-in provider, add it to `config/schema.ts`, register it in
+   `ProviderRegistry`, add icon/panel metadata as needed, and add focused daemon
+   tests before opening the PR.
+3. Create `packages/daemon/src/proxy/providers/<provider>.ts` only when the
+   provider needs custom auth, catalog, request conversion, streaming, or
+   protocol dispatch that cannot be expressed by the shared transports.
 
 ### Adding a panel API endpoint
 

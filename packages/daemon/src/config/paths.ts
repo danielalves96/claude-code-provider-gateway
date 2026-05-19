@@ -35,3 +35,7 @@ export function getCurrentSessionPath(): string {
 export function getSessionArchivePath(): string {
   return join(getConfigDir(), "sessions.jsonl");
 }
+
+export function getProviderLogoDir(): string {
+  return join(getConfigDir(), "provider-logos");
+}

@@ -5,6 +5,14 @@
 Providers are daemon-owned. The panel should consume provider metadata through
 the daemon API instead of hardcoding provider behavior wherever possible.
 
+If the provider is simply OpenAI Chat Completions-compatible or Anthropic
+Messages-compatible, users can add it at runtime from the Providers page with
+**Add OpenAI Compatible** or **Add Anthropic Compatible**. That flow stores the
+provider under a custom slug, encrypts the API key, supports optional PNG/WebP
+logos, and exposes **Manual models** when catalog discovery is unavailable. Use
+this checklist only when the provider should become a built-in provider or
+needs behavior that cannot be represented by the runtime custom-provider flow.
+
 ## Before You Start
 
 Decide which transport shape the provider uses:

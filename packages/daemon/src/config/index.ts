@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { writePrivateFile } from "../core/files/private-file.js";
 import { getConfigPath, getMasterKeyPath, getSecretsPath } from "./paths.js";
-import type { Config, ProviderConfig, ProviderId } from "./schema.js";
+import type { BuiltInProviderId, Config, ProviderConfig } from "./schema.js";
 import { OAUTH_PROVIDER_IDS, PROVIDER_DEFAULTS, PROVIDER_IDS } from "./schema.js";
 import { extractSecretsToStore, hydrateSecretsFromStore } from "./secrets/config-splitter.js";
 import { EncryptedFileSecretStore } from "./secrets/encrypted-file-store.js";
@@ -18,6 +18,7 @@ export {
   getLogPath,
   getMasterKeyPath,
   getPidPath,
+  getProviderLogoDir,
   getSecretsPath,
   getSessionArchivePath,
 } from "./paths.js";
@@ -31,7 +32,7 @@ export function getSecretStore(): SecretStore {
   return cachedSecretStore;
 }
 
-function buildDefaultProviderConfig(id: ProviderId): ProviderConfig {
+function buildDefaultProviderConfig(id: BuiltInProviderId): ProviderConfig {
   const isOAuth = OAUTH_PROVIDER_IDS.has(id);
   return {
     enabled: false,
@@ -45,13 +46,13 @@ function buildDefaultProviderConfig(id: ProviderId): ProviderConfig {
   };
 }
 
-function buildDefaultProviders(): Record<ProviderId, ProviderConfig> {
+function buildDefaultProviders(): Record<string, ProviderConfig> {
   return PROVIDER_IDS.reduce(
     (providers, id) => {
       providers[id] = buildDefaultProviderConfig(id);
       return providers;
     },
-    {} as Record<ProviderId, ProviderConfig>,
+    {} as Record<string, ProviderConfig>,
   );
 }
 

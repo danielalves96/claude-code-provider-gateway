@@ -1,5 +1,4 @@
 import type { Config } from "../schema.js";
-import { PROVIDER_IDS } from "../schema.js";
 import { SECRET_KEYS, type SecretStore } from "./store.js";
 
 // Drains secrets *out of* `config` into `store`, leaving the config object
@@ -8,7 +7,7 @@ export function extractSecretsToStore(config: Config, store: SecretStore): void 
   writeIfPresent(store, SECRET_KEYS.serverAuthToken, config.server.authToken);
   config.server.authToken = "";
 
-  for (const id of PROVIDER_IDS) {
+  for (const id of Object.keys(config.providers)) {
     const provider = config.providers[id];
     if (!provider) continue;
 
@@ -33,7 +32,7 @@ export function extractSecretsToStore(config: Config, store: SecretStore): void 
 export function hydrateSecretsFromStore(config: Config, store: SecretStore): void {
   config.server.authToken = store.get(SECRET_KEYS.serverAuthToken) ?? config.server.authToken;
 
-  for (const id of PROVIDER_IDS) {
+  for (const id of Object.keys(config.providers)) {
     const provider = config.providers[id];
     if (!provider) continue;
 
@@ -70,7 +69,7 @@ export function clearProviderOAuthSecrets(store: SecretStore, id: string): void 
 // one-shot migration that moves secrets into the SecretStore.
 export function jsonStillHasSecrets(config: Config): boolean {
   if (config.server.authToken) return true;
-  for (const id of PROVIDER_IDS) {
+  for (const id of Object.keys(config.providers)) {
     const p = config.providers[id];
     if (!p) continue;
     if (p.apiKey) return true;

@@ -13,6 +13,8 @@ favorites, icons, suggested models, and OAuth-specific controls.
 | OAuth | Sign in from the Providers page. Tokens are stored in the encrypted secret store. | OpenAI Account, GitHub Copilot, Kilo Code, Cline |
 | API key | Paste an upstream provider key in the provider modal. | OpenRouter, Groq, xAI, Mistral, Command Code |
 | Local | Run the local model server and adjust the base URL if needed. | Ollama, LM Studio, llama.cpp |
+| Custom OpenAI-compatible | Click **Add OpenAI Compatible**, enter name/slug/base URL/API key, optionally upload a PNG/WebP logo. | Self-hosted or third-party OpenAI Chat Completions-compatible endpoints |
+| Custom Anthropic-compatible | Click **Add Anthropic Compatible**, enter name/slug/base URL/API key, optionally upload a PNG/WebP logo. | Self-hosted or third-party Anthropic Messages-compatible endpoints |
 | Coming soon OAuth | Visible in the UI, disabled until the flow is implemented. | Kiro AI, iFlow AI |
 
 ## Supported Providers
@@ -73,6 +75,32 @@ favorites, icons, suggested models, and OAuth-specific controls.
 | LM Studio | `lmstudio` | `http://localhost:1234/v1` |
 | llama.cpp | `llamacpp` | `http://localhost:8080/v1` |
 
+### User-Created Custom Providers
+
+Custom providers are not part of `PROVIDER_IDS`; they are stored in
+`config.providers` under the user-chosen slug. The daemon creates the provider
+at runtime from `config.providers.<slug>.custom.compatibility`:
+
+| Compatibility | Runtime transport | Upstream endpoints |
+|---|---|---|
+| `openai` | `OpenAIChatTransport` | `{baseUrl}/models`, `{baseUrl}/chat/completions` |
+| `anthropic` | `AnthropicMessagesTransport` | `{baseUrl}/models`, `{baseUrl}/messages` |
+
+Creation flow:
+
+1. Open **Providers**.
+2. Use the tab action **Add OpenAI Compatible** or **Add Anthropic Compatible**.
+3. Enter display name, immutable slug, Base URL, API key, and optionally a PNG/WebP logo.
+4. Click **Test Connection** to probe model discovery before saving.
+5. Save the provider. If discovery fails or returns no models, open the provider details and add **Manual models**.
+
+Custom provider details intentionally allow editing only Base URL, API key, enabled state, manual/disabled models, and deletion. Name, slug, and logo are immutable after creation; delete and recreate the provider to change them.
+
+Uploaded logos are stored locally in
+`~/.config/claude-code-provider-gateway/provider-logos/` (or the Windows
+`%APPDATA%` equivalent). API keys are stored in `secrets.enc.json`, not
+`config.json`.
+
 ## CLI Flags
 
 Provider flags are defined in `packages/daemon/src/config/schema.ts`. They are
@@ -124,6 +152,7 @@ case-insensitive in the shell setup flow.
 | All enabled providers | `--all`, `--a` |
 | All enabled Model Chains | `--ModelChain`, `--ModelChains`, `--chains` |
 | One enabled Model Chain | `--<chain-slug>` |
+| One custom provider | `--<custom-provider-slug>` |
 
 ## Model Discovery And Manual Models
 
@@ -136,6 +165,8 @@ provider is ready.
   `packages/panel/src/features/providers/data/suggestedModels.ts`.
 - User-added model IDs are stored in `config.providers.<id>.models`.
 - Disabled model IDs are stored in `config.providers.<id>.disabledModels`.
+- Custom providers always expose the manual picker as **Manual models** in the
+  details modal, even when auto-discovery succeeds.
 - In `all` mode, models are exposed as gateway-prefixed IDs such as
   `anthropic/groq/llama-3.3-70b-versatile`.
 - Model Chain entries are exposed as synthetic IDs such as
@@ -195,12 +226,18 @@ The Providers page supports:
 - Search by provider label.
 - Active/inactive filtering.
 - Provider groups by configuration type.
+- A **Custom Providers (OpenAI/Anthropic Compatible)** section at the end of
+  the All Providers tab; creation buttons are aligned with the tab bar actions.
 - Favorite providers saved in `config.panelSettings.favoriteProviders`.
 - Drag-and-drop ordering for favorites.
 - Confirmation before replacing/removing API keys or changing local base URLs.
+- Custom provider deletion requires confirmation and removes its config,
+  encrypted API key, uploaded logo, routing references, Model Chain targets,
+  and favorite entry.
 - Direct API key documentation links for known providers.
 
-Provider icons live in `packages/panel/public/providers/<provider_id>.webp`.
+Built-in provider icons live in `packages/panel/public/providers/<provider_id>.webp`.
+Custom provider logos live in the user's config directory under `provider-logos/`.
 
 ## Adding Or Updating Providers
 
@@ -223,5 +260,7 @@ and OAuth presentation text.
 
 The current provider architecture intentionally avoids one file per provider
 when that file would only contain `id`, `label`, and `extends Transport`.
-Plain providers are registered with `createOpenAIProvider("<id>")` or
-`createAnthropicProvider("<id>")`; custom providers keep their own files.
+Plain built-in providers are registered with `createOpenAIProvider("<id>")` or
+`createAnthropicProvider("<id>")`; dedicated files are reserved for built-ins
+with custom behavior. User-created custom providers are config-defined and do
+not need source files.

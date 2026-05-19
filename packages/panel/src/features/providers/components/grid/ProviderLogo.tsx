@@ -5,9 +5,10 @@ interface ProviderLogoProps {
   providerId: string;
   label: string;
   size: number;
+  logoUrl?: string;
 }
 
-export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
+export function ProviderLogo({ providerId, label, size, logoUrl }: ProviderLogoProps) {
   const { token } = theme.useToken();
   const [failedProviderId, setFailedProviderId] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
 
   return (
     <img
-      src={`/providers/${providerId}.webp`}
+      src={logoUrl ?? `/providers/${providerId}.webp`}
       alt=""
       aria-hidden="true"
       style={{
