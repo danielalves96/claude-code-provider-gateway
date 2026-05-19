@@ -211,3 +211,16 @@ The repository is private for npm publishing purposes; npm is used for developme
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## Issue Reporting
+
+Report bugs or request features at [GitHub Issues](https://github.com/danielalves96/claude-code-provider-gateway/issues).
+
+Before opening an issue, check [Troubleshooting](docs/TROUBLESHOOTING.md) for common problems. When filing a bug report, include:
+
+- **Steps to reproduce** — the exact sequence of actions that triggers the problem.
+- **Expected behavior** — what you expected to happen.
+- **Actual behavior** — what actually happened (error messages, logs, screenshots).
+- **Environment** — operating system, app version (from the desktop settings or `ccpg --version`), and Claude Code version if relevant.
+
+For feature requests, describe the use case and how the feature would fit into the existing desktop workflow. Large feature proposals should start as a discussion before a PR.

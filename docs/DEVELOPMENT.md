@@ -433,4 +433,93 @@ import { loadConfig } from './config/index.js'
 
 // Incorrect
 import { loadConfig } from './config/index'
+
+## Build Commands
+
+Root workspace scripts (run from the repo root):
+
+| Command | Purpose |
+|---|---|
+| `npm run build` | Production build: panel → daemon bundle |
+| `npm run dev` | Start daemon (nodemon) + panel (Vite) for web-only dev |
+| `npm run dev:desk` | Start daemon + panel + Tauri desktop shell with external daemon mode |
+| `npm run dev:daemon` | Start daemon alone with nodemon hot reload |
+| `npm run dev:panel` | Start panel alone with Vite HMR |
+| `npm run test` | Run all daemon tests (Node built-in test runner) |
+| `npm run typecheck` | Run `tsc --noEmit` across daemon and panel |
+| `npm run quality` | Run Biome check (format + lint + import ordering) |
+| `npm run quality:fix` | Run Biome check with safe auto-fixes |
+| `npm run quality:ci` | Run Biome in CI mode (errors only, no writes) |
+| `npm run format` | Run Biome formatter with auto-fix |
+| `npm run format:check` | Run Biome formatter in check-only mode |
+| `npm run lint` | Run Biome linter |
+| `npm run lint:fix` | Run Biome linter with safe auto-fixes |
+| `npm run lint:fix:unsafe` | Run Biome linter with unsafe auto-fixes |
+
+Per-workspace scripts are documented under [Package Details](#package-details).
+
+## Code Style
+
+This project uses **Biome** (v2.4.x) as the single tool for formatting, linting, and import organization. There is no ESLint or Prettier — Biome replaces both.
+
+### Configuration
+
+| File | Purpose |
+|---|---|
+| `biome.jsonc` | Root Biome configuration (formatter, linter, assist) |
+
+Key settings:
+
+- **Indent:** 2 spaces
+- **Quotes:** double
+- **Semicolons:** always
+- **Trailing commas:** always (JS/TS), none (JSON)
+- **Line width:** 100 characters
+- **Line endings:** LF only
+- **Target:** ES2022, strict TypeScript
+
+Linter rules include recommended defaults plus `noUnusedImports` (error), `noUnusedVariables` (error), `noConsole` (warn), `noDebugger` (error), and `noExplicitAny` (warn, relaxed in test files).
+
+### Running locally
+
+```bash
+npm run quality         # Check format + lint + imports (no changes)
+npm run quality:fix     # Auto-fix safe issues
+npm run format          # Format only (writes changes)
+npm run lint            # Lint only (no changes)
+```
+
+CI runs `npm run quality:ci` which exits non-zero on any violation. Run the same command before pushing to avoid CI failures.
+
+### IDE integration
+
+Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) and set it as the default formatter. The extension reads `biome.jsonc` automatically. Disable any conflicting ESLint/Prettier extensions in this workspace.
+
+## Branch Conventions
+
+The default branch is `master`. Feature and fix branches use lowercase slug prefixes:
+
+| Prefix | Purpose | Example |
+|---|---|---|
+| `feat/` | New features or enhancements | `feat/redesign-providers-page` |
+| `fix/` | Bug fixes | `fix/incomplete-tool-use-block` |
+| `chore/` | Maintenance, tooling, build config | `chore/setup-biome-quality-gate` |
+
+Branch names should be short, descriptive, and use hyphens between words. No ticket-number prefixes are required.
+
+## PR Process
+
+There is no PR template in the repository. The following guidelines are documented in [CONTRIBUTING.md](../CONTRIBUTING.md):
+
+1. **Before opening:** Ensure the change fits one of these categories — bug fix, provider compatibility improvement, desktop UX improvement, security/reliability/observability improvement, focused documentation, or tests for existing behavior. Large rewrites, new provider families, persistence changes, and security-sensitive changes should start as an issue or discussion.
+
+2. **Run the quality gate:** Execute `npm run quality:ci`, `npm test`, `npm run build`, and `npm run typecheck` locally before pushing.
+
+3. **Test your changes:** For daemon changes, run focused tests. For UI changes, include manual verification notes and screenshots/recordings where practical.
+
+4. **Update documentation:** When modifying provider behavior, routing, config, storage, or release behavior, update the relevant docs (`PROVIDERS.md`, `ADDING_PROVIDER.md`, `ARCHITECTURE.md`, etc.).
+
+5. **Security:** Do not include real API keys, OAuth tokens, access tokens, or generated config files in the PR.
+
+6. **Review:** A maintainer will review the PR. CI must pass (Quality Gate workflow) before merging. See [CONTRIBUTING.md](../CONTRIBUTING.md) for provider-specific PR requirements and the full checklist.
 ```
