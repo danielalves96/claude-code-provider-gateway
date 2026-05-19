@@ -89,16 +89,15 @@ install app → add provider → test connection → run Claude Code through CCP
 
 The production path is desktop-only: users should not need Node.js, npm, Rust, Bun, or hand-edited terminal config.
 
-The next documentation step is a separate official docs site repository. Until then, the key docs live here:
+The next documentation step is a separate official docs site repository. Until then, start with the [documentation hub](docs/README.md) or jump directly to:
 
-- [Architecture](docs/ARCHITECTURE.md)
+- [Getting Started](docs/GETTING-STARTED.md)
 - [Providers](docs/PROVIDERS.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [API Reference](docs/API_REFERENCE.md)
 - [Development](docs/DEVELOPMENT.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Changelog](CHANGELOG.md)
 
 ## Features
 
@@ -417,14 +416,25 @@ Runtime files live in:
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - system layers, request lifecycle, routing, security model, storage.
-- [Providers](docs/PROVIDERS.md) - provider catalog, auth modes, CLI flags, model discovery, and panel behavior.
-- [API Reference](docs/API_REFERENCE.md) - local proxy and panel endpoints used by Claude Code and the desktop UI.
-- [Development](docs/DEVELOPMENT.md) - source setup, desktop dev, tests, builds, release flow.
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - practical fixes for launch, provider, OAuth, proxy, history, and build issues.
-- [Contributing](CONTRIBUTING.md) - issues, PRs, conventions, contribution workflow.
-- [Security](SECURITY.md) - local threat model and vulnerability reporting.
-- [Changelog](CHANGELOG.md) - release notes.
+| Document | Use it for |
+|---|---|
+| [Documentation Hub](docs/README.md) | The complete docs map and reading paths for users, contributors, and maintainers. |
+| [Getting Started](docs/GETTING-STARTED.md) | Install the desktop app, configure a provider, and launch Claude Code through `ccpg`. |
+| [Providers](docs/PROVIDERS.md) | Provider catalog, auth modes, CLI flags, model discovery, Model Chains, and panel behavior. |
+| [Configuration](docs/CONFIGURATION.md) | Config file shape, environment variables, defaults, secrets, and runtime storage. |
+| [Architecture](docs/ARCHITECTURE.md) | System layers, request lifecycle, routing, provider transports, security model, and storage. |
+| [Panel Features](docs/PANEL_FEATURES.md) | Management UI feature modules and frontend organization. |
+| [API Reference](docs/API_REFERENCE.md) | Local proxy and panel endpoints used by Claude Code, the desktop UI, and shell setup. |
+| [Daemon Reference](docs/DAEMON_REFERENCE.md) | Backend module reference for the proxy, panel API, providers, sessions, and observability. |
+| [Adding a Provider](docs/ADDING_PROVIDER.md) | Checklist and implementation patterns for new provider support. |
+| [Codebase Guide](docs/CODEBASE_GUIDE.md) | Repository structure, conventions, extension points, and verification checklist. |
+| [Development](docs/DEVELOPMENT.md) | Source setup, desktop dev, tests, builds, release flow, and package scripts. |
+| [Testing](docs/TESTING.md) | Test runner, layout, commands, coverage expectations, and CI integration. |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Practical fixes for launch, provider, OAuth, proxy, Model Chain, history, and build issues. |
+| [Maintenance Notes](docs/MAINTENANCE.md) | Known limitations, fragile areas, and maintenance review checklists. |
+| [Contributing](CONTRIBUTING.md) | Issues, PRs, conventions, and contribution workflow. |
+| [Security](SECURITY.md) | Local threat model and vulnerability reporting. |
+| [Changelog](CHANGELOG.md) | Release notes. |
 
 ## License
 

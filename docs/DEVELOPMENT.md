@@ -76,7 +76,12 @@ claude-code-provider-gateway/
 | [Architecture](ARCHITECTURE.md) | Runtime layers, request flow, provider transports, config, storage, and security model. |
 | [Providers](PROVIDERS.md) | Supported provider catalog, auth modes, CLI flags, model discovery, and provider UI behavior. |
 | [Adding a Provider](ADDING_PROVIDER.md) | Implementation checklist for new provider support. |
+| [Codebase Guide](CODEBASE_GUIDE.md) | Repository structure, naming conventions, extension points, and verification checklist. |
 | [API Reference](API_REFERENCE.md) | Local proxy and panel endpoints used by Claude Code, the panel, and `ccpg`. |
+| [Daemon Reference](DAEMON_REFERENCE.md) | Backend module reference for the proxy, panel API, providers, sessions, and observability. |
+| [Panel Features](PANEL_FEATURES.md) | Management UI feature slices, shared modules, contracts, and frontend data flow. |
+| [Testing](TESTING.md) | Test runner, layout, commands, coverage expectations, and CI integration. |
+| [Maintenance Notes](MAINTENANCE.md) | Known limitations, fragile areas, and security/performance review checklists. |
 | [Troubleshooting](TROUBLESHOOTING.md) | Common launch, provider, OAuth, Model Chain, history, and build issues. |
 | [Contributing](../CONTRIBUTING.md) | Issue/PR expectations and project contribution workflow. |
 | [Security](../SECURITY.md) | Local threat model and vulnerability reporting. |

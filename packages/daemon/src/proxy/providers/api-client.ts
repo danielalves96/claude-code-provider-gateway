@@ -54,7 +54,7 @@ export async function fetchProviderJson<T>(options: ProviderFetchOptions): Promi
   } catch (err) {
     if (timeout.didAbort()) {
       const error = timeoutError();
-      throw new Error(`HTTP ${error.status} em ${options.url}: ${error.message}`);
+      throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message}`);
     }
     throw err;
   } finally {
@@ -62,7 +62,7 @@ export async function fetchProviderJson<T>(options: ProviderFetchOptions): Promi
   }
   if (!response.ok) {
     const error = await readProviderError(response);
-    throw new Error(`HTTP ${error.status} em ${options.url}: ${error.message.slice(0, 300)}`);
+    throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message.slice(0, 300)}`);
   }
   return (await response.json()) as T;
 }
