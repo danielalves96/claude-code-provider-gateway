@@ -34,9 +34,17 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
     },
     providers,
     routing: {
-      default: normalizeRoutingRule(config.routing?.default, defaults.routing.default, knownProviderIds),
+      default: normalizeRoutingRule(
+        config.routing?.default,
+        defaults.routing.default,
+        knownProviderIds,
+      ),
       opus: normalizeRoutingRule(config.routing?.opus, defaults.routing.opus, knownProviderIds),
-      sonnet: normalizeRoutingRule(config.routing?.sonnet, defaults.routing.sonnet, knownProviderIds),
+      sonnet: normalizeRoutingRule(
+        config.routing?.sonnet,
+        defaults.routing.sonnet,
+        knownProviderIds,
+      ),
       haiku: normalizeRoutingRule(config.routing?.haiku, defaults.routing.haiku, knownProviderIds),
     },
     thinking: {
