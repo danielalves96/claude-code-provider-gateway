@@ -246,7 +246,7 @@ export class ProviderRegistry {
 
 - **Lazy instantiation**: Provider instances are created on first access (`get()`) and cached in a `Map`. Disabled providers return `null`.
 - **Hot-reload**: `updateConfig()` replaces the stored config and clears the cache so next access uses fresh configuration.
-- **Provider map**: The `PROVIDER_MAP` constant maps 43 `ProviderId` values to constructors. Most providers use factory-generated classes (`createOpenAIProvider()` / `createAnthropicProvider()`); special providers (Copilot, OpenAI Account, Cline, KiloCode, Kiro, iFlow, DeepSeek, Google, Ollama, Ollama Cloud, CommandCode) have dedicated hand-written classes.
+- **Provider map**: The `PROVIDER_MAP` constant maps 41 `ProviderId` values to constructors. Most providers use factory-generated classes (`createOpenAIProvider()` / `createAnthropicProvider()`); special providers (Copilot, OpenAI Account, Cline, KiloCode, Kiro, iFlow, DeepSeek, Google, Ollama, Ollama Cloud, CommandCode) have dedicated hand-written classes.
 
 ### `MessageService`
 

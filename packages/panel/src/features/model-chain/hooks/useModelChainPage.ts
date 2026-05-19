@@ -1,5 +1,5 @@
 import { App } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ModelFallbackConfig, RoutingOption } from "../domain/types.js";
 import { modelChainService } from "../services/modelChainService.js";
 
@@ -10,6 +10,7 @@ export function useModelChainPage() {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const persistInFlight = useRef(false);
 
   useEffect(() => {
     Promise.all([modelChainService.getConfig(), modelChainService.getOptions()])
@@ -27,7 +28,12 @@ export function useModelChainPage() {
   }, [message]);
 
   const persist = async (next: ModelFallbackConfig[]) => {
+    if (persistInFlight.current) {
+      throw new Error("A model chain save is already in progress");
+    }
+
     const previous = chains;
+    persistInFlight.current = true;
     setChains(next);
     setSaving(true);
     try {
@@ -36,6 +42,7 @@ export function useModelChainPage() {
       setChains(previous);
       throw error;
     } finally {
+      persistInFlight.current = false;
       setSaving(false);
     }
   };

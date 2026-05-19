@@ -114,7 +114,7 @@ test("normalizeConfig clears active model fallback when the chain is unavailable
   const defaults = buildDefaultConfig();
   const config = {
     ...defaults,
-    activeModelFallbackSlug: "removed-chain",
+    activeModelFallbackSlug: "empty-chain",
     modelFallbacks: [
       {
         id: "chain_empty_chain",

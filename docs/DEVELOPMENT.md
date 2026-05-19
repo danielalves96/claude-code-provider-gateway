@@ -528,4 +528,3 @@ There is no PR template in the repository. The following guidelines are document
 5. **Security:** Do not include real API keys, OAuth tokens, access tokens, or generated config files in the PR.
 
 6. **Review:** A maintainer will review the PR. CI must pass (Quality Gate workflow) before merging. See [CONTRIBUTING.md](../CONTRIBUTING.md) for provider-specific PR requirements and the full checklist.
-```

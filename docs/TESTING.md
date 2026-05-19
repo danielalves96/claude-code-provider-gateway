@@ -32,7 +32,7 @@ This delegates to the daemon workspace, which runs:
 node --import tsx --test $(find src -name '*.test.ts' -type f | sort)
 ```
 
-All 18 test files in `packages/daemon/src/` are discovered and executed sequentially by `node:test`. The `sort` ensures deterministic ordering.
+All daemon `*.test.ts` files in `packages/daemon/src/` are discovered and executed sequentially by `node:test`. The `sort` ensures deterministic ordering.
 
 **Run a specific test file from the daemon workspace:**
 
