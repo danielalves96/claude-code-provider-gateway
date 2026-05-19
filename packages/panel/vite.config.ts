@@ -15,6 +15,17 @@ export default defineConfig({
   build: {
     outDir: "../../packages/daemon/dist/static",
     emptyOutDir: true,
+    target: "es2022",
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-antd": ["antd", "@ant-design/icons"],
+          "vendor-dnd": ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
+        },
+      },
+    },
   },
   server: {
     port: 5173,

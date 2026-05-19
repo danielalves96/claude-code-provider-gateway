@@ -1,9 +1,15 @@
-import { Layout, theme } from "antd";
+import { Layout, Skeleton, theme } from "antd";
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar.js";
 import { TopBar } from "./TopBar.js";
 
 const { Content } = Layout;
+
+function PageFallback() {
+  const { token } = theme.useToken();
+  return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: `${token.paddingLG}px 0` }} />;
+}
 
 export function AppShell() {
   const { token } = theme.useToken();
@@ -20,7 +26,9 @@ export function AppShell() {
             height: "calc(100vh - 56px)",
           }}
         >
-          <Outlet />
+          <Suspense fallback={<PageFallback />}>
+            <Outlet />
+          </Suspense>
         </Content>
       </Layout>
     </Layout>

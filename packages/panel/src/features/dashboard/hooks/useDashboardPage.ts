@@ -29,6 +29,7 @@ export function useDashboardPage() {
   return {
     status: gateway.status,
     stats: gateway.stats,
+    isLoading: gateway.isLoading,
     launchItems: launch.items,
     launchError: launch.error,
     shellSetup: shellSetup.setup,

@@ -9,12 +9,19 @@ export function useProviders() {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
     providersService
       .list()
-      .then(setProviders)
-      .catch(() => setProviders([]));
+      .then((data) => {
+        setProviders(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setProviders([]);
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -142,6 +149,7 @@ export function useProviders() {
 
   return {
     providers,
+    isLoading,
     testing,
     testResults,
     refresh,

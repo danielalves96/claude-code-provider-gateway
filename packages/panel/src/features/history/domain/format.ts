@@ -1,5 +1,10 @@
 import type { Session } from "./types.js";
 
+export function stripModelPrefix(model: string): string {
+  const slash = model.lastIndexOf("/");
+  return slash >= 0 ? model.slice(slash + 1) : model;
+}
+
 export function formatDate(ts: number): string {
   const d = new Date(ts);
   return d.toDateString() === new Date().toDateString()
@@ -24,5 +29,7 @@ export function topModel(session: Session): string | null {
   const models = Object.entries(session.modelStats ?? {}).sort(
     ([, a], [, b]) => b.requests - a.requests,
   );
-  return models[0]?.[0] ?? [...(session.requestLog ?? [])].reverse()[0]?.requestedModel ?? null;
+  const raw =
+    models[0]?.[0] ?? [...(session.requestLog ?? [])].reverse()[0]?.requestedModel ?? null;
+  return raw ? stripModelPrefix(raw) : null;
 }

@@ -10,33 +10,34 @@ export function useHistory() {
   const [gatewayProviders, setGatewayProviders] = useState<GatewayProviderStat[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [clearing, setClearing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
     Promise.all([historyService.list(), historyService.stats()])
       .then(([sessionsResponse, statsResponse]) => {
         setData(sessionsResponse);
         setGatewayProviders(statsResponse.providers);
+        setIsLoading(false);
       })
       .catch(() => {
         setData(null);
         setGatewayProviders([]);
+        setIsLoading(false);
       });
   }, []);
 
   usePolling(refresh, HISTORY_POLL_INTERVAL_MS);
 
-  const sessions = useMemo<Session[]>(() => {
-    if (!data) return [];
-    return data.current ? [data.current, ...data.archive] : data.archive;
-  }, [data]);
+  const sessions = useMemo<Session[]>(() => data?.archive ?? [], [data]);
 
   const totals = useMemo(
     () => ({
       requests: sessions.reduce((s, x) => s + x.totalRequests, 0),
       errors: sessions.reduce((s, x) => s + x.totalErrors, 0),
-      archived: data?.archive.length ?? 0,
+      archived: sessions.length,
     }),
-    [sessions, data],
+    [sessions],
   );
 
   const globalProviderRows = useMemo(
@@ -59,6 +60,17 @@ export function useHistory() {
     }
   }, []);
 
+  const deleteSession = useCallback(async (id: string) => {
+    setDeletingId(id);
+    try {
+      const result = await historyService.deleteSession(id);
+      setData((prev) => (prev ? { ...prev, archive: result.archive } : prev));
+      setExpandedKeys((prev) => prev.filter((k) => k !== id));
+    } finally {
+      setDeletingId(null);
+    }
+  }, []);
+
   const toggleExpanded = useCallback((id: string, expanded: boolean) => {
     setExpandedKeys((prev) => (expanded ? [...prev, id] : prev.filter((k) => k !== id)));
   }, []);
@@ -71,8 +83,11 @@ export function useHistory() {
     toggleExpanded,
     refresh,
     clearArchive,
+    deleteSession,
     clearing,
+    deletingId,
     canClear: (data?.archive.length ?? 0) > 0,
     pollIntervalMs: HISTORY_POLL_INTERVAL_MS,
+    isLoading,
   };
 }

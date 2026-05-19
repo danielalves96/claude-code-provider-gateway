@@ -1,5 +1,5 @@
 import { ThunderboltOutlined } from "@ant-design/icons";
-import { Card, Col, Empty, Flex, Row, Tag, Typography, theme } from "antd";
+import { Card, Col, Empty, Flex, Row, Skeleton, Tag, Typography, theme } from "antd";
 import { Link as RouterLink } from "react-router-dom";
 import type { StatsResponse } from "../../domain/types.js";
 import { ProviderStatCard } from "./ProviderStatCard.js";
@@ -8,9 +8,10 @@ const { Text } = Typography;
 
 interface EnabledProvidersCardProps {
   stats: StatsResponse | null;
+  isLoading?: boolean;
 }
 
-export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
+export function EnabledProvidersCard({ stats, isLoading }: EnabledProvidersCardProps) {
   const { token } = theme.useToken();
   const count = stats?.providers.length ?? 0;
 
@@ -65,7 +66,15 @@ export function EnabledProvidersCard({ stats }: EnabledProvidersCardProps) {
         </Text>
       }
     >
-      {count === 0 ? (
+      {isLoading ? (
+        <Row gutter={[token.paddingLG, token.paddingLG]}>
+          {(["sk-0", "sk-1", "sk-2"] as const).map((key) => (
+            <Col xs={24} sm={12} xl={8} key={key}>
+              <Skeleton active paragraph={{ rows: 2 }} />
+            </Col>
+          ))}
+        </Row>
+      ) : count === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={

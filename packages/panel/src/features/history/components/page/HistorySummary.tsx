@@ -1,39 +1,20 @@
-import {
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  WarningOutlined,
-} from "@ant-design/icons";
+import { CheckCircleOutlined, DatabaseOutlined, WarningOutlined } from "@ant-design/icons";
 import { theme } from "antd";
 import { MetricSummaryGrid } from "../../../../shared/components/MetricSummaryGrid.js";
 
 interface HistorySummaryProps {
-  sessionCount: number;
   archived: number;
   totalRequests: number;
   totalErrors: number;
 }
 
-export function HistorySummary({
-  sessionCount,
-  archived,
-  totalRequests,
-  totalErrors,
-}: HistorySummaryProps) {
+export function HistorySummary({ archived, totalRequests, totalErrors }: HistorySummaryProps) {
   const { token } = theme.useToken();
 
   const metrics = [
     {
-      id: "active-sessions",
-      title: "Active Sessions",
-      value: sessionCount,
-      icon: <ClockCircleOutlined />,
-      color: token.colorPrimary,
-      active: sessionCount > 0,
-    },
-    {
       id: "archived",
-      title: "Archived",
+      title: "Archived Sessions",
       value: archived,
       icon: <DatabaseOutlined />,
       color: token.colorTextSecondary,

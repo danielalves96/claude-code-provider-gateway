@@ -5,13 +5,16 @@ import {
   ForkOutlined,
   HistoryOutlined,
   SettingOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
+import { Badge } from "antd";
 
 export type NavItem = NonNullable<MenuProps["items"]>[number];
 
-export const NAV_ITEMS: NavItem[] = [
+const BASE_ITEMS: NavItem[] = [
   { key: "/", icon: <DashboardOutlined />, label: "Dashboard" },
+  { key: "/live", icon: <ThunderboltOutlined />, label: "Live Session" },
   { key: "/providers", icon: <ApiOutlined />, label: "Providers" },
   { key: "/routing", icon: <ForkOutlined />, label: "Routing" },
   { key: "/history", icon: <HistoryOutlined />, label: "History" },
@@ -19,11 +22,27 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 
+export function buildNavItems(isLive: boolean): NavItem[] {
+  if (!isLive) return BASE_ITEMS;
+  return BASE_ITEMS.map((item) =>
+    item && "key" in item && item.key === "/live"
+      ? {
+          ...item,
+          icon: (
+            <Badge dot status="processing" offset={[3, -3]}>
+              <ThunderboltOutlined />
+            </Badge>
+          ),
+        }
+      : item,
+  );
+}
+
 export function selectedKeyFromPath(pathname: string): string {
   if (pathname === "/") return "/";
-  for (const item of NAV_ITEMS) {
-    const key = String(item?.key ?? "");
-    if (key && key !== "/" && pathname.startsWith(key)) return key;
+  for (const item of BASE_ITEMS) {
+    const key = String(item && "key" in item ? (item.key ?? "") : "");
+    if (key && key !== "/" && (pathname === key || pathname.startsWith(`${key}/`))) return key;
   }
   return "/";
 }

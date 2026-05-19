@@ -5,7 +5,6 @@ import { RequestLogTable } from "../tables/RequestLogTable.js";
 import { SessionMetadataCards } from "./SessionMetadataCards.js";
 
 const { Text } = Typography;
-const RECENT_REQUEST_LIMIT = 40;
 
 interface SessionDetailsProps {
   session: Session;
@@ -17,7 +16,7 @@ export function SessionDetails({ session }: SessionDetailsProps) {
   const usedModels = Object.entries(session.modelStats ?? {}).sort(
     ([, a], [, b]) => b.requests - a.requests,
   );
-  const requestLog = [...(session.requestLog ?? [])].reverse().slice(0, RECENT_REQUEST_LIMIT);
+  const requestLog = [...(session.requestLog ?? [])].reverse();
 
   return (
     <Flex

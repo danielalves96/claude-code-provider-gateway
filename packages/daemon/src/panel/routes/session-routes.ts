@@ -2,6 +2,7 @@ import type { Hono } from "hono";
 import {
   attachSessionProcess,
   clearArchivedSessions,
+  deleteArchivedSession,
   endSession,
   getCurrentSession,
   heartbeatSession,
@@ -26,6 +27,12 @@ export function registerSessionRoutes(app: Hono): void {
       archive: listArchivedSessions(),
     } satisfies SessionsResponse & { ok: true };
     return c.json(response);
+  });
+
+  app.delete("/api/sessions/:id", (c) => {
+    const id = c.req.param("id");
+    const deleted = deleteArchivedSession(id);
+    return c.json({ ok: deleted, archive: listArchivedSessions() });
   });
 
   app.post("/api/launch/end", async (c) => {

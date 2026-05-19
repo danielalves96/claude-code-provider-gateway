@@ -1,4 +1,4 @@
-import { Card, Col, Flex, Row, Typography, theme } from "antd";
+import { Card, Col, Flex, Row, Skeleton, Typography, theme } from "antd";
 import type { GatewayStatus } from "../../domain/types.js";
 import { useStatusOverview } from "../../hooks/useStatusOverview.js";
 
@@ -6,11 +6,32 @@ const { Text } = Typography;
 
 interface StatusOverviewProps {
   status: GatewayStatus | null;
+  isLoading?: boolean;
 }
 
-export function StatusOverview({ status }: StatusOverviewProps) {
+export function StatusOverview({ status, isLoading }: StatusOverviewProps) {
   const { token } = theme.useToken();
   const cards = useStatusOverview(status);
+
+  if (isLoading) {
+    return (
+      <Row gutter={[token.paddingSM, token.paddingSM]}>
+        {(["sk-0", "sk-1", "sk-2", "sk-3"] as const).map((key) => (
+          <Col xs={12} sm={12} lg={6} key={key} style={{ flex: 1 }}>
+            <Card styles={{ body: { padding: `${token.paddingMD}px` } }}>
+              <Flex align="center" gap={token.padding}>
+                <Skeleton.Avatar active size={42} shape="circle" />
+                <Flex vertical flex={1} gap={4}>
+                  <Skeleton.Input active size="small" style={{ width: "60%" }} />
+                  <Skeleton.Input active size="default" style={{ width: "40%" }} />
+                </Flex>
+              </Flex>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    );
+  }
 
   return (
     <Row gutter={[token.paddingSM, token.paddingSM]}>

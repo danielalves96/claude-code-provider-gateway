@@ -15,6 +15,7 @@ import {
   archiveSession,
   clearArchivedSessions as clearArchive,
   currentSessionExists,
+  deleteArchivedSession as deleteArchived,
   ensureSessionDir,
   listArchivedSessions as listArchive,
   readCurrentSession,
@@ -160,6 +161,15 @@ export function clearArchivedSessions(): void {
   }
 }
 
+export function deleteArchivedSession(id: string): boolean {
+  try {
+    return deleteArchived(id);
+  } catch (err) {
+    logger.error("sessions", `failed to delete session ${id}: ${String(err)}`);
+    return false;
+  }
+}
+
 export function listArchivedSessions(): SessionRecord[] {
   return listArchive();
 }
@@ -191,7 +201,7 @@ function createSessionRecord(config: Config): SessionRecord {
   const launchHint = config.modelMode === "all" ? "all" : config.activeProvider;
 
   return {
-    id: randomBytes(8).toString("hex"),
+    id: `${Date.now().toString(36)}-${randomBytes(8).toString("hex")}`,
     startedAt: Date.now(),
     endedAt: null,
     durationMs: 0,
