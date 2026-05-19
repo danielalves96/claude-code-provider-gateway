@@ -51,7 +51,7 @@ export interface SessionRecord {
   endedAt: number | null;
   durationMs: number;
   status: "running" | "completed" | "crashed";
-  modelMode: "single" | "all";
+  modelMode: "single" | "all" | "chains";
   activeProvider: ProviderId;
   launchHint: string;
   enabledProviders: ProviderId[];

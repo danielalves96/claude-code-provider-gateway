@@ -43,10 +43,14 @@ export type StatsResponse = {
 export type LaunchCommandsResponse = {
   manual: string;
   all: string;
+  modelChains: string;
   perProvider: Array<{ id: string; label: string; cli: string }>;
 };
 
-export type QuickLaunchResponse = Pick<LaunchCommandsResponse, "all" | "perProvider">;
+export type QuickLaunchResponse = Pick<
+  LaunchCommandsResponse,
+  "all" | "modelChains" | "perProvider"
+>;
 
 export type ShellName = "zsh" | "bash" | "fish" | "powershell";
 

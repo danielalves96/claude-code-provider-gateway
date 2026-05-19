@@ -4,6 +4,7 @@ import {
   FileTextOutlined,
   ForkOutlined,
   HistoryOutlined,
+  PartitionOutlined,
   SettingOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
@@ -16,6 +17,7 @@ const BASE_ITEMS: NavItem[] = [
   { key: "/", icon: <DashboardOutlined />, label: "Dashboard" },
   { key: "/live", icon: <ThunderboltOutlined />, label: "Live Session" },
   { key: "/providers", icon: <ApiOutlined />, label: "Providers" },
+  { key: "/model-chain", icon: <PartitionOutlined />, label: "Model Chain" },
   { key: "/routing", icon: <ForkOutlined />, label: "Routing" },
   { key: "/history", icon: <HistoryOutlined />, label: "History" },
   { key: "/logs", icon: <FileTextOutlined />, label: "Server Logs" },

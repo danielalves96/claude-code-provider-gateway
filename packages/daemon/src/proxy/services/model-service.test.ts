@@ -18,3 +18,67 @@ test("ModelService returns empty model list when active provider is disabled", a
     last_id: null,
   });
 });
+
+test("ModelService advertises only the active model chain during chain launch", async () => {
+  const config = buildDefaultConfig();
+  config.providers.nvidia_nim.enabled = true;
+  config.activeProvider = "nvidia_nim";
+  config.activeModelFallbackSlug = "foode";
+  config.modelFallbacks = [
+    {
+      id: "chain_foode",
+      name: "Foode",
+      slug: "foode",
+      enabled: true,
+      models: [{ providerId: "nvidia_nim", model: "anthropic/nvidia_nim/some-model" }],
+    },
+    {
+      id: "chain_other",
+      name: "Other",
+      slug: "other",
+      enabled: true,
+      models: [{ providerId: "openrouter", model: "anthropic/openrouter/other-model" }],
+    },
+  ];
+  const service = new ModelService(new ProxyRuntime(config));
+
+  const result = await service.listModels();
+
+  assert.deepEqual(
+    result.data.map((model) => model.id),
+    ["anthropic/chain/foode"],
+  );
+  assert.equal(result.first_id, "anthropic/chain/foode");
+  assert.equal(result.last_id, "anthropic/chain/foode");
+});
+
+test("ModelService advertises all model chains in chains mode", async () => {
+  const config = buildDefaultConfig();
+  config.providers.nvidia_nim.enabled = true;
+  config.activeProvider = "nvidia_nim";
+  config.modelMode = "chains";
+  config.modelFallbacks = [
+    {
+      id: "chain_foode",
+      name: "Foode",
+      slug: "foode",
+      enabled: true,
+      models: [{ providerId: "nvidia_nim", model: "anthropic/nvidia_nim/some-model" }],
+    },
+    {
+      id: "chain_other",
+      name: "Other",
+      slug: "other",
+      enabled: true,
+      models: [{ providerId: "openrouter", model: "anthropic/openrouter/other-model" }],
+    },
+  ];
+  const service = new ModelService(new ProxyRuntime(config));
+
+  const result = await service.listModels();
+
+  assert.deepEqual(
+    result.data.map((model) => model.id),
+    ["anthropic/chain/foode", "anthropic/chain/other"],
+  );
+});

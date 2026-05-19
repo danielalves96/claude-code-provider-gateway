@@ -46,6 +46,10 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     }
     if (update.activeProvider) merged.activeProvider = update.activeProvider;
     if (update.modelMode) merged.modelMode = update.modelMode;
+    if (update.activeModelFallbackSlug !== undefined) {
+      merged.activeModelFallbackSlug = update.activeModelFallbackSlug;
+    }
+    if (update.modelFallbacks) merged.modelFallbacks = update.modelFallbacks;
     merged.panelSettings ??= { favoriteProviders: [], favoritesTipDismissed: false };
     if (update.panelSettings) {
       Object.assign(merged.panelSettings, update.panelSettings);

@@ -149,9 +149,13 @@ function SessionMode({ session }: { session: Session }) {
   return (
     <Space size="small">
       <Tag color="default" style={{ margin: 0, border: `1px solid ${token.colorBorderSecondary}` }}>
-        {session.modelMode === "all" ? "all-providers" : "single"}
+        {session.modelMode === "all"
+          ? "all-providers"
+          : session.modelMode === "chains"
+            ? "model-chains"
+            : "single"}
       </Tag>
-      {session.modelMode !== "all" && (
+      {session.modelMode !== "all" && session.modelMode !== "chains" && (
         <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
           {providerLabel(session.activeProvider)}
         </Text>

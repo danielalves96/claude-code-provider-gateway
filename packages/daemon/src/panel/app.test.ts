@@ -132,10 +132,12 @@ test("panel API exposes token-free quick launch commands without Origin", async 
   assert.equal(response.status, 200);
   const body = (await response.json()) as {
     all?: string;
+    modelChains?: string;
     manual?: string;
     perProvider?: Array<{ id: string; cli: string }>;
   };
   assert.equal(body.all, "ccpg --all");
+  assert.equal(body.modelChains, "ccpg --ModelChain");
   assert.equal(body.manual, undefined);
   assert.deepEqual(body.perProvider, [
     { id: "openrouter", label: "OpenRouter", cli: "ccpg --OpenRouter" },

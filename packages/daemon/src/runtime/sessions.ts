@@ -37,13 +37,13 @@ const HEARTBEAT_TIMEOUT_MS = 60_000;
 
 let current: SessionRecord | null = null;
 let checkpointTimer: NodeJS.Timeout | null = null;
-let sessionPrimaryModel: { providerId: ProviderId; providerModel: string } | null = null;
+let sessionPrimaryModel: { providerId: string; providerModel: string } | null = null;
 
-export function setSessionPrimaryModel(providerId: ProviderId, providerModel: string): void {
+export function setSessionPrimaryModel(providerId: string, providerModel: string): void {
   sessionPrimaryModel = { providerId, providerModel };
 }
 
-export function getSessionPrimaryModel(): { providerId: ProviderId; providerModel: string } | null {
+export function getSessionPrimaryModel(): { providerId: string; providerModel: string } | null {
   return sessionPrimaryModel;
 }
 
@@ -198,7 +198,12 @@ function createSessionRecord(config: Config): SessionRecord {
   )
     .filter(([, pc]) => pc.enabled)
     .map(([id]) => id);
-  const launchHint = config.modelMode === "all" ? "all" : config.activeProvider;
+  const launchHint =
+    config.modelMode === "all"
+      ? "all"
+      : config.modelMode === "chains"
+        ? "modelchain"
+        : config.activeProvider;
 
   return {
     id: `${Date.now().toString(36)}-${randomBytes(8).toString("hex")}`,

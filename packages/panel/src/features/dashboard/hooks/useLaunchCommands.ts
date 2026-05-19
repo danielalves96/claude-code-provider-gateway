@@ -22,14 +22,24 @@ export function useLaunchCommands() {
     if (!launch) return [];
     return [
       { id: "all", label: "All providers", badge: "--all", cmd: launch.all },
+      {
+        id: "model-chains",
+        label: "All Model Chains",
+        badge: "--ModelChain",
+        cmd: launch.modelChains,
+      },
       ...launch.perProvider.map((p) => ({
         id: p.id,
         label: p.label,
-        badge: `--${p.id.replace(/_/g, "")}`,
+        badge: flagFromCommand(p.cli),
         cmd: p.cli,
       })),
     ];
   }, [launch]);
 
   return { launch, items, error };
+}
+
+function flagFromCommand(command: string): string {
+  return command.split(/\s+/).find((part) => part.startsWith("--")) ?? command;
 }

@@ -1,6 +1,8 @@
 import type {
   CavemanLevel,
   Config,
+  ModelFallbackConfig,
+  ModelFallbackEntry,
   ModelMode,
   ProviderConfig,
   ProviderId,
@@ -9,7 +11,7 @@ import type {
 import { PROVIDER_IDS } from "./schema.js";
 
 const PROVIDER_ID_SET = new Set<string>(PROVIDER_IDS);
-const MODEL_MODES = new Set<ModelMode>(["single", "all"]);
+const MODEL_MODES = new Set<ModelMode>(["single", "all", "chains"]);
 const CAVEMAN_LEVELS = new Set<CavemanLevel>(["lite", "full", "ultra"]);
 
 export function normalizeConfig(config: Config, defaults: Config): Config {
@@ -56,6 +58,11 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
     },
     activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
+    activeModelFallbackSlug: nullableSlugOrDefault(
+      config.activeModelFallbackSlug,
+      defaults.activeModelFallbackSlug,
+    ),
+    modelFallbacks: normalizeModelFallbacks(config.modelFallbacks, defaults.modelFallbacks),
     panelSettings: {
       favoriteProviders: normalizeProviderIdList(
         config.panelSettings?.favoriteProviders,
@@ -67,6 +74,50 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
       ),
     },
   };
+}
+
+function normalizeModelFallbacks(
+  value: unknown,
+  fallback: ModelFallbackConfig[],
+): ModelFallbackConfig[] {
+  if (!Array.isArray(value)) return fallback;
+  const seen = new Set<string>();
+  const out: ModelFallbackConfig[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const raw = item as Partial<ModelFallbackConfig>;
+    const slug = normalizeSlug(raw.slug);
+    if (!slug || seen.has(slug)) continue;
+    const name = typeof raw.name === "string" && raw.name.trim() ? raw.name.trim() : slug;
+    const id =
+      typeof raw.id === "string" && raw.id.trim()
+        ? raw.id.trim()
+        : `chain_${slug.replaceAll("-", "_")}`;
+    const models = normalizeModelFallbackEntries(raw.models);
+    seen.add(slug);
+    out.push({ id, name, slug, models, enabled: raw.enabled !== false && models.length > 0 });
+  }
+  return out;
+}
+
+function normalizeModelFallbackEntries(value: unknown): ModelFallbackEntry[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const out: ModelFallbackEntry[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const raw = item as Partial<ModelFallbackEntry>;
+    const providerId =
+      typeof raw.providerId === "string" && PROVIDER_ID_SET.has(raw.providerId)
+        ? (raw.providerId as ProviderId)
+        : null;
+    const model = typeof raw.model === "string" ? raw.model.trim() : "";
+    const key = providerId && model ? `${providerId}/${model}` : "";
+    if (!providerId || !model || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ providerId, model });
+  }
+  return out;
 }
 
 function normalizeProviders(
@@ -146,6 +197,18 @@ function stringOrDefault(value: unknown, fallback: string): string {
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function nullableSlugOrDefault(value: unknown, fallback: string | null): string | null {
+  if (value === null) return null;
+  if (typeof value !== "string") return fallback;
+  return normalizeSlug(value) ?? fallback;
+}
+
+function normalizeSlug(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const slug = value.trim().replace(/^--/, "");
+  return /^[a-zA-Z][a-zA-Z0-9_-]{1,62}$/.test(slug) ? slug : null;
 }
 
 function normalizeStringList(value: unknown, fallback: string[] | undefined): string[] | undefined {
