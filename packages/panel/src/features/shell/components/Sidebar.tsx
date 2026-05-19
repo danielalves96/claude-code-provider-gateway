@@ -202,11 +202,11 @@ function Brand({ collapsed }: { collapsed: boolean }) {
           flexShrink: 0,
         }}
       >
-        <img src="/claude-blind.png" alt="" style={{ height: 22, width: "auto" }} />
+        <img src="/claude-blind.webp" alt="" style={{ height: 22, width: "auto" }} />
       </div>
       {!collapsed && (
         <img
-          src="/logo_name.png"
+          src="/logo_name.webp"
           alt="Claude Code Provider Gateway"
           style={{ height: 28, width: "auto", objectFit: "contain" }}
         />

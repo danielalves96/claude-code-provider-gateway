@@ -27,7 +27,7 @@ export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
 
   return (
     <img
-      src={`/providers/${providerId}.png`}
+      src={`/providers/${providerId}.webp`}
       alt=""
       aria-hidden="true"
       style={{
