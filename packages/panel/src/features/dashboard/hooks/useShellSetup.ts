@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { dashboardService } from "../dashboardService.js";
-import type { ShellSetup } from "../types.js";
+import type { ShellSetup } from "../domain/types.js";
+import { dashboardService } from "../services/dashboardService.js";
 
 export function useShellSetup() {
   const [setup, setSetup] = useState<ShellSetup | null>(null);

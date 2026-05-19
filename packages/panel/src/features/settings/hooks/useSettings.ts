@@ -1,8 +1,13 @@
 import { Form } from "antd";
 import { useEffect, useState } from "react";
 import { useSaveFeedback } from "../../../shared/hooks/useSaveFeedback.js";
-import { settingsService } from "../settingsService.js";
-import type { ProxyConfig, ServerConfig, TokenSaversConfig, WebToolsConfig } from "../types.js";
+import type {
+  ProxyConfig,
+  ServerConfig,
+  TokenSaversConfig,
+  WebToolsConfig,
+} from "../domain/types.js";
+import { settingsService } from "../services/settingsService.js";
 
 const DEFAULT_WEB_TOOLS: WebToolsConfig = {
   enabled: true,

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { usePolling } from "../../../shared/hooks/usePolling.js";
-import { dashboardService } from "../dashboardService.js";
-import type { GatewayStatus, StatsResponse } from "../types.js";
+import type { GatewayStatus, StatsResponse } from "../domain/types.js";
+import { dashboardService } from "../services/dashboardService.js";
 
 const POLL_INTERVAL_MS = 2000;
 

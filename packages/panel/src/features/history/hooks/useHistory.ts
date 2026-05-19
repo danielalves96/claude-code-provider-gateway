@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { usePolling } from "../../../shared/hooks/usePolling.js";
-import { historyService } from "../historyService.js";
-import type { GatewayProviderStat, Session, SessionsResponse } from "../types.js";
+import type { GatewayProviderStat, Session, SessionsResponse } from "../domain/types.js";
+import { historyService } from "../services/historyService.js";
 
 export const HISTORY_POLL_INTERVAL_MS = 5000;
 

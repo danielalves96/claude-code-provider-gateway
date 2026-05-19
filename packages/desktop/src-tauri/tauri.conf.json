@@ -14,9 +14,9 @@
       {
         "title": "Claude Code Provider Gateway",
         "width": 1600,
-        "height": 900,
+        "height": 930,
         "minWidth": 900,
-        "minHeight": 600,
+        "minHeight": 630,
         "resizable": true,
         "fullscreen": false
       }

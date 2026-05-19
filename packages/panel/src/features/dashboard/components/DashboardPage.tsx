@@ -1,57 +1,36 @@
 import { Flex, theme } from "antd";
-import { useMemo, useState } from "react";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
-import { useGatewayStatus } from "../hooks/useGatewayStatus.js";
-import { useLaunchCommands } from "../hooks/useLaunchCommands.js";
-import { useLiveLogs } from "../hooks/useLiveLogs.js";
-import { useShellSetup } from "../hooks/useShellSetup.js";
-import { EnabledProvidersCard } from "./EnabledProvidersCard.js";
-import { LiveLogsPanel } from "./LiveLogsPanel.js";
-import { QuickLaunchCard } from "./QuickLaunchCard.js";
-import { ShellSetupCard } from "./ShellSetupCard.js";
-import { StatusOverview } from "./StatusOverview.js";
-
-const DISMISSED_SHELL_SETUP_KEY = "cc-provider-gtw:shell-setup-dismissed";
+import { useDashboardPage } from "../hooks/useDashboardPage.js";
+import { EnabledProvidersCard } from "./overview/EnabledProvidersCard.js";
+import { StatusOverview } from "./overview/StatusOverview.js";
+import { QuickLaunchCard } from "./quick-launch/QuickLaunchCard.js";
+import { ShellSetupCard } from "./shell-setup/ShellSetupCard.js";
 
 export default function DashboardPage() {
   const { token } = theme.useToken();
-  const { status, stats } = useGatewayStatus();
-  const { items, error: launchError } = useLaunchCommands();
-  const { setup, refresh } = useShellSetup();
-  const { logs, paused, togglePaused, clear } = useLiveLogs();
-  const [setupDismissed, setSetupDismissed] = useState(
-    () => window.localStorage.getItem(DISMISSED_SHELL_SETUP_KEY) === "true",
-  );
+  const page = useDashboardPage();
 
-  const hasTerminalConfigured = useMemo(
-    () => setup?.shells.some((shell) => shell.installed) ?? false,
-    [setup],
-  );
-
-  const shellSetupCard =
-    setup && status && !setupDismissed ? (
-      <ShellSetupCard
-        setup={setup}
-        panelPort={status.panelPort ?? 6767}
-        defaultOpen={!hasTerminalConfigured}
-        canDismiss={hasTerminalConfigured}
-        onRefresh={refresh}
-        onDismiss={() => {
-          window.localStorage.setItem(DISMISSED_SHELL_SETUP_KEY, "true");
-          setSetupDismissed(true);
-        }}
-      />
-    ) : null;
+  const shellSetupCard = page.shouldShowShellSetup
+    ? page.shellSetup && (
+        <ShellSetupCard
+          setup={page.shellSetup}
+          panelPort={page.status?.panelPort ?? 6767}
+          defaultOpen={!page.hasTerminalConfigured}
+          canDismiss={page.hasTerminalConfigured}
+          onRefresh={page.refreshShellSetup}
+          onDismiss={page.dismissShellSetup}
+        />
+      )
+    : null;
 
   return (
     <Flex vertical gap={token.paddingLG}>
       <PageHeader title="Dashboard" />
-      <StatusOverview status={status} />
-      <EnabledProvidersCard stats={stats} />
-      {!hasTerminalConfigured && shellSetupCard}
-      <QuickLaunchCard items={items} error={launchError} />
-      {hasTerminalConfigured && shellSetupCard}
-      <LiveLogsPanel logs={logs} paused={paused} onTogglePaused={togglePaused} onClear={clear} />
+      <StatusOverview status={page.status} />
+      <EnabledProvidersCard stats={page.stats} />
+      {!page.hasTerminalConfigured && shellSetupCard}
+      <QuickLaunchCard items={page.launchItems} error={page.launchError} />
+      {page.hasTerminalConfigured && shellSetupCard}
     </Flex>
   );
 }
