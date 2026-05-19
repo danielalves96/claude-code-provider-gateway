@@ -6,7 +6,8 @@ const { Text } = Typography;
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { openExternal } from "../../../shared/openExternal.js";
-import { NAV_ITEMS, selectedKeyFromPath } from "./navItems.js";
+import { useLiveIndicator } from "../../live-session/hooks/useLiveIndicator.js";
+import { buildNavItems, selectedKeyFromPath } from "./navItems.js";
 
 const { Sider } = Layout;
 
@@ -18,7 +19,9 @@ export function Sidebar() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
+  const isLive = useLiveIndicator();
   const selectedKey = selectedKeyFromPath(location.pathname);
+  const navItems = buildNavItems(isLive);
 
   return (
     <Sider
@@ -57,7 +60,7 @@ export function Sidebar() {
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={NAV_ITEMS}
+          items={navItems}
           onClick={({ key }) => navigate(key)}
           style={{ border: "none", paddingBlock: token.paddingSM }}
         />

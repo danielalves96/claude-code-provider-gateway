@@ -24,27 +24,27 @@ export default function RoutingPage() {
           <RoutingGridSkeleton />
         ) : (
           <>
-        {options.length === 0 && (
-          <Alert
-            type="warning"
-            showIcon
-            message="No providers enabled"
-            description="Enable and configure a provider on the Providers page before setting up routing."
-          />
-        )}
-
-        <Row gutter={[token.paddingLG, token.paddingLG]} align="stretch">
-          {TIERS.map((tier) => (
-            <Col xs={24} xl={12} key={tier} style={{ display: "flex" }}>
-              <TierCard
-                tier={tier}
-                rule={rules[tier]}
-                options={options}
-                onChange={(patch) => updateRule(tier, patch)}
+            {options.length === 0 && (
+              <Alert
+                type="warning"
+                showIcon
+                message="No providers enabled"
+                description="Enable and configure a provider on the Providers page before setting up routing."
               />
-            </Col>
-          ))}
-        </Row>
+            )}
+
+            <Row gutter={[token.paddingLG, token.paddingLG]} align="stretch">
+              {TIERS.map((tier) => (
+                <Col xs={24} xl={12} key={tier} style={{ display: "flex" }}>
+                  <TierCard
+                    tier={tier}
+                    rule={rules[tier]}
+                    options={options}
+                    onChange={(patch) => updateRule(tier, patch)}
+                  />
+                </Col>
+              ))}
+            </Row>
           </>
         )}
       </Flex>

@@ -1,3 +1,4 @@
+import { stripModelPrefix } from "./format.js";
 import { providerLabel } from "./labels.js";
 import type { Session } from "./types.js";
 
@@ -36,7 +37,8 @@ export function getTopModelInfo(sessions: Session[]): TopModelInfo | null {
 
   for (const session of sessions) {
     for (const [model, stat] of Object.entries(session.modelStats ?? {})) {
-      counts[model] = (counts[model] ?? 0) + stat.requests;
+      const key = stripModelPrefix(model);
+      counts[key] = (counts[key] ?? 0) + stat.requests;
     }
   }
 

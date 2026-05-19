@@ -4,15 +4,25 @@ import { SessionDetails } from "../details/SessionDetails.js";
 import { getSessionStatusBorderColor, useSessionColumns } from "./sessionColumns.js";
 import { TableExpandButton } from "./TableExpandButton.js";
 
+const PAGE_SIZE = 15;
+
 interface SessionsTableProps {
   sessions: Session[];
   expandedKeys: string[];
   onToggleExpanded: (id: string, expanded: boolean) => void;
+  onDeleteSession: (id: string) => void;
+  deletingId: string | null;
 }
 
-export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: SessionsTableProps) {
+export function SessionsTable({
+  sessions,
+  expandedKeys,
+  onToggleExpanded,
+  onDeleteSession,
+  deletingId,
+}: SessionsTableProps) {
   const { token } = theme.useToken();
-  const columns = useSessionColumns();
+  const columns = useSessionColumns({ onDelete: onDeleteSession, deletingId });
 
   return (
     <Card styles={{ body: { padding: 0 } }}>
@@ -21,7 +31,9 @@ export function SessionsTable({ sessions, expandedKeys, onToggleExpanded }: Sess
         columns={columns}
         rowKey="id"
         size="small"
-        pagination={false}
+        pagination={
+          sessions.length > PAGE_SIZE ? { pageSize: PAGE_SIZE, showSizeChanger: false } : false
+        }
         onRow={(record) => ({
           style: {
             borderLeft: `3px solid ${getSessionStatusBorderColor(record.status, token)}`,

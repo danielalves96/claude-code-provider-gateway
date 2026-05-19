@@ -1,6 +1,5 @@
 import { Card, Col, Empty, Flex, Row, Skeleton, Typography, theme } from "antd";
 import { useHistoryPage } from "../../hooks/useHistoryPage.js";
-import { ProvidersTable } from "../tables/ProvidersTable.js";
 import { SessionsTable } from "../tables/SessionsTable.js";
 import { ClearHistoryModal } from "./ClearHistoryModal.js";
 import { HistoryHeader } from "./HistoryHeader.js";
@@ -39,7 +38,12 @@ function HistorySkeletonSummary() {
           <Card size="small" styles={{ body: { padding: "8px 12px" } }}>
             <Flex align="center" justify="space-between">
               <Flex align="center" gap={6}>
-                <Skeleton.Avatar active size="small" shape="circle" style={{ width: 14, height: 14 }} />
+                <Skeleton.Avatar
+                  active
+                  size="small"
+                  shape="circle"
+                  style={{ width: 14, height: 14 }}
+                />
                 <Skeleton.Input active size="small" style={{ width: 80 }} />
               </Flex>
               <Skeleton.Input active size="small" style={{ width: 32 }} />
@@ -64,23 +68,20 @@ export default function HistoryPage() {
         pollIntervalMs={page.pollIntervalMs}
       />
 
-      {page.isLoading ? <HistorySkeletonTopStats /> : (
+      {page.isLoading ? (
+        <HistorySkeletonTopStats />
+      ) : (
         <HistoryTopStats topProvider={page.topProviderInfo} topModel={page.topModelInfo} />
       )}
 
-      {page.isLoading ? <HistorySkeletonSummary /> : (
+      {page.isLoading ? (
+        <HistorySkeletonSummary />
+      ) : (
         <HistorySummary
-          sessionCount={page.sessions.length}
           archived={page.totals.archived}
           totalRequests={page.totals.requests}
           totalErrors={page.totals.errors}
         />
-      )}
-
-      {page.globalProviderRows.length > 0 && (
-        <Card>
-          <ProvidersTable rows={page.globalProviderRows} title="Gateway Providers" />
-        </Card>
       )}
 
       {page.isLoading ? (
@@ -96,6 +97,8 @@ export default function HistoryPage() {
           sessions={page.sessions}
           expandedKeys={page.expandedKeys}
           onToggleExpanded={page.toggleExpanded}
+          onDeleteSession={page.deleteSession}
+          deletingId={page.deletingId}
         />
       )}
 

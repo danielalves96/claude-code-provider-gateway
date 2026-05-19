@@ -8,7 +8,9 @@ function TierCardSkeleton() {
   return (
     <Card
       style={{ width: "100%", display: "flex", flexDirection: "column" }}
-      styles={{ body: { flex: 1, display: "flex", flexDirection: "column", padding: token.paddingLG } }}
+      styles={{
+        body: { flex: 1, display: "flex", flexDirection: "column", padding: token.paddingLG },
+      }}
     >
       <Flex justify="space-between" align="flex-start" style={{ marginBottom: token.marginLG }}>
         <Space size="middle" align="center">

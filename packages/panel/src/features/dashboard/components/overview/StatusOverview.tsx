@@ -16,8 +16,8 @@ export function StatusOverview({ status, isLoading }: StatusOverviewProps) {
   if (isLoading) {
     return (
       <Row gutter={[token.paddingSM, token.paddingSM]}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Col xs={12} sm={12} lg={6} key={i} style={{ flex: 1 }}>
+        {(["sk-0", "sk-1", "sk-2", "sk-3"] as const).map((key) => (
+          <Col xs={12} sm={12} lg={6} key={key} style={{ flex: 1 }}>
             <Card styles={{ body: { padding: `${token.paddingMD}px` } }}>
               <Flex align="center" gap={token.padding}>
                 <Skeleton.Avatar active size={42} shape="circle" />

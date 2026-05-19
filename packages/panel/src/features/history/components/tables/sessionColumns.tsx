@@ -1,6 +1,11 @@
-import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  DeleteOutlined,
+  SyncOutlined,
+} from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
-import { Space, Tag, Typography, theme } from "antd";
+import { Button, Popconfirm, Space, Tag, Typography, theme } from "antd";
 import { formatUptime } from "../../../../shared/utils/time.js";
 import { commandFor, formatDate, topModel } from "../../domain/format.js";
 import { providerLabel } from "../../domain/labels.js";
@@ -8,7 +13,15 @@ import type { Session } from "../../domain/types.js";
 
 const { Text } = Typography;
 
-export function useSessionColumns(): TableColumnsType<Session> {
+interface SessionColumnsOptions {
+  onDelete: (id: string) => void;
+  deletingId: string | null;
+}
+
+export function useSessionColumns({
+  onDelete,
+  deletingId,
+}: SessionColumnsOptions): TableColumnsType<Session> {
   const { token } = theme.useToken();
 
   return [
@@ -66,6 +79,31 @@ export function useSessionColumns(): TableColumnsType<Session> {
       width: 75,
       align: "right",
       render: (value: number) => <ErrorCount value={value} />,
+    },
+    {
+      key: "actions",
+      width: 56,
+      render: (_, session) => (
+        <div style={{ display: "flex", justifyContent: "center", paddingInlineEnd: 8 }}>
+          <Popconfirm
+            title="Delete this session?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            cancelText="Cancel"
+            placement="left"
+            overlayInnerStyle={{ background: "#1a1915" }}
+            onConfirm={() => onDelete(session.id)}
+          >
+            <Button
+              type="text"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              loading={deletingId === session.id}
+            />
+          </Popconfirm>
+        </div>
+      ),
     },
   ];
 }

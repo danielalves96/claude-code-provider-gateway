@@ -1,4 +1,4 @@
-import { Skeleton, Layout, theme } from "antd";
+import { Layout, Skeleton, theme } from "antd";
 import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar.js";
@@ -8,13 +8,7 @@ const { Content } = Layout;
 
 function PageFallback() {
   const { token } = theme.useToken();
-  return (
-    <Skeleton
-      active
-      paragraph={{ rows: 6 }}
-      style={{ padding: `${token.paddingLG}px 0` }}
-    />
-  );
+  return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: `${token.paddingLG}px 0` }} />;
 }
 
 export function AppShell() {

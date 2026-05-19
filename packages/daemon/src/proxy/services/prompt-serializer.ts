@@ -1,11 +1,9 @@
 import type { ContentBlock, MessagesRequest } from "../../core/anthropic/types.js";
 
-const PROMPT_SYSTEM_MAX_FIRST = 80000;
 const PROMPT_SYSTEM_MAX_REPEAT = 4000;
-const PROMPT_TOTAL_MAX = 300000;
 
 export function serializePrompt(req: MessagesRequest, first: boolean): string {
-  const systemMax = first ? PROMPT_SYSTEM_MAX_FIRST : PROMPT_SYSTEM_MAX_REPEAT;
+  const systemMax = first ? Number.MAX_SAFE_INTEGER : PROMPT_SYSTEM_MAX_REPEAT;
   const parts: string[] = [];
 
   const system = serializeSystemPrompt(req, systemMax);
@@ -16,7 +14,7 @@ export function serializePrompt(req: MessagesRequest, first: boolean): string {
     if (content) parts.push(`[${msg.role}]\n${content}`);
   }
 
-  return parts.join("\n\n").slice(0, PROMPT_TOTAL_MAX);
+  return parts.join("\n\n");
 }
 
 function serializeSystemPrompt(req: MessagesRequest, maxLength: number): string {

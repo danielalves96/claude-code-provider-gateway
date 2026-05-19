@@ -42,16 +42,41 @@ export function clearArchivedSessions(): void {
   writePrivateFile(ARCHIVE_PATH, "");
 }
 
+export function deleteArchivedSession(id: string): boolean {
+  if (!existsSync(ARCHIVE_PATH)) return false;
+  try {
+    const lines = readFileSync(ARCHIVE_PATH, "utf-8").split("\n").filter(Boolean);
+    const filtered = lines.filter((line) => {
+      try {
+        return (JSON.parse(line) as SessionRecord).id !== id;
+      } catch {
+        return true;
+      }
+    });
+    if (filtered.length === lines.length) return false;
+    writePrivateFile(ARCHIVE_PATH, filtered.length ? `${filtered.join("\n")}\n` : "");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function listArchivedSessions(): SessionRecord[] {
   if (!existsSync(ARCHIVE_PATH)) return [];
   try {
     const raw = readFileSync(ARCHIVE_PATH, "utf-8");
+    const seen = new Set<string>();
     return raw
       .split("\n")
       .filter(Boolean)
       .map(parseArchivedLine)
       .filter((s): s is SessionRecord => s !== null)
-      .reverse();
+      .reverse()
+      .filter((s) => {
+        if (seen.has(s.id)) return false;
+        seen.add(s.id);
+        return true;
+      });
   } catch {
     return [];
   }

@@ -68,8 +68,8 @@ export function EnabledProvidersCard({ stats, isLoading }: EnabledProvidersCardP
     >
       {isLoading ? (
         <Row gutter={[token.paddingLG, token.paddingLG]}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Col xs={24} sm={12} xl={8} key={i}>
+          {(["sk-0", "sk-1", "sk-2"] as const).map((key) => (
+            <Col xs={24} sm={12} xl={8} key={key}>
               <Skeleton active paragraph={{ rows: 2 }} />
             </Col>
           ))}
