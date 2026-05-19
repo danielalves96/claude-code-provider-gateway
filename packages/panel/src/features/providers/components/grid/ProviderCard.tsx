@@ -1,5 +1,5 @@
 import { StarFilled, StarOutlined } from "@ant-design/icons";
-import { Badge, Button, Card, Space, Switch, Tag, Tooltip, Typography, theme } from "antd";
+import { Badge, Button, Card, Space, Switch, Tag, Typography, theme } from "antd";
 import { COMING_SOON_PROVIDERS } from "../../domain/constants.js";
 import { isProviderReady } from "../../domain/status.js";
 import type { ProviderInfo, TestResult } from "../../domain/types.js";
@@ -107,11 +107,7 @@ export function ProviderCard({
             </Space>
           </div>
         </div>
-        {comingSoon ? (
-          <Tooltip title="OAuth flow not yet implemented">
-            <Switch checked={false} disabled size="small" aria-label={`${p.label} — coming soon`} />
-          </Tooltip>
-        ) : (
+        {!comingSoon && (
           <Space size={8}>
             {onToggleFavorite && (
               <Button
