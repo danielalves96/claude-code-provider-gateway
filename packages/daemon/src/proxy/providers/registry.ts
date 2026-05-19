@@ -1,4 +1,4 @@
-import type { Config, ProviderConfig, ProviderId } from "../../config/schema.js";
+import type { BuiltInProviderId, Config, ProviderConfig, ProviderId } from "../../config/schema.js";
 import { PROVIDER_IDS } from "../../config/schema.js";
 import type { BaseProvider } from "./base.js";
 import { ClineProvider } from "./cline.js";
@@ -13,10 +13,12 @@ import { OllamaProvider } from "./ollama.js";
 import { OllamaCloudProvider } from "./ollama-cloud.js";
 import { OpenAIAccountProvider } from "./openai-account.js";
 import { createAnthropicProvider, createOpenAIProvider } from "./provider-factory.js";
+import { AnthropicMessagesTransport } from "./transport-anthropic.js";
+import { OpenAIChatTransport } from "./transport-openai.js";
 
 type ProviderConstructor = new (config: ProviderConfig, rootConfig: Config) => BaseProvider;
 
-const PROVIDER_MAP: Record<ProviderId, ProviderConstructor> = {
+const PROVIDER_MAP: Record<BuiltInProviderId, ProviderConstructor> = {
   openai_account: OpenAIAccountProvider,
   copilot: CopilotProvider,
   nvidia_nim: createOpenAIProvider("nvidia_nim"),
@@ -63,7 +65,7 @@ const PROVIDER_MAP: Record<ProviderId, ProviderConstructor> = {
 };
 
 export class ProviderRegistry {
-  private cache = new Map<ProviderId, BaseProvider>();
+  private cache = new Map<string, BaseProvider>();
 
   constructor(private config: Config) {}
 
@@ -72,7 +74,8 @@ export class ProviderRegistry {
     if (!providerConfig?.enabled) return null;
 
     if (!this.cache.has(id)) {
-      const Ctor = PROVIDER_MAP[id];
+      const Ctor = this.constructorFor(id, providerConfig);
+      if (!Ctor) return null;
       this.cache.set(id, new Ctor(providerConfig, this.config));
     }
 
@@ -88,12 +91,51 @@ export class ProviderRegistry {
     this.cache.clear();
   }
 
-  all(): Array<{ id: ProviderId; provider: BaseProvider }> {
-    const result: Array<{ id: ProviderId; provider: BaseProvider }> = [];
-    for (const id of PROVIDER_IDS) {
+  all(): Array<{ id: string; provider: BaseProvider }> {
+    const result: Array<{ id: string; provider: BaseProvider }> = [];
+    for (const id of Object.keys(this.config.providers)) {
       const p = this.get(id);
       if (p) result.push({ id, provider: p });
     }
     return result;
   }
+
+  private constructorFor(id: string, providerConfig: ProviderConfig): ProviderConstructor | null {
+    if (providerConfig.custom) {
+      if ((PROVIDER_IDS as readonly string[]).includes(id)) return null;
+      if (providerConfig.custom.compatibility === "openai") return createCustomOpenAIProvider(id);
+      if (providerConfig.custom.compatibility === "anthropic") {
+        return createCustomAnthropicProvider(id);
+      }
+      return null;
+    }
+    if ((PROVIDER_IDS as readonly string[]).includes(id)) {
+      return PROVIDER_MAP[id as BuiltInProviderId];
+    }
+    return null;
+  }
+}
+
+function createCustomOpenAIProvider(id: string): ProviderConstructor {
+  return class CustomOpenAIProvider extends OpenAIChatTransport {
+    get id() {
+      return id;
+    }
+
+    get label() {
+      return this.config.custom?.label ?? id;
+    }
+  };
+}
+
+function createCustomAnthropicProvider(id: string): ProviderConstructor {
+  return class CustomAnthropicProvider extends AnthropicMessagesTransport {
+    get id() {
+      return id;
+    }
+
+    get label() {
+      return this.config.custom?.label ?? id;
+    }
+  };
 }

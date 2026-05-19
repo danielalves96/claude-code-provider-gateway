@@ -6,10 +6,10 @@
 
 The **daemon** (`@claude-code-provider-gateway/daemon`) is the backend process of CCPG, implemented in TypeScript. It runs two local HTTP servers — a **proxy API** (port `49250`) that speaks the Anthropic Messages API, and a **panel API** (port `6767`) that serves the configuration web UI and REST endpoints. Both servers bind to `127.0.0.1` only.
 
-The daemon's primary job is to intercept Claude Code API requests, route them to one of 41 configured LLM providers, translate between Anthropic and OpenAI API formats, and stream responses back as Anthropic SSE. It also provides session tracking, runtime stats, live logging, and a full configuration API consumed by the panel frontend.
+The daemon's primary job is to intercept Claude Code API requests, route them to a built-in or user-created LLM provider, translate between Anthropic and OpenAI API formats, and stream responses back as Anthropic SSE. It also provides session tracking, runtime stats, live logging, and a full configuration API consumed by the panel frontend.
 
 ```text
-Claude Code ── Anthropic API ──► Proxy (:49250) ──► 41 LLM providers
+Claude Code ── Anthropic API ──► Proxy (:49250) ──► built-in + custom LLM providers
 User Browser ─────────────────► Panel (:6767)  ──► Config + Session + Stats
 ```
 
@@ -38,7 +38,7 @@ packages/daemon/src/
 ├── index.ts               # Entry point: load config → configure network → start servers
 ├── config/                 # Schema, defaults, validation, paths, encrypted secrets
 │   ├── index.ts            # loadConfig(), saveConfig(), buildDefaultConfig(), ConfigManager logic
-│   ├── schema.ts           # Config type, ProviderConfig, ProviderId (41 constants), PROVIDER_DEFAULTS
+│   ├── schema.ts           # Config type, ProviderConfig, built-in ProviderId constants, PROVIDER_DEFAULTS
 │   ├── paths.ts            # OS-aware config dir paths (~/.config/... on Linux/Mac, %APPDATA% on Win)
 │   ├── validation.ts       # normalizeConfig() — validates and backfills all config fields
 │   └── secrets/            # Secret storage layer
@@ -72,7 +72,7 @@ packages/daemon/src/
 │   │   ├── native-claude-routing.ts # Native Claude passthrough detection
 │   │   ├── prompt-serializer.ts     # Request audit trail serialization
 │   │   └── stream-result.ts     # SSE stream response helpers with response capture
-│   ├── providers/           # 41 provider implementations
+│   ├── providers/           # Built-in provider implementations and shared transports
 │   │   ├── base.ts              # BaseProvider abstract class
 │   │   ├── registry.ts          # ProviderRegistry — ID → constructor mapping + caching
 │   │   ├── provider-factory.ts  # createOpenAIProvider() / createAnthropicProvider() factories
@@ -101,7 +101,7 @@ packages/daemon/src/
 │   │   └── auth.ts         # requirePanelAccess — CORS + token auth for Tauri origins
 │   ├── routes/
 │   │   ├── config-routes.ts    # GET/PUT /api/config
-│   │   ├── provider-routes.ts  # GET /api/providers, /api/models/:id, /api/routing/options
+│   │   ├── provider-routes.ts  # Provider list/test/models, custom providers, logo serving, routing options
 │   │   ├── session-routes.ts   # GET/DELETE /api/sessions, /api/launch/*
 │   │   ├── shell-routes.ts     # Shell setup, launch commands, launch-prepare
 │   │   ├── oauth-routes.ts     # OAuth flows: OpenAI Account, Copilot, KiloCode, Cline
@@ -149,7 +149,7 @@ Bound by `createPanelApp()` in `panel/app.ts`. Provides the REST API consumed by
 |-------|-----------|---------|
 | Status | `GET /api/status`, `GET /api/stats`, `GET /api/logs` | Health, per-provider stats, live log SSE stream |
 | Config | `GET /api/config`, `PUT /api/config` | Full config read/update with secrets masking |
-| Providers | `GET /api/providers`, `GET /api/models/:id`, `POST /api/providers/:id/test` | Provider listing, model discovery, connection testing |
+| Providers | `GET /api/providers`, `GET /api/models/:id`, `POST /api/providers/:id/test`, `POST /api/custom-providers/test`, `POST /api/custom-providers`, `DELETE /api/custom-providers/:id`, `GET /api/provider-logos/:file` | Provider listing, model discovery, connection testing, user-created custom providers, uploaded custom logos |
 | Routing | `GET /api/routing/options` | Model selection options for routing rules |
 | Sessions | `GET /api/sessions`, `DELETE /api/sessions` | Current + archived sessions, clear history |
 | Launch | `POST /api/launch/end`, `/api/launch/heartbeat`, `/api/launch/attach` | Session lifecycle from CLI launcher |
@@ -246,7 +246,8 @@ export class ProviderRegistry {
 
 - **Lazy instantiation**: Provider instances are created on first access (`get()`) and cached in a `Map`. Disabled providers return `null`.
 - **Hot-reload**: `updateConfig()` replaces the stored config and clears the cache so next access uses fresh configuration.
-- **Provider map**: The `PROVIDER_MAP` constant maps 41 `ProviderId` values to constructors. Most providers use factory-generated classes (`createOpenAIProvider()` / `createAnthropicProvider()`); special providers (Copilot, OpenAI Account, Cline, KiloCode, Kiro, iFlow, DeepSeek, Google, Ollama, Ollama Cloud, CommandCode) have dedicated hand-written classes.
+- **Provider map**: The `PROVIDER_MAP` constant maps the built-in provider IDs to constructors. Most built-ins use factory-generated classes (`createOpenAIProvider()` / `createAnthropicProvider()`); special providers (Copilot, OpenAI Account, Cline, KiloCode, Kiro, iFlow, DeepSeek, Google, Ollama, Ollama Cloud, CommandCode) have dedicated hand-written classes.
+- **Dynamic custom providers**: IDs not present in `PROVIDER_MAP` can still be instantiated when `config.providers.<id>.custom` exists. `custom.compatibility: "openai"` creates an `OpenAIChatTransport` subclass; `"anthropic"` creates an `AnthropicMessagesTransport` subclass. Custom providers are cached and hot-reloaded like built-ins.
 
 ### `MessageService`
 
@@ -334,7 +335,7 @@ While there isn't a single `ConfigManager` class, the configuration system is th
 ```ts
 interface Config {
   server: { proxyPort: 49250; panelPort: 6767; authToken: string };
-  providers: Record<ProviderId, ProviderConfig>;  // 41 providers
+  providers: Record<ProviderId, ProviderConfig>;  // built-ins plus user-created custom providers
   routing: Record<RoutingTier, RoutingRule>;       // default/opus/sonnet/haiku
   thinking: { enabled: boolean; opus: boolean|null; sonnet: boolean|null; haiku: boolean|null };
   webTools: { enabled: boolean; allowPrivateNetworks: boolean };
@@ -352,7 +353,7 @@ interface Config {
 
 - **`SecretStore` interface** — `get(key)`, `set(key, value)`, `delete(key)`, `keys()`.
 - **`EncryptedFileSecretStore`** — AES-256-GCM encrypted JSON file at `secrets.enc.json`. Each secret is stored as `{nonce, ciphertext, tag}` hex objects. Read/write with `0o600` permissions.
-- **`config-splitter.ts`** — `extractSecretsToStore()` drains secrets from the config object before persistence. `hydrateSecretsFromStore()` restores them after loading. Handles `server.authToken`, `provider.<id>.apiKey`, and `provider.<id>.oauth.*` keys.
+- **`config-splitter.ts`** — `extractSecretsToStore()` drains secrets from the config object before persistence. `hydrateSecretsFromStore()` restores them after loading. Handles `server.authToken`, `provider.<id>.apiKey`, and `provider.<id>.oauth.*` keys for both built-in and custom providers.
 - **Master key resolution** (`master-key.ts`): priority order is `CC_GATEWAY_SECRET_KEY` env var → existing `secret.key` file → generate new 32-byte key and persist.
 
 ## Request Lifecycle
@@ -417,7 +418,7 @@ Fallback chains iterate through a configurable list of `{providerId, model}` pai
 
 ## Provider System
 
-The daemon supports **41 providers**. Each provider is represented by a `ProviderId` literal union type (defined in `config/schema.ts`). Providers are registered in `PROVIDER_MAP` inside `ProviderRegistry`.
+The daemon ships with a built-in provider catalog and also supports user-created custom providers. Built-ins are registered in `PROVIDER_MAP` inside `ProviderRegistry`; custom providers are stored in config under their slug and instantiated dynamically.
 
 ### Provider Categories
 
@@ -430,6 +431,13 @@ The daemon supports **41 providers**. Each provider is represented by a `Provide
 - Generated via `createOpenAIProvider()`: NVIDIA NIM, Kimi, Groq, xAI, Mistral, Cerebras, Together, Fireworks, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, GLM CN, Volcengine Ark, BytePlus, Alibaba Bailian (both), OpenCode Go, Xiaomi MiMo (both), Cohere, Blackbox, HuggingFace
 - Auth: `Authorization: Bearer <key>`
 - Request/response conversion handled by `transport-openai.ts`
+
+**User-created custom providers**:
+- Created from the Providers page as OpenAI-compatible or Anthropic-compatible.
+- Stored in `config.providers.<slug>.custom` with `label`, immutable `slug`, optional `logoFile`, and `compatibility`.
+- API keys live in the encrypted secret store under `provider.<slug>.apiKey`.
+- Uploaded logos are served from `provider-logos/` through `GET /api/provider-logos/:file`.
+- Deletion removes the config entry, encrypted API key, uploaded logo, routing rules, Model Chain entries, and favorites references.
 
 **Special hand-written providers**:
 

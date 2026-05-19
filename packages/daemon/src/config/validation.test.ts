@@ -17,6 +17,22 @@ test("normalizeConfig preserves valid config values", () => {
         enabled: true,
         requestTimeoutMs: 1200,
       },
+      acme_anthropic: {
+        enabled: true,
+        apiKey: "sk-acme-anthropic",
+        authType: "api_key" as const,
+        models: ["claude-custom"],
+        disabledModels: [],
+        baseUrl: "https://anthropic.acme.test/v1",
+        rateLimit: 40,
+        rateWindow: 60,
+        maxConcurrency: 5,
+        custom: {
+          label: "Acme Anthropic",
+          slug: "acme_anthropic",
+          compatibility: "anthropic" as const,
+        },
+      },
     },
   };
 
@@ -186,4 +202,56 @@ test("normalizeConfig preserves OAuth provider metadata", () => {
     "https://api.individual.githubcopilot.com",
   );
   assert.equal(normalized.providers.kilocode.oauth?.orgId, "org_123");
+});
+
+test("normalizeConfig preserves custom OpenAI-compatible providers", () => {
+  const defaults = buildDefaultConfig();
+  const config = {
+    ...defaults,
+    activeProvider: "acme_ai",
+    providers: {
+      ...defaults.providers,
+      acme_ai: {
+        enabled: true,
+        apiKey: "sk-acme",
+        authType: "api_key" as const,
+        models: ["acme-large"],
+        disabledModels: [],
+        baseUrl: "https://api.acme.test/v1",
+        rateLimit: 40,
+        rateWindow: 60,
+        maxConcurrency: 5,
+        custom: {
+          label: "Acme AI",
+          slug: "acme_ai",
+          logoFile: "acme_ai.webp",
+          compatibility: "openai" as const,
+        },
+      },
+      acme_anthropic: {
+        enabled: true,
+        apiKey: "sk-acme-anthropic",
+        authType: "api_key" as const,
+        models: ["claude-custom"],
+        disabledModels: [],
+        baseUrl: "https://anthropic.acme.test/v1",
+        rateLimit: 40,
+        rateWindow: 60,
+        maxConcurrency: 5,
+        custom: {
+          label: "Acme Anthropic",
+          slug: "acme_anthropic",
+          compatibility: "anthropic" as const,
+        },
+      },
+    },
+  };
+
+  const normalized = normalizeConfig(config, defaults);
+
+  assert.equal(normalized.activeProvider, "acme_ai");
+  assert.equal(normalized.providers.acme_ai.custom?.label, "Acme AI");
+  assert.equal(normalized.providers.acme_ai.baseUrl, "https://api.acme.test/v1");
+  assert.deepEqual(normalized.providers.acme_ai.models, ["acme-large"]);
+  assert.equal(normalized.providers.acme_anthropic.custom?.compatibility, "anthropic");
 });

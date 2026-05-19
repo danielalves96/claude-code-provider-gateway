@@ -1,5 +1,4 @@
 import type { Config, ModelFallbackConfig, ProviderId, RoutingRule } from "../config/schema.js";
-import { PROVIDER_IDS } from "../config/schema.js";
 
 export type ResolvedModel =
   | {
@@ -14,6 +13,8 @@ export type ResolvedModel =
     };
 
 type ProviderResolvedModel = Extract<ResolvedModel, { providerId: ProviderId }>;
+
+const RESERVED_PROVIDER_IDS = new Set(["anthropic", "chain", "fallback"]);
 
 const CLAUDE_OPUS_PATTERN = /claude-(3-opus|opus)/i;
 const CLAUDE_SONNET_PATTERN = /claude-(3[.-]5?-sonnet|sonnet)/i;
@@ -48,7 +49,8 @@ export function resolveModel(requestedModel: string, config: Config): ResolvedMo
   if (requestedFallback) return { source: "fallback", fallback: requestedFallback };
 
   // Direct provider/model syntax: "nvidia_nim/z-ai/glm4.7"
-  for (const pid of PROVIDER_IDS) {
+  for (const pid of Object.keys(config.providers)) {
+    if (RESERVED_PROVIDER_IDS.has(pid) || !config.providers[pid].enabled) continue;
     if (model.startsWith(`${pid}/`)) {
       return { providerId: pid, providerModel: model.slice(pid.length + 1), source: "prefix" };
     }

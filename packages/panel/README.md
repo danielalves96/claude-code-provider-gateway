@@ -46,7 +46,7 @@ The panel exposes the following pages:
 |------|------|-------------|
 | **Dashboard** | `/` | System status overview, enabled provider count, quick launch, and shell setup instructions. |
 | **Live Session** | `/live` | Real-time monitoring of the active Claude Code session, including request logs, model stats, and provider latency. |
-| **Providers** | `/providers` | Add, configure, test, reorder, and favorite LLM providers. Supports search and status filtering. |
+| **Providers** | `/providers` | Add custom OpenAI/Anthropic-compatible providers, configure, test, reorder, and favorite LLM providers. Supports search and status filtering. |
 | **Model Chain** | `/model-chain` | Create custom fallback chains from active provider models. Chains try models in priority order on failure. |
 | **Routing** | `/routing` | Map Claude model tiers (Opus, Sonnet, Haiku) to specific providers and models. |
 | **History** | `/history` | Browse completed session history with request details, token counts, latency, and response previews. |
@@ -57,7 +57,7 @@ The panel exposes the following pages:
 
 The panel communicates with the CCPG daemon through a typed HTTP client in `src/shared/api/`:
 
-- **`client.ts`** — `request<T>(path, init?)` wraps `fetch` with JSON serialization and error handling via `ApiError`.
+- **`client.ts`** — `request<T>(path, init?)` wraps `fetch` with JSON serialization and error handling via `ApiError`. It preserves browser-generated multipart boundaries for `FormData` uploads such as custom provider logos.
 - **`http.ts`** — Convenience methods (`http.get`, `http.put`, `http.post`, `http.delete`) for standard CRUD operations.
 - **`base.ts`** — Resolves the API base URL, defaulting to `http://127.0.0.1:6767`; automatically detected in Tauri runtime.
 

@@ -77,6 +77,12 @@ This starts the desktop app, panel dev server, and hot-reload daemon. See [docs/
 Start with [docs/ADDING_PROVIDER.md](docs/ADDING_PROVIDER.md). The daemon owns
 provider behavior; the panel should not contain hidden routing rules.
 
+If the upstream is a plain OpenAI Chat Completions-compatible or Anthropic
+Messages-compatible endpoint, prefer the runtime custom provider flow in the UI
+instead of adding a new built-in provider. Built-in provider changes are for
+catalog entries that need shipped metadata, special auth, custom transport
+behavior, or dedicated defaults.
+
 Most provider changes touch:
 
 - `packages/daemon/src/config/schema.ts`
@@ -176,13 +182,14 @@ Useful manual checks:
 
 When adding or changing a provider:
 
-1. Keep provider protocol details in `packages/daemon/src/proxy/providers/`.
-2. Add defaults, labels, and CLI flags in `packages/daemon/src/config/schema.ts`.
-3. Prefer `createOpenAIProvider()` or `createAnthropicProvider()` in the registry for simple API-compatible providers.
-4. Add a provider file only for OAuth, dynamic headers, custom catalogs, custom base URLs, custom streams, or dual transport dispatch.
-5. Make `listModels()` and `testConnection()` useful; the desktop UI depends on both.
-6. Preserve Anthropic-compatible streaming semantics.
-7. Document provider limitations when tools, streaming, images, thinking, or model discovery are partial.
+1. Prefer the runtime custom provider UI for plain OpenAI Chat Completions-compatible or Anthropic Messages-compatible endpoints.
+2. Keep built-in provider protocol details in `packages/daemon/src/proxy/providers/`.
+3. Add built-in defaults, labels, and CLI flags in `packages/daemon/src/config/schema.ts`.
+4. Prefer `createOpenAIProvider()` or `createAnthropicProvider()` in the registry when a built-in provider can use the shared transports.
+5. Add a provider file only for OAuth, dynamic headers, custom catalogs, custom base URLs, custom streams, or dual transport dispatch.
+6. Make `listModels()` and `testConnection()` useful; the desktop UI depends on both.
+7. Preserve Anthropic-compatible streaming semantics.
+8. Document provider limitations when tools, streaming, images, thinking, or model discovery are partial.
 
 Provider PRs should also state:
 

@@ -54,8 +54,37 @@ export function ProviderConfigContent({
   // Show picker when: API key provider, ready, discovery returned nothing.
   // Also always show if already has manually configured models (so they're editable).
   const showPicker =
-    providerKind === "api-key" &&
-    ((discoveredEmpty && ready) || (provider.models ?? []).length > 0);
+    provider.custom ||
+    (providerKind === "api-key" &&
+      ((discoveredEmpty && ready) || (provider.models ?? []).length > 0));
+
+  const apiKeySection = providerKind === "api-key" && (
+    <ApiKeySection
+      hasKey={provider.hasKey}
+      keyPreview={provider.keyPreview}
+      onSave={(value) => handlers.onSaveKey(provider.id, value)}
+      onRequestRemove={() => handlers.onRequestRemoveKey(provider.id)}
+      onRequestReplace={(value) => handlers.onRequestReplaceKey(provider.id, value)}
+    />
+  );
+
+  const modelPickerSection = showPicker && (
+    <ModelPickerSection
+      models={provider.models ?? []}
+      suggestions={SUGGESTED_MODELS[provider.id as keyof typeof SUGGESTED_MODELS]}
+      title={provider.custom ? "Manual models" : "Extra models"}
+      placeholder="provider/model-id"
+      onAdd={(model) => handlers.onAddModel(provider, model)}
+      onRemove={(model) => handlers.onRemoveModel(provider, model)}
+    />
+  );
+
+  const baseUrlSection = (providerKind === "local" || provider.custom) && (
+    <BaseUrlSection
+      baseUrl={provider.baseUrl}
+      onRequestChange={(url) => handlers.onRequestChangeUrl(provider.id, url)}
+    />
+  );
 
   return (
     <Flex vertical gap="large" style={{ marginTop: 24 }}>
@@ -69,31 +98,18 @@ export function ProviderConfigContent({
         />
       )}
 
-      {providerKind === "api-key" && (
-        <ApiKeySection
-          hasKey={provider.hasKey}
-          keyPreview={provider.keyPreview}
-          onSave={(value) => handlers.onSaveKey(provider.id, value)}
-          onRequestRemove={() => handlers.onRequestRemoveKey(provider.id)}
-          onRequestReplace={(value) => handlers.onRequestReplaceKey(provider.id, value)}
-        />
-      )}
-
-      {showPicker && (
-        <ModelPickerSection
-          models={provider.models ?? []}
-          suggestions={SUGGESTED_MODELS[provider.id as keyof typeof SUGGESTED_MODELS]}
-          placeholder="provider/model-id"
-          onAdd={(model) => handlers.onAddModel(provider, model)}
-          onRemove={(model) => handlers.onRemoveModel(provider, model)}
-        />
-      )}
-
-      {providerKind === "local" && (
-        <BaseUrlSection
-          baseUrl={provider.baseUrl}
-          onRequestChange={(url) => handlers.onRequestChangeUrl(provider.id, url)}
-        />
+      {provider.custom ? (
+        <>
+          {baseUrlSection}
+          {apiKeySection}
+          {modelPickerSection}
+        </>
+      ) : (
+        <>
+          {apiKeySection}
+          {modelPickerSection}
+          {baseUrlSection}
+        </>
       )}
 
       {provider.enabled && (

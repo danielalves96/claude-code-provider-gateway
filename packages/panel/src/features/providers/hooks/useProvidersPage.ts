@@ -19,6 +19,8 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
 
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [addCustomOpen, setAddCustomOpen] = useState(false);
+  const [customCompatibility, setCustomCompatibility] = useState<"openai" | "anthropic">("openai");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProviderStatusFilter>("all");
 
@@ -31,6 +33,11 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
 
   const providerGroups = useMemo(
     () => groupProvidersByConfiguration(filteredProviders),
+    [filteredProviders],
+  );
+
+  const customProviders = useMemo(
+    () => filteredProviders.filter((provider) => provider.custom),
     [filteredProviders],
   );
 
@@ -72,6 +79,10 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
       case "change-url":
         await providersApi.saveBaseUrl(confirm.providerId, confirm.newValue);
         break;
+      case "delete-provider":
+        await providersApi.deleteCustom(confirm.providerId);
+        setSelectedProviderId(null);
+        break;
     }
 
     setConfirm(null);
@@ -95,6 +106,7 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
       onRequestRemoveKey: (providerId) => setConfirm({ kind: "remove-key", providerId }),
       onRequestChangeUrl: (providerId, newValue) =>
         setConfirm({ kind: "change-url", providerId, newValue }),
+      onRequestDeleteProvider: (providerId) => setConfirm({ kind: "delete-provider", providerId }),
       onAddModel: providersApi.addModel,
       onRemoveModel: providersApi.removeModel,
       onDisabledModelsChange: providersApi.setDisabledModels,
@@ -113,12 +125,17 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
     activeProvider,
     filteredProviders,
     providerGroups,
+    customProviders,
     searchTerm,
     statusFilter,
     modalHandlers,
+    addCustomOpen,
+    customCompatibility,
     setSearchTerm,
     setStatusFilter,
     setSelectedProviderId,
+    setAddCustomOpen,
+    setCustomCompatibility,
     setConfirm,
     resetFilters,
     closeProviderModal,

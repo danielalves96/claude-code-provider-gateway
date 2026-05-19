@@ -80,10 +80,20 @@ keeps secret values in `secrets.enc.json` rather than plaintext `config.json`.
 | `POST` | `/api/providers/:id/test` | Origin/token policy | Runs provider `testConnection()`. |
 | `GET` | `/api/models/:providerId` | Origin/token policy | Lists discovered/manual models for one enabled provider. |
 | `GET` | `/api/routing/options` | Origin/token policy | Lists enabled providers and selectable models for Routing and Model Chain editors. |
+| `POST` | `/api/custom-providers/test` | Origin/token policy | Tests a not-yet-saved OpenAI-compatible or Anthropic-compatible custom provider draft and returns discovered models when available. |
+| `POST` | `/api/custom-providers` | Origin/token policy | Creates a custom provider from multipart form data (`name`, `slug`, `baseUrl`, `apiKey`, `compatibility`, optional PNG/WebP `logo`). |
+| `DELETE` | `/api/custom-providers/:id` | Origin/token policy | Deletes a custom provider and cleans config references, encrypted API key, favorites, Model Chain targets, routing rules, and uploaded logo. |
+| `GET` | `/api/provider-logos/:file` | Origin/token policy | Serves uploaded custom provider PNG/WebP logos from the local config directory. |
 
 Provider behavior remains daemon-owned. The panel can group, filter, favorite,
 and present providers, but final model discovery and routing come from daemon
 config, provider classes, and `model-service.ts`.
+
+Custom provider drafts use `compatibility: "openai"` for OpenAI Chat
+Completions-style endpoints (`{baseUrl}/chat/completions`) or
+`compatibility: "anthropic"` for Anthropic Messages-style endpoints
+(`{baseUrl}/messages`). Both variants use API-key auth and support manual
+models when discovery returns an empty catalog.
 
 ### OAuth
 
@@ -130,6 +140,9 @@ their OAuth routes are not implemented yet.
 The launch preparer deletes `~/.claude/cache/gateway-models.json` on a
 best-effort basis so Claude Code refreshes its gateway model catalog after a
 mode switch.
+
+For user-created custom providers, `--<Provider>` is the provider slug chosen in
+the creation modal, for example `ccpg --acme_ai`.
 
 ### Shell Setup
 

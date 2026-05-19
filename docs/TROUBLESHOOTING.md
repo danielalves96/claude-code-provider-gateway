@@ -75,8 +75,9 @@ Common causes:
 | Missing API key | Add or replace the API key in the provider modal. |
 | OAuth expired | Log out and sign in again from the provider card. |
 | Wrong base URL | Restore the default URL or verify the local server URL. |
+| Custom provider compatibility mismatch | Delete and recreate the provider with the correct **Add OpenAI Compatible** or **Add Anthropic Compatible** action. Name, slug, and logo are immutable after creation. |
 | Network/proxy restriction | Configure **Settings -> Outbound Proxy** and restart the gateway. |
-| Empty model catalog | Add manual models in the provider modal, then test launch/routing. |
+| Empty model catalog | Add manual models in the provider modal, then test launch/routing. Custom providers always show the manual model input as **Manual models**. |
 
 Local providers need their upstream server running first:
 
@@ -182,6 +183,7 @@ Useful files:
 |---|---|
 | `daemon.log` | Provider errors, OAuth failures, RTK/Caveman logs, startup/shutdown messages. |
 | `config.json` | Non-secret provider settings, model mode, Model Chains, ports, token saver settings. |
+| `provider-logos/` | Uploaded PNG/WebP logos for user-created custom providers. |
 | `current-session.json` | Active session checkpoint. |
 | `sessions.jsonl` | Archived sessions. |
 

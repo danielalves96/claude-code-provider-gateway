@@ -15,7 +15,8 @@ export type TestResult = ProviderTestResult;
 export type ConfirmAction =
   | { kind: "replace-key"; providerId: string; newValue: string }
   | { kind: "remove-key"; providerId: string }
-  | { kind: "change-url"; providerId: string; newValue: string };
+  | { kind: "change-url"; providerId: string; newValue: string }
+  | { kind: "delete-provider"; providerId: string };
 
 export type CopilotFlow = CopilotOAuthStartResponse;
 export type OAuthStartResponse = OpenAIAccountOAuthStartResponse;

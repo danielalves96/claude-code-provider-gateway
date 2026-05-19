@@ -1,11 +1,13 @@
-import { Alert, Empty, Flex, theme } from "antd";
+import { Alert, Col, Empty, Flex, Row, Typography, theme } from "antd";
 import type { ProviderGroup } from "../../domain/providerGroups.js";
 import type { ProviderInfo, TestResult } from "../../domain/types.js";
+import { ProviderCard } from "../grid/ProviderCard.js";
 import { ProviderGridSection } from "../grid/ProviderGridSection.js";
 import { SortableFavoritesGrid } from "../grid/SortableFavoritesGrid.js";
 
 interface AllProvidersTabProps {
   groups: ProviderGroup[];
+  customProviders: ProviderInfo[];
   testResults: Record<string, TestResult>;
   favorites: string[];
   onProviderSelect: (providerId: string) => void;
@@ -15,6 +17,7 @@ interface AllProvidersTabProps {
 
 export function AllProvidersTab({
   groups,
+  customProviders,
   testResults,
   favorites,
   onProviderSelect,
@@ -23,7 +26,7 @@ export function AllProvidersTab({
 }: AllProvidersTabProps) {
   const { token } = theme.useToken();
 
-  if (groups.length === 0) {
+  if (groups.length === 0 && customProviders.length === 0) {
     return (
       <Empty description="No providers found matching your filters" style={{ margin: "40px 0" }} />
     );
@@ -43,6 +46,70 @@ export function AllProvidersTab({
           onToggleFavorite={(provider) => onToggleFavorite(provider.id)}
         />
       ))}
+      <CustomProvidersSection
+        providers={customProviders}
+        testResults={testResults}
+        favorites={favorites}
+        onProviderSelect={(provider) => onProviderSelect(provider.id)}
+        onToggleEnabled={onToggleEnabled}
+        onToggleFavorite={(provider) => onToggleFavorite(provider.id)}
+      />
+    </Flex>
+  );
+}
+
+function CustomProvidersSection({
+  providers,
+  testResults,
+  favorites,
+  onProviderSelect,
+  onToggleEnabled,
+  onToggleFavorite,
+}: {
+  providers: ProviderInfo[];
+  testResults: Record<string, TestResult>;
+  favorites: string[];
+  onProviderSelect: (provider: ProviderInfo) => void;
+  onToggleEnabled: (id: string, currentlyEnabled: boolean) => void;
+  onToggleFavorite: (provider: ProviderInfo, event: React.MouseEvent) => void;
+}) {
+  const { token } = theme.useToken();
+
+  return (
+    <Flex vertical gap={token.paddingSM}>
+      <Typography.Title level={5} style={{ margin: 0, fontWeight: 600 }}>
+        Custom Providers (OpenAI/Anthropic Compatible)
+      </Typography.Title>
+
+      {providers.length === 0 ? (
+        <div
+          style={{
+            border: `1px dashed ${token.colorBorder}`,
+            borderRadius: token.borderRadiusLG,
+            color: token.colorTextSecondary,
+            padding: `${token.paddingSM}px ${token.paddingMD}px`,
+            textAlign: "center",
+          }}
+        >
+          No custom providers. Use the tab actions above to add OpenAI or Anthropic compatible
+          endpoints.
+        </div>
+      ) : (
+        <Row gutter={[token.paddingMD, token.paddingMD]} align="stretch">
+          {providers.map((provider) => (
+            <Col xs={24} sm={12} lg={8} xl={6} key={provider.id}>
+              <ProviderCard
+                provider={provider}
+                testResult={testResults[provider.id]}
+                onClick={onProviderSelect}
+                onToggleEnabled={onToggleEnabled}
+                isFavorite={favorites.includes(provider.id)}
+                onToggleFavorite={onToggleFavorite}
+              />
+            </Col>
+          ))}
+        </Row>
+      )}
     </Flex>
   );
 }

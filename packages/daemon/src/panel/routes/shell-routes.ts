@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import type { ProviderId } from "../../config/schema.js";
+import type { BuiltInProviderId, ProviderId } from "../../config/schema.js";
 import { CLI_FLAGS, PROVIDER_LABELS } from "../../config/schema.js";
 import type {
   InstallShellSetupResponse,
@@ -92,13 +92,13 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
 }
 
 function buildQuickLaunchProviders(config: ReturnType<PanelRuntime["currentConfig"]>) {
-  const providers: Array<{ id: string; label: string; cli: string }> = (
-    Object.entries(config.providers) as [ProviderId, (typeof config.providers)[ProviderId]][]
+  const providers: Array<{ id: string; label: string; cli: string }> = Object.entries(
+    config.providers,
   )
     .filter(([, pc]) => pc.enabled)
-    .map(([id]) => ({
+    .map(([id, pc]) => ({
       id,
-      label: PROVIDER_LABELS[id] ?? id,
+      label: pc.custom?.label ?? PROVIDER_LABELS[id as BuiltInProviderId] ?? id,
       cli: `ccpg ${flagFor(id) ?? `--${id}`}`,
     }));
   return providers.concat(

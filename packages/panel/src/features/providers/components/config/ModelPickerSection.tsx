@@ -13,6 +13,7 @@ const { Text } = Typography;
 interface ModelPickerSectionProps {
   models: string[];
   suggestions?: SuggestedModel[];
+  title?: string;
   placeholder?: string;
   onAdd: (model: string) => void;
   onRemove: (model: string) => void;
@@ -21,6 +22,7 @@ interface ModelPickerSectionProps {
 export function ModelPickerSection({
   models,
   suggestions,
+  title = "Extra models",
   placeholder = "provider/model-id",
   onAdd,
   onRemove,
@@ -65,7 +67,7 @@ export function ModelPickerSection({
       <Text type="secondary">
         <Space>
           <PlusOutlined />
-          Extra models
+          {title}
         </Space>
       </Text>
 

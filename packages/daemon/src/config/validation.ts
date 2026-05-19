@@ -15,7 +15,16 @@ const MODEL_MODES = new Set<ModelMode>(["single", "all", "chains"]);
 const CAVEMAN_LEVELS = new Set<CavemanLevel>(["lite", "full", "ultra"]);
 
 export function normalizeConfig(config: Config, defaults: Config): Config {
-  const modelFallbacks = normalizeModelFallbacks(config.modelFallbacks, defaults.modelFallbacks);
+  const providers = normalizeProviders(config.providers, defaults.providers);
+  const knownProviderIds = new Set([
+    ...(PROVIDER_IDS as readonly string[]),
+    ...Object.keys(providers),
+  ]);
+  const modelFallbacks = normalizeModelFallbacks(
+    config.modelFallbacks,
+    defaults.modelFallbacks,
+    knownProviderIds,
+  );
 
   return {
     server: {
@@ -23,12 +32,20 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
       panelPort: numberOrDefault(config.server.panelPort, defaults.server.panelPort),
       authToken: stringOrDefault(config.server.authToken, defaults.server.authToken),
     },
-    providers: normalizeProviders(config.providers, defaults.providers),
+    providers,
     routing: {
-      default: normalizeRoutingRule(config.routing?.default, defaults.routing.default),
-      opus: normalizeRoutingRule(config.routing?.opus, defaults.routing.opus),
-      sonnet: normalizeRoutingRule(config.routing?.sonnet, defaults.routing.sonnet),
-      haiku: normalizeRoutingRule(config.routing?.haiku, defaults.routing.haiku),
+      default: normalizeRoutingRule(
+        config.routing?.default,
+        defaults.routing.default,
+        knownProviderIds,
+      ),
+      opus: normalizeRoutingRule(config.routing?.opus, defaults.routing.opus, knownProviderIds),
+      sonnet: normalizeRoutingRule(
+        config.routing?.sonnet,
+        defaults.routing.sonnet,
+        knownProviderIds,
+      ),
+      haiku: normalizeRoutingRule(config.routing?.haiku, defaults.routing.haiku, knownProviderIds),
     },
     thinking: {
       enabled: booleanOrDefault(config.thinking.enabled, defaults.thinking.enabled),
@@ -58,7 +75,11 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
         defaults.tokenSavers.cavemanLevel,
       ),
     },
-    activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
+    activeProvider: activeProviderOrDefault(
+      config.activeProvider,
+      defaults.activeProvider,
+      providers,
+    ),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
     activeModelFallbackSlug: normalizeActiveModelFallbackSlug(
       config.activeModelFallbackSlug,
@@ -70,6 +91,7 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
       favoriteProviders: normalizeProviderIdList(
         config.panelSettings?.favoriteProviders,
         defaults.panelSettings.favoriteProviders,
+        knownProviderIds,
       ),
       favoritesTipDismissed: booleanOrDefault(
         config.panelSettings?.favoritesTipDismissed,
@@ -82,6 +104,7 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
 function normalizeModelFallbacks(
   value: unknown,
   fallback: ModelFallbackConfig[],
+  knownProviderIds: Set<string>,
 ): ModelFallbackConfig[] {
   if (!Array.isArray(value)) return fallback;
   const seen = new Set<string>();
@@ -96,14 +119,17 @@ function normalizeModelFallbacks(
       typeof raw.id === "string" && raw.id.trim()
         ? raw.id.trim()
         : `chain_${slug.replaceAll("-", "_")}`;
-    const models = normalizeModelFallbackEntries(raw.models);
+    const models = normalizeModelFallbackEntries(raw.models, knownProviderIds);
     seen.add(slug);
     out.push({ id, name, slug, models, enabled: raw.enabled !== false && models.length > 0 });
   }
   return out;
 }
 
-function normalizeModelFallbackEntries(value: unknown): ModelFallbackEntry[] {
+function normalizeModelFallbackEntries(
+  value: unknown,
+  knownProviderIds: Set<string>,
+): ModelFallbackEntry[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
   const out: ModelFallbackEntry[] = [];
@@ -111,8 +137,8 @@ function normalizeModelFallbackEntries(value: unknown): ModelFallbackEntry[] {
     if (!item || typeof item !== "object") continue;
     const raw = item as Partial<ModelFallbackEntry>;
     const providerId =
-      typeof raw.providerId === "string" && PROVIDER_ID_SET.has(raw.providerId)
-        ? (raw.providerId as ProviderId)
+      typeof raw.providerId === "string" && isKnownProviderId(raw.providerId, knownProviderIds)
+        ? raw.providerId
         : null;
     const model = typeof raw.model === "string" ? raw.model.trim() : "";
     const key = providerId && model ? `${providerId}/${model}` : "";
@@ -143,13 +169,13 @@ function hasEnabledFallbackSlug(modelFallbacks: ModelFallbackConfig[], slug: str
 }
 
 function normalizeProviders(
-  providers: Record<ProviderId, ProviderConfig>,
-  defaults: Record<ProviderId, ProviderConfig>,
-): Record<ProviderId, ProviderConfig> {
-  return PROVIDER_IDS.reduce(
+  providers: Record<string, ProviderConfig>,
+  defaults: Record<string, ProviderConfig>,
+): Record<string, ProviderConfig> {
+  return mergeProviderIds(providers, defaults).reduce(
     (out, id) => {
       const provider = providers[id];
-      const fallback = defaults[id];
+      const fallback = defaults[id] ?? defaultCustomProviderConfig(provider, id);
       out[id] = {
         enabled: booleanOrDefault(provider.enabled, fallback.enabled),
         apiKey: optionalString(provider.apiKey),
@@ -162,11 +188,71 @@ function normalizeProviders(
         rateWindow: numberOrDefault(provider.rateWindow, fallback.rateWindow),
         maxConcurrency: numberOrDefault(provider.maxConcurrency, fallback.maxConcurrency),
         requestTimeoutMs: optionalPositiveNumber(provider.requestTimeoutMs),
+        custom: normalizeCustomProvider(provider.custom, fallback.custom, id),
       };
       return out;
     },
-    {} as Record<ProviderId, ProviderConfig>,
+    {} as Record<string, ProviderConfig>,
   );
+}
+
+function mergeProviderIds(
+  providers: Record<string, ProviderConfig> | undefined,
+  defaults: Record<string, ProviderConfig>,
+): string[] {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const id of [...PROVIDER_IDS, ...Object.keys(providers ?? {}), ...Object.keys(defaults)]) {
+    if (seen.has(id)) continue;
+    if (!PROVIDER_ID_SET.has(id) && !isCustomProviderId(id, providers?.[id])) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
+function isCustomProviderId(id: string, provider: ProviderConfig | undefined): boolean {
+  return !!provider?.custom && normalizeSlug(id) === id;
+}
+
+function defaultCustomProviderConfig(
+  provider: ProviderConfig | undefined,
+  id: string,
+): ProviderConfig {
+  return {
+    enabled: false,
+    apiKey: "",
+    authType: "api_key",
+    models: [],
+    disabledModels: [],
+    baseUrl: "",
+    rateLimit: 40,
+    rateWindow: 60,
+    maxConcurrency: 5,
+    custom: {
+      label: provider?.custom?.label || id,
+      slug: id,
+      logoFile: provider?.custom?.logoFile,
+      compatibility: provider?.custom?.compatibility === "anthropic" ? "anthropic" : "openai",
+    },
+  };
+}
+
+function normalizeCustomProvider(
+  value: ProviderConfig["custom"],
+  fallback: ProviderConfig["custom"],
+  id: string,
+): ProviderConfig["custom"] {
+  const source = value ?? fallback;
+  if (!source || typeof source !== "object") return undefined;
+  const label = typeof source.label === "string" && source.label.trim() ? source.label.trim() : id;
+  const slug = normalizeSlug(source.slug) ?? id;
+  const logoFile =
+    typeof source.logoFile === "string" && /^[a-zA-Z0-9_-]+\.(png|webp)$/.test(source.logoFile)
+      ? source.logoFile
+      : undefined;
+  const compatibility = source.compatibility === "anthropic" ? "anthropic" : "openai";
+  return { label, slug, logoFile, compatibility };
 }
 
 function normalizeOAuth(
@@ -187,15 +273,19 @@ function normalizeOAuth(
   };
 }
 
-function normalizeRoutingRule(value: unknown, fallback: RoutingRule): RoutingRule {
+function normalizeRoutingRule(
+  value: unknown,
+  fallback: RoutingRule,
+  knownProviderIds: Set<string>,
+): RoutingRule {
   // Legacy migration: string "provider_id/model-name"
   if (typeof value === "string") {
     const slash = value.indexOf("/");
     if (slash > 0) {
       const pid = value.slice(0, slash);
       const model = value.slice(slash + 1);
-      if (PROVIDER_ID_SET.has(pid) && model) {
-        return { enabled: true, providerId: pid as ProviderId, model };
+      if (isKnownProviderId(pid, knownProviderIds) && model) {
+        return { enabled: true, providerId: pid, model };
       }
     }
     return { enabled: false, providerId: "", model: "" };
@@ -203,7 +293,8 @@ function normalizeRoutingRule(value: unknown, fallback: RoutingRule): RoutingRul
   if (!value || typeof value !== "object") return fallback;
   const v = value as Partial<RoutingRule>;
   const providerId =
-    typeof v.providerId === "string" && (v.providerId === "" || PROVIDER_ID_SET.has(v.providerId))
+    typeof v.providerId === "string" &&
+    (v.providerId === "" || isKnownProviderId(v.providerId, knownProviderIds))
       ? (v.providerId as ProviderId | "")
       : "";
   const model = typeof v.model === "string" ? v.model : "";
@@ -270,8 +361,12 @@ function authTypeOrDefault(
   return value === "oauth" || value === "api_key" ? value : fallback;
 }
 
-function providerIdOrDefault(value: unknown, fallback: ProviderId): ProviderId {
-  return typeof value === "string" && PROVIDER_ID_SET.has(value) ? (value as ProviderId) : fallback;
+function activeProviderOrDefault(
+  value: unknown,
+  fallback: ProviderId,
+  providers: Record<string, ProviderConfig>,
+): ProviderId {
+  return typeof value === "string" && providers[value] ? value : fallback;
 }
 
 function modelModeOrDefault(value: unknown, fallback: ModelMode): ModelMode {
@@ -286,12 +381,16 @@ function cavemanLevelOrDefault(value: unknown, fallback: CavemanLevel): CavemanL
     : fallback;
 }
 
-function normalizeProviderIdList(value: unknown, fallback: ProviderId[]): ProviderId[] {
+function normalizeProviderIdList(
+  value: unknown,
+  fallback: ProviderId[],
+  knownProviderIds: Set<string>,
+): ProviderId[] {
   if (!Array.isArray(value)) return fallback;
   const seen = new Set<ProviderId>();
   const out: ProviderId[] = [];
   for (const item of value) {
-    if (typeof item === "string" && PROVIDER_ID_SET.has(item)) {
+    if (typeof item === "string" && isKnownProviderId(item, knownProviderIds)) {
       if (!seen.has(item as ProviderId)) {
         seen.add(item as ProviderId);
         out.push(item as ProviderId);
@@ -299,4 +398,8 @@ function normalizeProviderIdList(value: unknown, fallback: ProviderId[]): Provid
     }
   }
   return out;
+}
+
+function isKnownProviderId(id: string, knownProviderIds: Set<string>): boolean {
+  return knownProviderIds.has(id);
 }

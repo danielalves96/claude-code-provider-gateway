@@ -16,6 +16,15 @@ interface ProviderPatch {
   disabledModels?: string[];
 }
 
+export interface CustomProviderDraft {
+  name: string;
+  slug: string;
+  baseUrl: string;
+  apiKey: string;
+  compatibility: "openai" | "anthropic";
+  logo?: File | null;
+}
+
 function patchConfig(providerId: string, patch: ProviderPatch) {
   return http.put("/config", { providers: { [providerId]: patch } });
 }
@@ -23,6 +32,19 @@ function patchConfig(providerId: string, patch: ProviderPatch) {
 export const providersService = {
   list: () => http.get<ProviderInfo[]>("/providers"),
   test: (id: string) => http.post<TestResult>(`/providers/${id}/test`),
+  testCustom: (draft: CustomProviderDraft) =>
+    http.post<TestResult & { models?: ModelInfo[] }>("/custom-providers/test", draft),
+  createCustom: (draft: CustomProviderDraft) => {
+    const form = new FormData();
+    form.set("name", draft.name);
+    form.set("slug", draft.slug);
+    form.set("baseUrl", draft.baseUrl);
+    form.set("apiKey", draft.apiKey);
+    form.set("compatibility", draft.compatibility);
+    if (draft.logo) form.set("logo", draft.logo);
+    return http.post<{ ok: boolean; id: string }>("/custom-providers", form);
+  },
+  deleteCustom: (id: string) => http.delete(`/custom-providers/${encodeURIComponent(id)}`),
   listModels: (id: string) => http.get<ModelInfo[]>(`/models/${id}`),
 
   setEnabled: (id: string, enabled: boolean) => patchConfig(id, { enabled }),

@@ -100,6 +100,9 @@ export type ProviderInfo = {
   disabledModels?: string[];
   authType?: "api_key" | "oauth";
   oauth?: OAuthInfo;
+  custom?: boolean;
+  customCompatibility?: "openai" | "anthropic";
+  logoUrl?: string;
 };
 
 export type { ModelInfo };

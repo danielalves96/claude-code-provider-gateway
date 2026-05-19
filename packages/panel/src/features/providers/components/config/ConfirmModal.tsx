@@ -32,6 +32,13 @@ const COPY = {
     okText: "Update",
     danger: false,
   },
+  "delete-provider": {
+    title: "Delete custom provider?",
+    text: (label: string) =>
+      `${label} will be permanently removed, including its API key, routing rules, and logo.`,
+    okText: "Delete",
+    danger: true,
+  },
 } as const;
 
 export function ConfirmModal({ action, providers, onCancel, onConfirm }: ConfirmModalProps) {

@@ -22,7 +22,9 @@ export function groupProvidersByConfiguration(providers: ProviderInfo[]): Provid
     },
     {
       title: "API Key Providers",
-      providers: sortProvidersByLabel(providers.filter((provider) => isApiKeyProvider(provider))),
+      providers: sortProvidersByLabel(
+        providers.filter((provider) => isApiKeyProvider(provider) && !provider.custom),
+      ),
     },
   ].filter((group) => group.providers.length > 0);
 }

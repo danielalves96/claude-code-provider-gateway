@@ -38,7 +38,7 @@
 
 2. Install and open the app. The daemon starts automatically.
 
-3. Open the **Providers** tab, add at least one provider, and click **Test** to verify the connection works.
+3. Open the **Providers** tab, configure at least one built-in provider or add a custom OpenAI/Anthropic-compatible provider, and click **Test** to verify the connection works.
 
 4. Go to **Dashboard → Shell Setup** and install the `ccpg` shell command. Follow the setup wizard for your shell (zsh, bash, or fish).
 
@@ -65,7 +65,7 @@ Once the app is open and you have at least one provider configured and tested, l
 ccpg --DeepSeek
 ```
 
-Replace `--DeepSeek` with the provider flag matching your configured provider (e.g., `--OpenRouter`, `--Ollama`, `--Copilot`, `--OpenAIAccount`). Any arguments after the provider flag are passed through to Claude Code:
+Replace `--DeepSeek` with the provider flag matching your configured provider (e.g., `--OpenRouter`, `--Ollama`, `--Copilot`, `--OpenAIAccount`) or with `--<custom-provider-slug>` for a custom provider. Any arguments after the provider flag are passed through to Claude Code:
 
 ```bash
 ccpg --OpenRouter --resume <session-id>
@@ -101,8 +101,9 @@ Common causes and fixes:
 | Missing API key | Add or replace the API key in the provider modal. |
 | OAuth token expired | Log out and sign in again from the provider card. |
 | Wrong base URL | Restore the default URL or check your local server address. |
+| Custom provider compatibility mismatch | Recreate the provider with the correct **Add OpenAI Compatible** or **Add Anthropic Compatible** action. |
 | Network restriction | Configure **Settings → Outbound Proxy** and restart CCPG. |
-| Empty model list | Add models manually in the provider modal. |
+| Empty model list | Add models manually in the provider modal. Custom providers always expose **Manual models**. |
 
 For local providers, make sure the upstream server is running:
 

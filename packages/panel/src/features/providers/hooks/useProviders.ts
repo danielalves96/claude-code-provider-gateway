@@ -2,7 +2,7 @@ import { App } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import type { ProviderInfo, TestResult } from "../domain/types.js";
 import { mergeModelLists } from "../domain/utils.js";
-import { providersService } from "../services/providersService.js";
+import { type CustomProviderDraft, providersService } from "../services/providersService.js";
 
 export function useProviders() {
   const { message } = App.useApp();
@@ -147,6 +147,60 @@ export function useProviders() {
     [message],
   );
 
+  const testCustom = useCallback(
+    async (draft: CustomProviderDraft) => {
+      setTesting("custom-provider");
+      try {
+        const result = await providersService.testCustom(draft);
+        if (result.ok) {
+          message.success(`Connection test passed (${result.latencyMs}ms)`);
+        } else {
+          message.error(`Test failed: ${result.error ?? "Unknown error"}`);
+        }
+        return result;
+      } catch {
+        const result = { ok: false, latencyMs: 0, error: "Request failed" };
+        message.error("Connection test failed");
+        return result;
+      } finally {
+        setTesting(null);
+      }
+    },
+    [message],
+  );
+
+  const createCustom = useCallback(
+    async (draft: CustomProviderDraft) => {
+      try {
+        const result = await providersService.createCustom(draft);
+        if (result.ok) {
+          message.success("Custom provider added");
+          refresh();
+          return result.id;
+        }
+        message.error("Failed to add custom provider");
+        return null;
+      } catch {
+        message.error("Failed to add custom provider");
+        return null;
+      }
+    },
+    [refresh, message],
+  );
+
+  const deleteCustom = useCallback(
+    async (id: string) => {
+      try {
+        await providersService.deleteCustom(id);
+        message.success("Custom provider deleted");
+        refresh();
+      } catch {
+        message.error("Failed to delete custom provider");
+      }
+    },
+    [refresh, message],
+  );
+
   return {
     providers,
     isLoading,
@@ -161,5 +215,8 @@ export function useProviders() {
     addModel,
     removeModel,
     setDisabledModels,
+    testCustom,
+    createCustom,
+    deleteCustom,
   };
 }

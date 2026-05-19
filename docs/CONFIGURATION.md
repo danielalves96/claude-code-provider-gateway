@@ -43,6 +43,23 @@ It is a JSON file with the following top-level shape:
       "rateWindow": 60,
       "maxConcurrency": 5,
       "requestTimeoutMs": 120000
+    },
+    "acme_ai": {
+      "enabled": true,
+      "apiKey": "",
+      "authType": "api_key",
+      "models": ["acme-large"],
+      "disabledModels": [],
+      "baseUrl": "https://api.acme.example/v1",
+      "rateLimit": 40,
+      "rateWindow": 60,
+      "maxConcurrency": 5,
+      "custom": {
+        "label": "Acme AI",
+        "slug": "acme_ai",
+        "logoFile": "acme_ai.webp",
+        "compatibility": "openai"
+      }
     }
   },
   "routing": {
@@ -88,7 +105,7 @@ It is a JSON file with the following top-level shape:
 | Key | Type | Description |
 |---|---|---|
 | `server` | object | Daemon network settings: proxy port, panel port, and internal auth token. |
-| `providers` | object | Per-provider configuration keyed by provider ID (e.g., `"openrouter"`, `"ollama"`). Contains multiple provider entries. |
+| `providers` | object | Per-provider configuration keyed by provider ID (e.g., `"openrouter"`, `"ollama"`, or a user-created custom slug). Contains built-in and custom provider entries. |
 | `routing` | object | Model routing rules for Claude Code's tier-based model selection (`default`, `opus`, `sonnet`, `haiku`). |
 | `thinking` | object | Extended thinking toggle, with per-tier overrides. |
 | `webTools` | object | Web search and private-network access controls. |
@@ -117,6 +134,9 @@ Each entry under `providers` uses the following schema:
 | `rateWindow` | number | `60` | Rate window duration in seconds. |
 | `maxConcurrency` | number | `5` | Maximum concurrent in-flight requests to this provider. |
 | `requestTimeoutMs` | number | (none) | Optional per-request timeout in milliseconds. When unset, no explicit timeout is applied. |
+| `custom` | object | (none) | Present only for user-created custom providers. Contains `label`, immutable `slug`, optional `logoFile`, and `compatibility` (`"openai"` or `"anthropic"`). |
+
+Custom providers are created from the **Providers** page with either **Add OpenAI Compatible** or **Add Anthropic Compatible**. Their `baseUrl` remains editable in the details modal, API keys are stored in the encrypted secret store like built-in providers, and user-supplied logos are stored outside `config.json` in `provider-logos/`.
 
 ### Routing Rule Keys
 
@@ -125,7 +145,7 @@ Each routing tier (`default`, `opus`, `sonnet`, `haiku`) contains:
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | boolean | `false` | Whether this routing rule is active. |
-| `providerId` | string | `""` | Target provider ID (must be a valid provider ID from the provider catalog). |
+| `providerId` | string | `""` | Target provider ID (must be a built-in provider ID or a configured custom provider slug). |
 | `model` | string | `""` | Target model name on that provider. |
 
 A routing rule is only considered active when `enabled`, `providerId`, and `model` are all set.
@@ -155,7 +175,7 @@ All other settings revert to their defaults if absent from the config file. The 
 | `server.panelPort` | `6767` | `packages/daemon/src/config/index.ts` |
 | `server.authToken` | `sk_` + 16 random hex bytes | Auto-generated on first run |
 | `providers.<id>.enabled` | `false` | All providers start disabled |
-| `providers.<id>.authType` | `"oauth"` for OAuth providers, `"api_key"` otherwise | Per-provider at build time |
+| `providers.<id>.authType` | `"oauth"` for OAuth providers, `"api_key"` otherwise | Per-provider at build time; custom providers always use `"api_key"` |
 | `providers.<id>.rateLimit` | `40` | `packages/daemon/src/config/index.ts` |
 | `providers.<id>.rateWindow` | `60` | `packages/daemon/src/config/index.ts` |
 | `providers.<id>.maxConcurrency` | `5` | `packages/daemon/src/config/index.ts` |
@@ -177,7 +197,7 @@ All other settings revert to their defaults if absent from the config file. The 
 
 ### Provider Default Base URLs
 
-Each provider has a hardcoded default `baseUrl` in `packages/daemon/src/config/schema.ts`. The most commonly customized ones are:
+Built-in providers have hardcoded default `baseUrl` values in `packages/daemon/src/config/schema.ts`. Custom providers store the user-entered `baseUrl` in their own provider config. The most commonly customized built-in URLs are:
 
 | Provider ID | Default `baseUrl` |
 |---|---|
@@ -193,7 +213,7 @@ Each provider has a hardcoded default `baseUrl` in `packages/daemon/src/config/s
 | `xai` | `https://api.x.ai/v1` |
 | `mistral` | `https://api.mistral.ai/v1` |
 
-For the complete list of all 42 provider base URLs, see `PROVIDER_DEFAULTS` in `packages/daemon/src/config/schema.ts`.
+For the complete built-in provider base URL list, see `PROVIDER_DEFAULTS` in `packages/daemon/src/config/schema.ts`.
 
 ## Secrets Storage
 
@@ -211,6 +231,8 @@ The following values are stored encrypted, never in plaintext on disk:
 | `provider.<id>.oauth.accessToken` | OAuth access token. |
 | `provider.<id>.oauth.refreshToken` | OAuth refresh token. |
 | `provider.<id>.oauth.copilotToken` | GitHub Copilot short-lived token. |
+
+For custom providers, deleting the provider from the panel removes the config entry, encrypted API key, routing references, Model Chain references, favorites entry, and the uploaded logo file.
 
 ### Master Key Resolution
 
@@ -272,6 +294,7 @@ This means the config format is forward-compatible: adding new top-level keys to
 | `config.json` | Config directory | Non-sensitive settings (providers, routing, UI prefs, ports). |
 | `secrets.enc.json` | Config directory | AES-256-GCM encrypted API keys, OAuth tokens, and auth token. |
 | `secret.key` | Config directory | 32-byte hex master key for the secrets store. |
+| `provider-logos/` | Config directory | Uploaded PNG/WebP logos for user-created custom providers. |
 | `daemon.pid` | Config directory | PID marker for the running daemon process. |
 | `daemon.log` | Config directory | Local daemon log (provider errors, request diagnostics). |
 | `current-session.json` | Config directory | Active Claude Code session checkpoint. |

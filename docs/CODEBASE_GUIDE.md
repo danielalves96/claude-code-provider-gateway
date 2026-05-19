@@ -121,7 +121,13 @@ existing package structure.
 
 ### Add a provider
 
-Start with [Adding a Provider](ADDING_PROVIDER.md). The usual files are:
+For plain OpenAI Chat Completions-compatible or Anthropic Messages-compatible
+endpoints, users can add a runtime custom provider from the Providers page. No
+code change is required unless the provider should ship as a built-in card or
+needs custom auth, catalog, headers, streaming, or request conversion.
+
+For built-in provider support, start with [Adding a Provider](ADDING_PROVIDER.md).
+The usual files are:
 
 | Area | Files |
 |---|---|

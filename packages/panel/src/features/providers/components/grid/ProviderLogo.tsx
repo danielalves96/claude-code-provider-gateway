@@ -5,13 +5,15 @@ interface ProviderLogoProps {
   providerId: string;
   label: string;
   size: number;
+  logoUrl?: string;
 }
 
-export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
+export function ProviderLogo({ providerId, label, size, logoUrl }: ProviderLogoProps) {
   const { token } = theme.useToken();
-  const [failedProviderId, setFailedProviderId] = useState<string | null>(null);
+  const [failedLogoSrc, setFailedLogoSrc] = useState<string | null>(null);
+  const src = logoUrl ?? `/providers/${providerId}.webp`;
 
-  if (failedProviderId === providerId) {
+  if (failedLogoSrc === src) {
     return (
       <Avatar
         shape="square"
@@ -27,7 +29,7 @@ export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
 
   return (
     <img
-      src={`/providers/${providerId}.webp`}
+      src={src}
       alt=""
       aria-hidden="true"
       style={{
@@ -36,7 +38,7 @@ export function ProviderLogo({ providerId, label, size }: ProviderLogoProps) {
         objectFit: "contain",
         flexShrink: 0,
       }}
-      onError={() => setFailedProviderId(providerId)}
+      onError={() => setFailedLogoSrc(src)}
     />
   );
 }
