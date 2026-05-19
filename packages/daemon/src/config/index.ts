@@ -90,6 +90,8 @@ export function buildDefaultConfig(): Config {
     },
     activeProvider: "nvidia_nim",
     modelMode: "single",
+    activeModelFallbackSlug: null,
+    modelFallbacks: [],
     panelSettings: {
       favoriteProviders: [],
       favoritesTipDismissed: false,

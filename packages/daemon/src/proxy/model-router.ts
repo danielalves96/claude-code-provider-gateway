@@ -1,18 +1,25 @@
-import type { Config, ProviderId, RoutingRule } from "../config/schema.js";
+import type { Config, ModelFallbackConfig, ProviderId, RoutingRule } from "../config/schema.js";
 import { PROVIDER_IDS } from "../config/schema.js";
 
-export interface ResolvedModel {
-  providerId: ProviderId;
-  providerModel: string;
-  /** How the model was resolved — used by the service layer to detect background passthrough calls */
-  source: "prefix" | "tier" | "passthrough";
-}
+export type ResolvedModel =
+  | {
+      providerId: ProviderId;
+      providerModel: string;
+      /** How the model was resolved — used by the service layer to detect background passthrough calls */
+      source: "prefix" | "tier" | "passthrough";
+    }
+  | {
+      source: "fallback";
+      fallback: ModelFallbackConfig;
+    };
+
+type ProviderResolvedModel = Extract<ResolvedModel, { providerId: ProviderId }>;
 
 const CLAUDE_OPUS_PATTERN = /claude-(3-opus|opus)/i;
 const CLAUDE_SONNET_PATTERN = /claude-(3[.-]5?-sonnet|sonnet)/i;
 const CLAUDE_HAIKU_PATTERN = /claude-(3-haiku|haiku)/i;
 
-function applyRule(rule: RoutingRule | undefined): ResolvedModel | null {
+function applyRule(rule: RoutingRule | undefined): ProviderResolvedModel | null {
   if (!rule?.enabled || !rule.providerId || !rule.model) return null;
 
   // Normalize the stored model name: the panel lets users pick models by their full
@@ -37,6 +44,9 @@ export function resolveModel(requestedModel: string, config: Config): ResolvedMo
     model = model.slice("anthropic/".length);
   }
 
+  const requestedFallback = resolveFallbackModel(model, config);
+  if (requestedFallback) return { source: "fallback", fallback: requestedFallback };
+
   // Direct provider/model syntax: "nvidia_nim/z-ai/glm4.7"
   for (const pid of PROVIDER_IDS) {
     if (model.startsWith(`${pid}/`)) {
@@ -57,10 +67,32 @@ export function resolveModel(requestedModel: string, config: Config): ResolvedMo
   const defaultResolved = applyRule(config.routing.default);
   if (defaultResolved) return { ...defaultResolved, source: "tier" };
 
+  const activeFallback = activeModelFallback(config);
+  if (activeFallback) return { source: "fallback", fallback: activeFallback };
+
   // Passthrough: routing not configured → send the original model name to the active provider
   return {
     providerId: config.activeProvider,
     providerModel: requestedModel,
     source: "passthrough",
   };
+}
+
+function resolveFallbackModel(model: string, config: Config): ModelFallbackConfig | null {
+  const slug = model.startsWith("chain/")
+    ? model.slice("chain/".length)
+    : model.startsWith("fallback/")
+      ? model.slice("fallback/".length)
+      : model;
+  return (
+    config.modelFallbacks.find((fallback) => fallback.enabled && fallback.slug === slug) ?? null
+  );
+}
+
+function activeModelFallback(config: Config): ModelFallbackConfig | null {
+  const slug = config.activeModelFallbackSlug;
+  if (!slug) return null;
+  return (
+    config.modelFallbacks.find((fallback) => fallback.enabled && fallback.slug === slug) ?? null
+  );
 }

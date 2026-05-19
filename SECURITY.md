@@ -4,7 +4,7 @@ Claude Code Provider Gateway is designed as a local desktop app with a local dae
 
 ## Supported Versions
 
-The first public supported version is planned as **v0.1.0**. Until that tag exists, security fixes should target the main branch.
+The current documented release line is **v0.1.x**. Security fixes should target the main branch and be backported into the next patch release when appropriate.
 
 ## Threat Model
 
@@ -35,6 +35,11 @@ Do not share these files publicly:
 - `sessions.jsonl`
 - daemon logs containing provider errors or prompts
 
+Model Chains are stored in `config.json` as non-secret references to provider
+ids, model ids, names, slugs, and ordering. They do not store API keys or OAuth
+tokens, but chain names and model choices can still reveal private workflow
+details.
+
 ## Reporting a Vulnerability
 
 If you find a security issue, please avoid opening a public issue with exploit details or secrets.
@@ -54,3 +59,6 @@ Useful report details:
 - The panel API is loopback-only and intended for the Tauri webview and local development server. Browser-origin access to localhost should still be considered part of the local threat model.
 - The gateway can show prompts and response previews in History. That is intentional, but it means local session history may contain private code or prompts.
 - Local providers keep model traffic on your machine, but Claude Code prompts still pass through CCPG's local session logger unless history is cleared.
+- Model Chains can route one Claude Code request across multiple upstream
+  providers when earlier targets fail. Configure chains with the same data
+  sensitivity expectations you would use for each provider individually.

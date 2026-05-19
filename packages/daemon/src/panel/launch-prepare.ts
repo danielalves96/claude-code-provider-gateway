@@ -23,6 +23,7 @@ export interface LaunchEnvVars {
 export interface LaunchPrepareResult {
   ok: true;
   providerId: ProviderId | null;
+  fallbackSlug?: string | null;
   sessionId: string;
   shellScript: string;
   envVars: LaunchEnvVars;
@@ -47,8 +48,31 @@ export function prepareLaunch(
   config: Config,
   flag: string,
 ): LaunchPrepareResult | LaunchPrepareFailure {
+  if (isModelChainFlag(flag)) {
+    if (!config.modelFallbacks.some((fallback) => fallback.enabled && fallback.models.length > 0)) {
+      return { ok: false, error: "No Model Chains enabled — create one in the app first" };
+    }
+    config.modelMode = "chains";
+    config.activeModelFallbackSlug = null;
+    saveConfig(config);
+    clearClaudeGatewayCache();
+
+    endSession();
+    const session = startSession(config);
+
+    return {
+      ok: true,
+      providerId: null,
+      fallbackSlug: null,
+      sessionId: session.id,
+      shellScript: buildShellExports(config, session.id),
+      envVars: buildEnvVars(config, session.id),
+    };
+  }
+
   if (flag === "--all" || flag === "--a") {
     config.modelMode = "all";
+    config.activeModelFallbackSlug = null;
     if (!config.providers[config.activeProvider]?.enabled) {
       const fallbackProvider = PROVIDER_IDS.find((id) => config.providers[id]?.enabled);
       if (fallbackProvider) config.activeProvider = fallbackProvider;
@@ -62,6 +86,7 @@ export function prepareLaunch(
     return {
       ok: true,
       providerId: null,
+      fallbackSlug: null,
       sessionId: session.id,
       shellScript: buildShellExports(config, session.id),
       envVars: buildEnvVars(config, session.id),
@@ -70,7 +95,26 @@ export function prepareLaunch(
 
   const providerId = resolveProviderFlag(flag);
   if (!providerId) {
-    return { ok: false, error: `Unknown provider flag: ${flag}` };
+    const fallback = resolveFallbackFlag(config, flag);
+    if (!fallback) {
+      return { ok: false, error: `Unknown provider flag: ${flag}` };
+    }
+    config.activeModelFallbackSlug = fallback.slug;
+    config.modelMode = "single";
+    saveConfig(config);
+    clearClaudeGatewayCache();
+
+    endSession();
+    const session = startSession(config);
+
+    return {
+      ok: true,
+      providerId: null,
+      fallbackSlug: fallback.slug,
+      sessionId: session.id,
+      shellScript: buildShellExports(config, session.id),
+      envVars: buildEnvVars(config, session.id),
+    };
   }
 
   const provider = config.providers[providerId];
@@ -83,6 +127,7 @@ export function prepareLaunch(
 
   config.activeProvider = providerId;
   config.modelMode = "single";
+  config.activeModelFallbackSlug = null;
   saveConfig(config);
   clearClaudeGatewayCache();
 
@@ -94,10 +139,28 @@ export function prepareLaunch(
   return {
     ok: true,
     providerId,
+    fallbackSlug: null,
     sessionId: session.id,
     shellScript: buildShellExports(config, session.id),
     envVars: buildEnvVars(config, session.id),
   };
+}
+
+function isModelChainFlag(flag: string): boolean {
+  const normalized = flag.toLowerCase();
+  return (
+    normalized === "--modelchain" || normalized === "--modelchains" || normalized === "--chains"
+  );
+}
+
+function resolveFallbackFlag(config: Config, flag: string): { slug: string } | null {
+  if (!flag.startsWith("--")) return null;
+  const target = flag.slice(2).toLowerCase();
+  const fallback = config.modelFallbacks.find(
+    (candidate) => candidate.enabled && candidate.slug.toLowerCase() === target,
+  );
+  if (!fallback?.models.length) return null;
+  return fallback;
 }
 
 function buildEnvVars(config: Config, sessionId: string): LaunchEnvVars {

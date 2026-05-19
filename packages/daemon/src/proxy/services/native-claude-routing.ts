@@ -1,7 +1,7 @@
-import type { Config, ProviderId } from "../../config/schema.js";
+import type { Config } from "../../config/schema.js";
 import { isNativeClaudeModel } from "../providers/anthropic-passthrough.js";
 
-type SessionPrimaryModel = { providerId: ProviderId; providerModel: string } | null;
+type SessionPrimaryModel = { providerId: string; providerModel: string } | null;
 
 export function shouldUseNativeClaudePassthrough(
   requestedModel: string,

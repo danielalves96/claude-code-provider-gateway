@@ -22,6 +22,7 @@ export function formatNumber(n: number): string {
 
 export function commandFor(session: Session): string {
   if (session.launchHint === "all") return "ccpg --all";
+  if (session.launchHint === "modelchain") return "ccpg --ModelChain";
   return `ccpg --${session.launchHint.replace(/_/g, "")}`;
 }
 

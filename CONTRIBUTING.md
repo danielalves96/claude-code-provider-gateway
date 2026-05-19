@@ -11,6 +11,8 @@ CCPG is a desktop-first local gateway for Claude Code. Contributions should pres
 - [Architecture](docs/ARCHITECTURE.md) - daemon, proxy, providers, sessions, security model
 - [Providers](docs/PROVIDERS.md) - supported providers, auth modes, CLI flags, model discovery
 - [Adding a Provider](docs/ADDING_PROVIDER.md) - provider implementation checklist
+- [API Reference](docs/API_REFERENCE.md) - local proxy and panel endpoints
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - common launch, provider, OAuth, history, and build issues
 - [Security](SECURITY.md) - threat model and vulnerability reporting
 - [Issues](https://github.com/danielalves96/claude-code-provider-gateway/issues)
 
@@ -81,7 +83,7 @@ Most provider changes touch:
 - `packages/daemon/src/proxy/providers/registry.ts`
 - `packages/daemon/src/proxy/providers/provider-factory.ts` when a reusable static option is missing
 - `packages/daemon/src/proxy/providers/<provider>.ts` only for custom behavior that cannot be expressed declaratively
-- `packages/panel/public/providers/<provider_id>.png`
+- `packages/panel/public/providers/<provider_id>.webp`
 - `packages/panel/src/features/providers/*` only for presentation details
 
 Update [docs/PROVIDERS.md](docs/PROVIDERS.md) whenever the provider is visible
@@ -98,6 +100,8 @@ Start in:
 
 Routing and streaming changes need focused daemon tests. Preserve
 Anthropic-compatible SSE event ordering because Claude Code depends on it.
+If the change touches Model Chains, also validate `ccpg --<chain-slug>`,
+`ccpg --ModelChain`, and chain fallback when the first target fails.
 
 ### Changing the provider UI
 
@@ -163,6 +167,9 @@ Useful manual checks:
 - Provider test button works for the changed provider.
 - `ccpg --<Provider>` launches Claude Code with the expected environment.
 - `ccpg --all` exposes prefixed models and routes by selected model.
+- `ccpg --ModelChain` exposes only enabled Model Chains.
+- `ccpg --<chain-slug>` exposes one chain and keeps background Claude tier
+  calls on that chain.
 - History shows request metadata after a session.
 
 ## Provider Contributions
@@ -204,3 +211,16 @@ The repository is private for npm publishing purposes; npm is used for developme
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## Issue Reporting
+
+Report bugs or request features at [GitHub Issues](https://github.com/danielalves96/claude-code-provider-gateway/issues).
+
+Before opening an issue, check [Troubleshooting](docs/TROUBLESHOOTING.md) for common problems. When filing a bug report, include:
+
+- **Steps to reproduce** — the exact sequence of actions that triggers the problem.
+- **Expected behavior** — what you expected to happen.
+- **Actual behavior** — what actually happened (error messages, logs, screenshots).
+- **Environment** — operating system, app version (from the desktop settings or `ccpg --version`), and Claude Code version if relevant.
+
+For feature requests, describe the use case and how the feature would fit into the existing desktop workflow. Large feature proposals should start as a discussion before a PR.

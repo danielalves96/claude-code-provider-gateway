@@ -38,18 +38,37 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     }
 
     const anthropicBeta = this.anthropicBetaHeader();
-    const result = await postProviderStream({
+    const headers = {
+      "Content-Type": "application/json",
+      ...this.authHeaders(),
+      "anthropic-version": "2023-06-01",
+      ...(anthropicBeta ? { "anthropic-beta": anthropicBeta } : {}),
+      ...this.extraHeaders(),
+    };
+    const resolvedModel = this.resolveModel(req.model);
+    let result = await postProviderStream({
       url: `${this.baseUrl()}/messages`,
-      headers: {
-        "Content-Type": "application/json",
-        ...this.authHeaders(),
-        "anthropic-version": "2023-06-01",
-        ...(anthropicBeta ? { "anthropic-beta": anthropicBeta } : {}),
-        ...this.extraHeaders(),
-      },
-      body: { ...req, model: this.resolveModel(req.model), stream: true },
+      headers,
+      body: { ...req, model: resolvedModel, stream: true },
       timeoutMs: this.requestTimeoutMs(),
     });
+
+    // Some models on OpenRouter (and similar providers) don't support tool_choice.
+    // Retry without it when we get this specific routing error.
+    if (
+      "error" in result &&
+      result.error.status === 404 &&
+      req.tool_choice !== undefined &&
+      result.error.message.includes("tool_choice")
+    ) {
+      const { tool_choice: _dropped, ...reqWithoutToolChoice } = req;
+      result = await postProviderStream({
+        url: `${this.baseUrl()}/messages`,
+        headers,
+        body: { ...reqWithoutToolChoice, model: resolvedModel, stream: true },
+        timeoutMs: this.requestTimeoutMs(),
+      });
+    }
 
     if ("error" in result) return { error: result.error };
 

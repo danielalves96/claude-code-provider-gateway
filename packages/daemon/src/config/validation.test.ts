@@ -110,6 +110,49 @@ test("normalizeConfig preserves valid token saver settings", () => {
   assert.equal(normalized.tokenSavers.cavemanLevel, "ultra");
 });
 
+test("normalizeConfig clears active model fallback when the chain is unavailable", () => {
+  const defaults = buildDefaultConfig();
+  const config = {
+    ...defaults,
+    activeModelFallbackSlug: "empty-chain",
+    modelFallbacks: [
+      {
+        id: "chain_empty_chain",
+        name: "Empty Chain",
+        slug: "empty-chain",
+        enabled: true,
+        models: [],
+      },
+    ],
+  };
+
+  const normalized = normalizeConfig(config, defaults);
+
+  assert.equal(normalized.activeModelFallbackSlug, null);
+  assert.equal(normalized.modelFallbacks[0]?.enabled, false);
+});
+
+test("normalizeConfig preserves active model fallback when the chain is enabled", () => {
+  const defaults = buildDefaultConfig();
+  const config = {
+    ...defaults,
+    activeModelFallbackSlug: "rescue-chain",
+    modelFallbacks: [
+      {
+        id: "chain_rescue_chain",
+        name: "Rescue Chain",
+        slug: "rescue-chain",
+        enabled: true,
+        models: [{ providerId: "nvidia_nim" as const, model: "meta/llama" }],
+      },
+    ],
+  };
+
+  const normalized = normalizeConfig(config, defaults);
+
+  assert.equal(normalized.activeModelFallbackSlug, "rescue-chain");
+});
+
 test("normalizeConfig preserves OAuth provider metadata", () => {
   const defaults = buildDefaultConfig();
   const config = {

@@ -81,7 +81,7 @@ export interface ProviderConfig {
   requestTimeoutMs?: number;
 }
 
-export type ModelMode = "single" | "all";
+export type ModelMode = "single" | "all" | "chains";
 export type CavemanLevel = "lite" | "full" | "ultra";
 
 export interface RoutingRule {
@@ -91,6 +91,19 @@ export interface RoutingRule {
 }
 
 export type RoutingTier = "default" | "opus" | "sonnet" | "haiku";
+
+export interface ModelFallbackEntry {
+  providerId: ProviderId;
+  model: string;
+}
+
+export interface ModelFallbackConfig {
+  id: string;
+  name: string;
+  slug: string;
+  models: ModelFallbackEntry[];
+  enabled: boolean;
+}
 
 export interface Config {
   server: {
@@ -121,6 +134,8 @@ export interface Config {
   };
   activeProvider: ProviderId;
   modelMode: ModelMode;
+  activeModelFallbackSlug: string | null;
+  modelFallbacks: ModelFallbackConfig[];
   panelSettings: {
     favoriteProviders: ProviderId[];
     favoritesTipDismissed: boolean;

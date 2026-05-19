@@ -22,6 +22,7 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
     const response = {
       manual: env,
       all: "ccpg --all",
+      modelChains: "ccpg --ModelChain",
       perProvider: buildQuickLaunchProviders(config),
     } satisfies LaunchCommandsResponse;
     return c.json(response);
@@ -30,6 +31,7 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
   app.get("/api/quick-launch", (c) => {
     const response = {
       all: "ccpg --all",
+      modelChains: "ccpg --ModelChain",
       perProvider: buildQuickLaunchProviders(runtime.currentConfig()),
     } satisfies QuickLaunchResponse;
     return c.json(response);
@@ -90,13 +92,24 @@ export function registerShellRoutes(app: Hono, runtime: PanelRuntime): void {
 }
 
 function buildQuickLaunchProviders(config: ReturnType<PanelRuntime["currentConfig"]>) {
-  return (Object.entries(config.providers) as [ProviderId, (typeof config.providers)[ProviderId]][])
+  const providers: Array<{ id: string; label: string; cli: string }> = (
+    Object.entries(config.providers) as [ProviderId, (typeof config.providers)[ProviderId]][]
+  )
     .filter(([, pc]) => pc.enabled)
     .map(([id]) => ({
       id,
       label: PROVIDER_LABELS[id] ?? id,
       cli: `ccpg ${flagFor(id) ?? `--${id}`}`,
     }));
+  return providers.concat(
+    config.modelFallbacks
+      .filter((fallback) => fallback.enabled && fallback.models.length > 0)
+      .map((fallback) => ({
+        id: `chain:${fallback.slug}`,
+        label: fallback.name,
+        cli: `ccpg --${fallback.slug}`,
+      })),
+  );
 }
 
 function flagFor(id: ProviderId): string | null {

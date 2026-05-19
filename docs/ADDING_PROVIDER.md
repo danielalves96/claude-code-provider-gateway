@@ -40,11 +40,11 @@ reference.
    - Add a dedicated `packages/daemon/src/proxy/providers/<provider>.ts` only when factory options are not enough.
 6. Add the provider to `OAUTH_PROVIDER_IDS` when it is OAuth-backed.
 7. Add or update panel provider metadata only when the daemon API cannot derive it:
-   - `packages/panel/public/providers/<id>.png` for the card icon.
-   - `packages/panel/src/features/providers/constants.ts` for local, OAuth, device-flow, or coming-soon grouping.
+   - `packages/panel/public/providers/<id>.webp` for the card icon.
+   - `packages/panel/src/features/providers/domain/constants.ts` for local, OAuth, device-flow, or coming-soon grouping.
    - `packages/panel/src/features/providers/data/suggestedModels.ts` when model discovery is empty or incomplete.
-   - `packages/panel/src/features/providers/apiKeyLinks.ts` when the provider has a useful key-management page.
-   - `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth labels, descriptions, and button text.
+   - `packages/panel/src/features/providers/domain/apiKeyLinks.ts` when the provider has a useful key-management page.
+   - `packages/panel/src/features/providers/domain/oauthPresentation.ts` for OAuth labels, descriptions, and button text.
 8. Add tests before opening the PR.
 
 Keep `docs/PROVIDERS.md` in sync when the provider is user-visible. If the
@@ -251,6 +251,22 @@ Some providers do not expose a reliable `/models` endpoint. In that case:
 
 Do not hardcode panel-only model routing. The daemon must still own the final
 model list and request routing.
+
+### Model Chain compatibility
+
+The Model Chain page consumes `GET /api/routing/options`, which is built from
+enabled providers and their enabled model catalogs. New providers become
+selectable in chains automatically when their daemon model listing is accurate.
+
+Before considering a provider done, verify:
+
+- `listModels()` returns usable model ids and display names, or manual models
+  are available through `config.providers.<id>.models`.
+- Disabled models are respected through `config.providers.<id>.disabledModels`.
+- A model selected in a chain can be routed by `message-service.ts` without
+  provider-specific panel logic.
+- Failure responses are returned as structured provider errors so the Model
+  Chain executor can retry the target and advance to the next model.
 
 ## Local Verification
 

@@ -119,9 +119,10 @@ function QuickLaunchTag({
   onCopy: (key: string, value: string) => void;
 }) {
   const { token } = theme.useToken();
+  const isChain = item.id.startsWith("chain:") || item.id === "model-chains";
 
   return (
-    <Tooltip title={copied ? "Copied!" : `Click to copy`}>
+    <Tooltip title={copied ? "Copied!" : `Copy ${item.label}`}>
       <button
         type="button"
         onClick={() => onCopy(item.id, item.cmd)}
@@ -148,6 +149,21 @@ function QuickLaunchTag({
         >
           {item.badge}
         </Text>
+        {isChain && (
+          <Text
+            style={{
+              fontSize: 11,
+              color: token.colorPrimary,
+              background: `${token.colorPrimary}12`,
+              border: `1px solid ${token.colorPrimary}30`,
+              borderRadius: 999,
+              padding: "1px 7px",
+              lineHeight: "18px",
+            }}
+          >
+            Chain
+          </Text>
+        )}
         <CopyOutlined style={{ color: copied ? token.colorSuccess : token.colorTextTertiary }} />
       </button>
     </Tooltip>

@@ -2,17 +2,15 @@
 
 > A technical deep-dive into Claude Code Provider Gateway's design, layers, and data flow.
 
-## Overview
+## System Overview
 
-Claude Code Provider Gateway is a desktop-first local gateway. The Tauri desktop app starts and supervises a bundled daemon sidecar. That daemon:
+Claude Code Provider Gateway (CCPG) is a **local-first, desktop-hosted gateway** that interposes an Anthropic Messages API-compatible proxy between Claude Code and any of 40+ LLM providers. The system is organized as a monorepo with three packages:
 
-1. Listens for Anthropic Messages API requests from Claude Code
-2. Routes them to the correct LLM provider based on configuration
-3. Translates the request to the provider's native format
-4. Streams the response back as Anthropic-compatible SSE
-5. Records local session history for the desktop UI
+- **Daemon** — A TypeScript/Node.js backend that runs two Hono HTTP servers on `127.0.0.1`: an Anthropic-compatible proxy API and a web panel API.
+- **Panel** — A React 19 SPA (Ant Design, Zustand, React Router) that serves as the configuration UI, live session viewer, and provider management dashboard.
+- **Desktop** — A Rust/Tauri 2 shell that packages the daemon as a sidecar process and wraps the panel in a native window, delivering a zero-command-line desktop experience.
 
-The React management panel is served by the daemon and shown inside the Tauri webview. Development mode can run the daemon and panel separately for faster iteration, but the production product is the desktop app.
+The architectural style is **layered**: the daemon is split into configuration, runtime, proxy (routing → providers → transport), panel (API + static serving), and observability layers. The desktop shell adds a supervisor layer that manages the daemon lifecycle.
 
 ## High-Level Architecture
 
@@ -55,6 +53,7 @@ claude-code-provider-gateway/
 │   │   │   ├── routes/                   # Anthropic + status route handlers
 │   │   │   ├── services/                 # Message orchestration + supporting services
 │   │   │   │   ├── message-service.ts    # Core orchestration
+│   │   │   │   ├── model-service.ts      # Model catalog discovery, provider aggregation, Model Chains
 │   │   │   │   ├── native-claude-routing.ts  # Passthrough routing logic
 │   │   │   │   ├── prompt-serializer.ts  # Request → human-readable text for session log
 │   │   │   │   └── stream-result.ts      # Stream wrapping + response capture helpers
@@ -123,16 +122,27 @@ Built with [Hono](https://hono.dev), a lightweight web framework.
 
 **routes/anthropic-routes.ts** — handles `POST /v1/messages`:
 
-Two model catalog modes are controlled by `config.modelMode`:
+Three model catalog modes are controlled by `config.modelMode`:
 
 | Mode | How routing works |
 |---|---|
-| `single` | All requests go to `config.activeProvider`. Models list only shows that provider's models. |
-| `all` | Aggregates models from all enabled providers. Requests are routed by provider/model prefix, not round-robin. |
+| `single` | Normal launch mode. Models list shows enabled Model Chains plus the active provider's models. If `activeModelFallbackSlug` is set, the list shows only that chain. |
+| `all` | Aggregates enabled Model Chains and models from all enabled providers. Requests are routed by chain slug or provider/model prefix, not round-robin. |
+| `chains` | Shows only enabled Model Chains. Used by `ccpg --ModelChain`. |
 
 Plus optional tier routing (`default`/`opus`/`sonnet`/`haiku`) for mapping Claude model tiers to specific provider models.
 
 In `all` mode, provider-discovered models are exposed to Claude Code with a gateway prefix such as `anthropic/deepseek/deepseek-chat`. The model router strips that prefix, sends the bare model name to the chosen provider, and remembers the primary provider-prefixed model for background Claude Code calls that arrive later as hardcoded Claude tier names.
+
+Model Chains are exposed as synthetic model ids such as
+`anthropic/chain/my-chain`. The chain display name shown to Claude Code is
+`{Name} · Gateway : Custom Models (Defined by user)`. A chain stores an ordered
+list of `{ providerId, model }` targets; the order is user-defined priority.
+When a chain request fails because of an upstream API error, rate limit,
+quota/credit issue, network failure, or other non-success response, the message
+service retries that target and then advances to the next configured target.
+When a chain is selected as the session primary model, background Claude tier
+requests are routed through the same chain.
 
 **middleware/auth.ts** — validates `x-api-key` header against `config.server.authToken`.
 
@@ -141,8 +151,14 @@ In `all` mode, provider-discovered models are exposed to Claude Code with a gate
 2. Resolves the target provider via `model-router.ts`
 3. Applies enabled token savers to a cloned request
 4. Counts input tokens after compression (`js-tiktoken`)
-5. Calls `provider.streamResponse()` with the configured request
+5. Calls `provider.streamResponse()` with the configured request, or walks the
+   configured Model Chain targets when the resolved source is a chain
 6. Tracks session statistics
+
+**services/model-service.ts** — builds the catalog returned by `GET /v1/models`.
+It merges provider model discovery, manual/disabled model settings, gateway
+provider prefixes, and synthetic Model Chain entries according to `modelMode`
+and `activeModelFallbackSlug`.
 
 **services/native-claude-routing.ts** — decides whether a request should bypass the active provider and fall through to native Anthropic passthrough. Applied when the requested model is a hardcoded Claude tier name and no primary model has been established yet for this session.
 
@@ -258,18 +274,18 @@ The React panel treats the daemon as the provider source of truth, then layers
 UI behavior on top:
 
 - Provider grouping is derived from configuration type in
-  `packages/panel/src/features/providers/components/ProviderGridSection.tsx`.
+  `packages/panel/src/features/providers/domain/providerGroups.ts`.
 - OAuth, local, and coming-soon classifications live in
-  `packages/panel/src/features/providers/constants.ts`.
+  `packages/panel/src/features/providers/domain/constants.ts`.
 - Favorite providers are persisted under
   `config.panelSettings.favoriteProviders` and ordered with
   `SortableFavoritesGrid`.
 - Suggested manual models live in
   `packages/panel/src/features/providers/data/suggestedModels.ts`.
 - API key documentation links live in
-  `packages/panel/src/features/providers/apiKeyLinks.ts`.
+  `packages/panel/src/features/providers/domain/apiKeyLinks.ts`.
 - OAuth presentation text and provider-specific UI labels live in
-  `packages/panel/src/features/providers/oauthPresentation.ts`.
+  `packages/panel/src/features/providers/domain/oauthPresentation.ts`.
 
 The provider config modal discovers models as soon as a provider is ready. If
 discovery returns no models, or if a provider already has manually configured
@@ -314,13 +330,17 @@ secrets.enc.json (AES-256-GCM encrypted JSON)
      │
      │ EncryptedFileSecretStore (encrypt/decrypt with master key)
      ▼
-secret.key (32-byte hex master key) or CC_GATEWAY_MASTER_KEY env var
+secret.key (32-byte hex master key) or CC_GATEWAY_SECRET_KEY env var
 ```
 
 - **Paths** (`paths.ts`) — centralized functions for all config directory paths: `getConfigDir()`, `getConfigPath()`, `getPidPath()`, `getLogPath()`, `getSecretsPath()`, `getMasterKeyPath()`, `getCurrentSessionPath()`, `getSessionArchivePath()`. Handles the Windows `%APPDATA%` path on Win32.
 - **Schema** (`schema.ts`) — TypeScript types, provider defaults (base URLs, labels), CLI flag mappings
 - **Validation** (`validation.ts`) — runtime normalization with default merging
 - **Token savers** (`Config.tokenSavers`) — non-secret toggles for RTK compression and Caveman level
+- **Model Chains** (`Config.modelFallbacks`) — non-secret chain definitions:
+  `id`, `name`, `slug`, `enabled`, and ordered provider/model targets
+- **Active chain** (`Config.activeModelFallbackSlug`) — launch-time selector
+  used by `ccpg --<chain-slug>` to expose only one chain
 - **Panel settings** (`Config.panelSettings`) — non-secret UI state, currently favorite provider order and dismissed helper tips
 - **Secret splitting** (`secrets/config-splitter.ts`) — extracts API keys, OAuth tokens, and auth token from config JSON into encrypted store
 - **Encrypted store** (`secrets/encrypted-file-store.ts`) — AES-256-GCM with random IV per write
@@ -353,7 +373,7 @@ Hono-based REST API for the web panel. The panel module is composed of:
 
 **`contracts.ts`** — shared TypeScript types for every panel API request and response shape (`GatewayStatusResponse`, `StatsResponse`, `ProviderInfo`, `SessionsResponse`, etc.). Imported by route modules and consumed by the React panel.
 
-**`runtime.ts`** — `PanelRuntime` class. Holds the live `Config`, a `ProviderRegistry` instance, and in-memory OAuth flow maps (PKCE flows for OpenAI Account, device-code flows for GitHub Copilot). Exposes `saveAndUpdateConfig()` so route handlers can persist and hot-reload config in one call.
+**`runtime.ts`** — `PanelRuntime` class. Holds the live `Config`, a `ProviderRegistry` instance, and in-memory OAuth flow maps (PKCE/browser callback flows for OpenAI Account and Cline, device-code flows for GitHub Copilot and Kilo Code). Exposes `saveAndUpdateConfig()` so route handlers can persist and hot-reload config in one call.
 
 **`middleware/auth.ts`** — `requirePanelAccess` middleware:
 - Allows requests from Tauri webview origins (`tauri://localhost`, `https://tauri.localhost`) and the Vite dev server in non-production mode
@@ -371,7 +391,7 @@ Hono-based REST API for the web panel. The panel module is composed of:
 | `provider-routes.ts` | `GET /api/providers`, `POST /api/providers/:id/test`, `GET /api/models/:providerId`, `GET /api/routing/options` |
 | `session-routes.ts` | `GET /api/sessions`, `DELETE /api/sessions`, `POST /api/launch/end`, `POST /api/launch/heartbeat`, `POST /api/launch/attach` |
 | `shell-routes.ts` | `GET /api/quick-launch`, `GET /api/launch-commands`, `GET /api/launch-command`, `GET /api/shell-setup`, `GET /api/shell-setup/snippet/:shell`, `POST /api/shell-setup/install`, `POST /api/launch/prepare` |
-| `oauth-routes.ts` | `POST /api/providers/openai_account/oauth/start`, `GET /api/providers/openai_account/oauth/status/:state`, `POST /api/providers/openai_account/oauth/logout`, `POST /api/providers/copilot/oauth/start`, `GET /api/providers/copilot/oauth/status/:flowId`, `POST /api/providers/copilot/oauth/logout` |
+| `oauth-routes.ts` | OpenAI Account PKCE routes, GitHub Copilot device-flow routes, Kilo Code device-flow routes, and Cline browser authorization routes |
 | `static-routes.ts` | React SPA static file serving |
 
 Panel also serves the React SPA static files (built by Vite to `packages/daemon/dist/static/`).
@@ -382,6 +402,7 @@ React 19 SPA built with Vite 6 + Ant Design 5 + Zustand 5.
 
 - **Dashboard** — live session view with provider cards, SSE log feed, quick-launch buttons
 - **Providers** — toggle providers, edit API keys, OAuth login, test connections, add extra models
+- **Model Chain** — create, edit, reorder, enable, and launch ordered fallback chains built from active provider models
 - **Routing** — tier-based model routing UI
 - **History** — session archive with per-request drill-down
 - **Settings** — daemon configuration, outbound proxy, web tools, and token savers
@@ -470,7 +491,8 @@ Claude Code
 │     Compares x-api-key to config.authToken   │
 │                                              │
 │  3. model-router.resolve()                   │
-│     Determines target provider + model       │
+│     Determines target provider/model or      │
+│     synthetic chain slug                     │
 └──────────────────────────────────────────────┘
   │
   ▼
@@ -479,7 +501,9 @@ Claude Code
 │                                              │
 │  1. Count input tokens (js-tiktoken)         │
 │  2. Get provider from ProviderRegistry       │
+│     or load ordered Model Chain targets      │
 │  3. Call provider.streamResponse(req, tokens)│
+│     or retry/fallback across chain targets   │
 │  4. Wrap stream with capture (stream-result) │
 └──────────────────────────────────────────────┘
   │
@@ -593,6 +617,7 @@ Desktop Build (GitHub Actions — .github/workflows/desktop-build.yml, on tag pu
 %APPDATA%\claude-code-provider-gateway\
 
 ├── config.json              # Non-sensitive config
+│                             # Providers, routing, Model Chains, token savers
 ├── secrets.enc.json         # AES-256-GCM encrypted secrets
 ├── secret.key               # Master encryption key (32-byte hex)
 ├── daemon.pid               # Process ID

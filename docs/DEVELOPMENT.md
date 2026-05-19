@@ -76,6 +76,13 @@ claude-code-provider-gateway/
 | [Architecture](ARCHITECTURE.md) | Runtime layers, request flow, provider transports, config, storage, and security model. |
 | [Providers](PROVIDERS.md) | Supported provider catalog, auth modes, CLI flags, model discovery, and provider UI behavior. |
 | [Adding a Provider](ADDING_PROVIDER.md) | Implementation checklist for new provider support. |
+| [Codebase Guide](CODEBASE_GUIDE.md) | Repository structure, naming conventions, extension points, and verification checklist. |
+| [API Reference](API_REFERENCE.md) | Local proxy and panel endpoints used by Claude Code, the panel, and `ccpg`. |
+| [Daemon Reference](DAEMON_REFERENCE.md) | Backend module reference for the proxy, panel API, providers, sessions, and observability. |
+| [Panel Features](PANEL_FEATURES.md) | Management UI feature slices, shared modules, contracts, and frontend data flow. |
+| [Testing](TESTING.md) | Test runner, layout, commands, coverage expectations, and CI integration. |
+| [Maintenance Notes](MAINTENANCE.md) | Known limitations, fragile areas, and security/performance review checklists. |
+| [Troubleshooting](TROUBLESHOOTING.md) | Common launch, provider, OAuth, Model Chain, history, and build issues. |
 | [Contributing](../CONTRIBUTING.md) | Issue/PR expectations and project contribution workflow. |
 | [Security](../SECURITY.md) | Local threat model and vulnerability reporting. |
 
@@ -216,6 +223,46 @@ Manual validation path:
 
 Caveman can be validated with a normal chat request after enabling **Caveman mode**. The session prompt should include the injected terse-response guidance, and responses should become shorter according to the selected level.
 
+### Model Chain development
+
+Model Chains touch daemon config, model discovery, launch preparation, routing,
+message fallback, session labels, and the panel editor. The main files are:
+
+| Area | Files |
+|---|---|
+| Config schema and normalization | `packages/daemon/src/config/schema.ts`, `packages/daemon/src/config/validation.ts` |
+| Launch modes and shell commands | `packages/daemon/src/panel/launch-prepare.ts`, `packages/daemon/src/panel/routes/shell-routes.ts` |
+| Model catalog and routing | `packages/daemon/src/proxy/services/model-service.ts`, `packages/daemon/src/proxy/model-router.ts` |
+| Runtime fallback execution | `packages/daemon/src/proxy/services/message-service.ts` |
+| Session history labels | `packages/daemon/src/runtime/sessions.ts`, `packages/daemon/src/runtime/session-types.ts` |
+| Panel UI | `packages/panel/src/features/model-chain/`, dashboard quick-launch components |
+
+Useful focused checks:
+
+```bash
+cd packages/daemon
+node --import tsx --test src/proxy/services/model-service.test.ts src/proxy/services/message-service.test.ts src/panel/launch-prepare.test.ts
+npm run typecheck
+```
+
+Manual validation path:
+
+1. Start the desktop dev app with `npm run dev:desk`.
+2. Enable and test at least two providers.
+3. In **Providers**, make sure the target models are enabled or manually added.
+4. Open **Model Chain** and create a chain with a name, slug, and two or more
+   ordered targets.
+5. Run `ccpg --<chain-slug>` and verify Claude Code sees only that chain.
+6. Run `ccpg --ModelChain` and verify Claude Code sees all enabled chains and
+   no raw provider models.
+7. Run `ccpg --all` and verify Claude Code sees enabled chains plus prefixed
+   provider models.
+8. Force the first target to fail, for example by disabling credentials or using
+   a bad model id, and verify the request retries/falls through to the next
+   target.
+9. Inspect **History** to confirm the session command and model labels match
+   the launch mode.
+
 ### Provider development
 
 Provider source of truth lives in the daemon:
@@ -235,13 +282,13 @@ Provider source of truth lives in the daemon:
 Panel provider support is intentionally thinner:
 
 - `packages/panel/public/providers/` for provider icons.
-- `packages/panel/src/features/providers/constants.ts` for local, OAuth,
+- `packages/panel/src/features/providers/domain/constants.ts` for local, OAuth,
   device-flow, and coming-soon grouping.
 - `packages/panel/src/features/providers/data/suggestedModels.ts` for manual
   model suggestions when discovery is missing or incomplete.
-- `packages/panel/src/features/providers/apiKeyLinks.ts` for key-management
+- `packages/panel/src/features/providers/domain/apiKeyLinks.ts` for key-management
   shortcuts.
-- `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth copy
+- `packages/panel/src/features/providers/domain/oauthPresentation.ts` for OAuth copy
   and provider-specific sign-in presentation.
 
 Useful focused checks while working on providers:
@@ -266,7 +313,9 @@ Manual provider validation path:
 4. Check the model list and disable any models that should not be exposed.
 5. Launch Claude Code with the provider flag, or use `ccpg --all` to validate
    gateway-prefixed routing.
-6. Inspect **History** and daemon logs for routed model, provider errors,
+6. If the provider should participate in Model Chains, create a chain using one
+   of its enabled models and validate `ccpg --<chain-slug>`.
+7. Inspect **History** and daemon logs for routed model, provider errors,
    prompt serialization, and response previews.
 
 ## Build Pipeline
@@ -341,7 +390,7 @@ Three parallel jobs:
 ```bash
 # Get your auth token from ~/.config/claude-code-provider-gateway/config.json
 ANTHROPIC_AUTH_TOKEN=sk_xxxxxxxxxxxx \
-ANTHROPIC_BASE_URL=http://localhost:49250 \
+ANTHROPIC_BASE_URL=http://127.0.0.1:49250 \
 CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1 \
 claude
 ```
@@ -390,3 +439,92 @@ import { loadConfig } from './config/index.js'
 // Incorrect
 import { loadConfig } from './config/index'
 ```
+
+## Build Commands
+
+Root workspace scripts (run from the repo root):
+
+| Command | Purpose |
+|---|---|
+| `npm run build` | Production build: panel → daemon bundle |
+| `npm run dev` | Start daemon (nodemon) + panel (Vite) for web-only dev |
+| `npm run dev:desk` | Start daemon + panel + Tauri desktop shell with external daemon mode |
+| `npm run dev:daemon` | Start daemon alone with nodemon hot reload |
+| `npm run dev:panel` | Start panel alone with Vite HMR |
+| `npm run test` | Run all daemon tests (Node built-in test runner) |
+| `npm run typecheck` | Run `tsc --noEmit` across daemon and panel |
+| `npm run quality` | Run Biome check (format + lint + import ordering) |
+| `npm run quality:fix` | Run Biome check with safe auto-fixes |
+| `npm run quality:ci` | Run Biome in CI mode (errors only, no writes) |
+| `npm run format` | Run Biome formatter with auto-fix |
+| `npm run format:check` | Run Biome formatter in check-only mode |
+| `npm run lint` | Run Biome linter |
+| `npm run lint:fix` | Run Biome linter with safe auto-fixes |
+| `npm run lint:fix:unsafe` | Run Biome linter with unsafe auto-fixes |
+
+Per-workspace scripts are documented under [Package Details](#package-details).
+
+## Code Style
+
+This project uses **Biome** (v2.4.x) as the single tool for formatting, linting, and import organization. There is no ESLint or Prettier — Biome replaces both.
+
+### Configuration
+
+| File | Purpose |
+|---|---|
+| `biome.jsonc` | Root Biome configuration (formatter, linter, assist) |
+
+Key settings:
+
+- **Indent:** 2 spaces
+- **Quotes:** double
+- **Semicolons:** always
+- **Trailing commas:** always (JS/TS), none (JSON)
+- **Line width:** 100 characters
+- **Line endings:** LF only
+- **Target:** ES2022, strict TypeScript
+
+Linter rules include recommended defaults plus `noUnusedImports` (error), `noUnusedVariables` (error), `noConsole` (warn), `noDebugger` (error), and `noExplicitAny` (warn, relaxed in test files).
+
+### Running locally
+
+```bash
+npm run quality         # Check format + lint + imports (no changes)
+npm run quality:fix     # Auto-fix safe issues
+npm run format          # Format only (writes changes)
+npm run lint            # Lint only (no changes)
+```
+
+CI runs `npm run quality:ci` which exits non-zero on any violation. Run the same command before pushing to avoid CI failures.
+
+### IDE integration
+
+Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) and set it as the default formatter. The extension reads `biome.jsonc` automatically. Disable any conflicting ESLint/Prettier extensions in this workspace.
+
+## Branch Conventions
+
+The default branch is `master`. Feature and fix branches use lowercase slug prefixes:
+
+| Prefix | Purpose | Example |
+|---|---|---|
+| `feat/` | New features or enhancements | `feat/redesign-providers-page` |
+| `fix/` | Bug fixes | `fix/incomplete-tool-use-block` |
+| `chore/` | Maintenance, tooling, build config | `chore/setup-biome-quality-gate` |
+
+Branch names should be short, descriptive, and use hyphens between words. No ticket-number prefixes are required.
+
+## PR Process
+
+There is no PR template in the repository. The following guidelines are documented in [CONTRIBUTING.md](../CONTRIBUTING.md):
+
+1. **Before opening:** Ensure the change fits one of these categories — bug fix, provider compatibility improvement, desktop UX improvement, security/reliability/observability improvement, focused documentation, or tests for existing behavior. Large rewrites, new provider families, persistence changes, and security-sensitive changes should start as an issue or discussion.
+
+2. **Run the quality gate:** Execute `npm run quality:ci`, `npm test`, `npm run build`, and `npm run typecheck` locally before pushing.
+
+3. **Test your changes:** For daemon changes, run focused tests. For UI changes, include manual verification notes and screenshots/recordings where practical.
+
+4. **Update documentation:** When modifying provider behavior, routing, config, storage, or release behavior, update the relevant docs (`PROVIDERS.md`, `ADDING_PROVIDER.md`, `ARCHITECTURE.md`, etc.).
+
+5. **Security:** Do not include real API keys, OAuth tokens, access tokens, or generated config files in the PR.
+
+6. **Review:** A maintainer will review the PR. CI must pass (Quality Gate workflow) before merging. See [CONTRIBUTING.md](../CONTRIBUTING.md) for provider-specific PR requirements and the full checklist.

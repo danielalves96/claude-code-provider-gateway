@@ -9,7 +9,7 @@ Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Gr
 [![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
-[![Providers](https://img.shields.io/badge/providers-40-2563eb?style=for-the-badge)](#supported-providers)
+[![Providers](https://img.shields.io/badge/providers-41-2563eb?style=for-the-badge)](#supported-providers)
 <br />
 [![Platforms](https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-f97316?style=for-the-badge)](#system-requirements)
 [![No Telemetry](https://img.shields.io/badge/telemetry-none-0f172a?style=for-the-badge)](#pricing)
@@ -74,6 +74,8 @@ ccpg --OpenAIAccount
 ccpg --Copilot
 ccpg --Ollama
 ccpg --all
+ccpg --ModelChain
+ccpg --my-chain
 ```
 
 ## Status
@@ -87,24 +89,25 @@ install app → add provider → test connection → run Claude Code through CCP
 
 The production path is desktop-only: users should not need Node.js, npm, Rust, Bun, or hand-edited terminal config.
 
-The next documentation step is a separate official docs site repository. Until then, the key docs live here:
+The next documentation step is a separate official docs site repository. Until then, start with the [documentation hub](docs/README.md) or jump directly to:
 
-
-- [Architecture](docs/ARCHITECTURE.md)
+- [Getting Started](docs/GETTING-STARTED.md)
 - [Providers](docs/PROVIDERS.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API Reference](docs/API_REFERENCE.md)
 - [Development](docs/DEVELOPMENT.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Changelog](CHANGELOG.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## Features
 
 - **Desktop app, not a terminal science project** - Tauri app for macOS, Windows, and Linux with provider setup, connection tests, routing, logs, and history in one UI.
-- **40 providers out of the box** - OAuth, API key, cloud, and local providers, including OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, and llama.cpp.
+- **41 provider cards out of the box** - OAuth, API key, cloud, local, and coming-soon providers, including OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, and llama.cpp.
 - **Anthropic-compatible local proxy** - Claude Code sends Anthropic Messages API requests to `127.0.0.1`; CCPG translates and routes them.
 - **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
+- **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, or runs out of credits.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
 - **Provider management UI** - search providers, filter active/inactive cards, favorite and reorder frequently used providers, edit custom model lists, and hide noisy discovered models.
 - **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
@@ -166,6 +169,39 @@ Use `--all` when you want to choose models from multiple providers inside one Cl
 <p align="center">
   <img src=".github/assets/claude_models.png" alt="Claude Code /model picker showing gateway-provided models" width="90%" />
 </p>
+
+## How Model Chains Work
+
+Model Chains let you create user-defined gateway models from the panel. Open
+**Model Chains**, create a chain with a name and `chain-slug`, then add models from
+active providers and enabled model lists. The order in the chain is the runtime
+priority.
+
+Claude Code sees each chain as a single custom model:
+
+```text
+{Chain Name} · Gateway : Custom Models (Defined by user)
+```
+
+Internally, the daemon exposes the model as `anthropic/chain/<slug>`. When a
+request hits that chain, CCPG calls the first target model. If the provider
+returns an API error, rate limit, credit/quota failure, network failure, or any
+other non-successful response, CCPG retries that target and then moves to the
+next target in the chain. The session stays attached to the chain, so Claude
+Code background tier calls continue through the same chain instead of leaking
+back to the first provider.
+
+Launch modes:
+
+| Command | What Claude Code sees |
+|---|---|
+| `ccpg --<chain-slug>` | Only that Model Chain. |
+| `ccpg --ModelChain` | All enabled Model Chains, and no provider models. |
+| `ccpg --all` | Enabled Model Chains plus all enabled provider models. |
+
+Use a single `chain-slug` when you want one controlled fallback path. Use
+`--ModelChain` when you want Claude Code's model picker to show every enabled
+chain.
 
 ## Supported Providers
 
@@ -304,6 +340,8 @@ ccpg --Ollama --continue
 | `--IFlow` | iFlow AI placeholder |
 | `--CommandCode` | Command Code models |
 | `--all` or `--a` | All enabled providers in one model catalog |
+| `--ModelChain`, `--ModelChains`, or `--chains` | All enabled Model Chains |
+| `--<chain-slug>` | One enabled Model Chain with the matching slug |
 
 Flags are case-insensitive in the shell setup flow.
 
@@ -342,8 +380,9 @@ This table is about product focus, not a claim that other projects are bad. Term
 └────────────────┘     │  └─────────────────────────────┘  │     │  ...            │
                        │  ┌─────────────────────────────┐  │     └─────────────────┘
                        │  │ Desktop Management UI       │  │
-                       │  │ Providers · Routing · Logs  │  │
-                       │  │ History · Shell Setup       │  │
+                       │  │ Providers · Model Chain     │  │
+                       │  │ Routing · History · Logs     │  │
+                       │  │ Settings · Shell Setup       │  │
                        │  └─────────────────────────────┘  │
                        └───────────────────────────────────┘
 ```
@@ -367,20 +406,35 @@ Runtime files live in:
 
 | File | Purpose |
 |---|---|
-| `config.json` | Non-sensitive provider settings, routing rules, token saver settings, ports, and model mode. |
+| `config.json` | Non-sensitive provider settings, routing rules, Model Chains, token saver settings, ports, and model mode. |
 | `secrets.enc.json` | API keys, OAuth tokens, and auth token encrypted with AES-256-GCM. |
-| `secret.key` | Local master key, unless `CC_GATEWAY_MASTER_KEY` is provided. |
+| `secret.key` | Local master key, unless `CC_GATEWAY_SECRET_KEY` is provided. |
+| `daemon.pid` | PID marker used by the daemon and desktop supervisor. |
+| `daemon.log` | Local daemon log file. May include provider errors and request diagnostics. |
 | `current-session.json` | Active session checkpoint. |
 | `sessions.jsonl` | Completed session archive, capped to 200 sessions. |
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - system layers, request lifecycle, routing, security model, storage.
-- [Providers](docs/PROVIDERS.md) - provider catalog, auth modes, CLI flags, model discovery, and panel behavior.
-- [Development](docs/DEVELOPMENT.md) - source setup, desktop dev, tests, builds, release flow.
-- [Contributing](CONTRIBUTING.md) - issues, PRs, conventions, contribution workflow.
-- [Security](SECURITY.md) - local threat model and vulnerability reporting.
-- [Changelog](CHANGELOG.md) - release notes.
+| Document | Use it for |
+|---|---|
+| [Documentation Hub](docs/README.md) | The complete docs map and reading paths for users, contributors, and maintainers. |
+| [Getting Started](docs/GETTING-STARTED.md) | Install the desktop app, configure a provider, and launch Claude Code through `ccpg`. |
+| [Providers](docs/PROVIDERS.md) | Provider catalog, auth modes, CLI flags, model discovery, Model Chains, and panel behavior. |
+| [Configuration](docs/CONFIGURATION.md) | Config file shape, environment variables, defaults, secrets, and runtime storage. |
+| [Architecture](docs/ARCHITECTURE.md) | System layers, request lifecycle, routing, provider transports, security model, and storage. |
+| [Panel Features](docs/PANEL_FEATURES.md) | Management UI feature modules and frontend organization. |
+| [API Reference](docs/API_REFERENCE.md) | Local proxy and panel endpoints used by Claude Code, the desktop UI, and shell setup. |
+| [Daemon Reference](docs/DAEMON_REFERENCE.md) | Backend module reference for the proxy, panel API, providers, sessions, and observability. |
+| [Adding a Provider](docs/ADDING_PROVIDER.md) | Checklist and implementation patterns for new provider support. |
+| [Codebase Guide](docs/CODEBASE_GUIDE.md) | Repository structure, conventions, extension points, and verification checklist. |
+| [Development](docs/DEVELOPMENT.md) | Source setup, desktop dev, tests, builds, release flow, and package scripts. |
+| [Testing](docs/TESTING.md) | Test runner, layout, commands, coverage expectations, and CI integration. |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Practical fixes for launch, provider, OAuth, proxy, Model Chain, history, and build issues. |
+| [Maintenance Notes](docs/MAINTENANCE.md) | Known limitations, fragile areas, and maintenance review checklists. |
+| [Contributing](CONTRIBUTING.md) | Issues, PRs, conventions, and contribution workflow. |
+| [Security](SECURITY.md) | Local threat model and vulnerability reporting. |
+| [Changelog](CHANGELOG.md) | Release notes. |
 
 ## License
 
