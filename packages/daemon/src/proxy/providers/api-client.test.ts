@@ -53,7 +53,7 @@ test("fetchProviderJson converts configured timeout into controlled error", asyn
   try {
     await assert.rejects(
       fetchProviderJson({ url: "https://example.test/models", headers: {}, timeoutMs: 1 }),
-      /HTTP 504 em https:\/\/example\.test\/models: Provider request timed out/,
+      /HTTP 504 at https:\/\/example\.test\/models: Provider request timed out/,
     );
   } finally {
     globalThis.fetch = originalFetch;
