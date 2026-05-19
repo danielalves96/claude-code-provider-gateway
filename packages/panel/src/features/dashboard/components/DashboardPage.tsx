@@ -26,8 +26,8 @@ export default function DashboardPage() {
   return (
     <Flex vertical gap={token.paddingLG}>
       <PageHeader title="Dashboard" />
-      <StatusOverview status={page.status} />
-      <EnabledProvidersCard stats={page.stats} />
+      <StatusOverview status={page.status} isLoading={page.isLoading} />
+      <EnabledProvidersCard stats={page.stats} isLoading={page.isLoading} />
       {!page.hasTerminalConfigured && shellSetupCard}
       <QuickLaunchCard items={page.launchItems} error={page.launchError} />
       {page.hasTerminalConfigured && shellSetupCard}

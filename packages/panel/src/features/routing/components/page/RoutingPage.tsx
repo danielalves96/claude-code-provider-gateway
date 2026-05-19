@@ -1,18 +1,16 @@
 import { Alert, Col, Flex, Row, theme } from "antd";
-import { LoadingState } from "../../../../shared/components/LoadingState.js";
 import { PageHeader } from "../../../../shared/components/PageHeader.js";
 import { SaveButton } from "../../../../shared/components/SaveButton.js";
 import { TIERS } from "../../domain/constants.js";
 import { useRouting } from "../../hooks/useRouting.js";
 import { ThinkingToggle } from "../tier/ThinkingToggle.js";
 import { TierCard } from "../tier/TierCard.js";
+import { RoutingGridSkeleton } from "../tier/TierCardSkeleton.js";
 
 export default function RoutingPage() {
   const { token } = theme.useToken();
   const { rules, thinking, setThinking, options, updateRule, loaded, saving, saved, save } =
     useRouting();
-
-  if (!loaded) return <LoadingState />;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
@@ -22,6 +20,10 @@ export default function RoutingPage() {
           description="Override which provider and model handles each Claude tier. When disabled, requests pass through unchanged."
         />
 
+        {!loaded ? (
+          <RoutingGridSkeleton />
+        ) : (
+          <>
         {options.length === 0 && (
           <Alert
             type="warning"
@@ -43,6 +45,8 @@ export default function RoutingPage() {
             </Col>
           ))}
         </Row>
+          </>
+        )}
       </Flex>
 
       <div

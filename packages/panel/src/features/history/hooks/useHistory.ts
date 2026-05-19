@@ -10,16 +10,19 @@ export function useHistory() {
   const [gatewayProviders, setGatewayProviders] = useState<GatewayProviderStat[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [clearing, setClearing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
     Promise.all([historyService.list(), historyService.stats()])
       .then(([sessionsResponse, statsResponse]) => {
         setData(sessionsResponse);
         setGatewayProviders(statsResponse.providers);
+        setIsLoading(false);
       })
       .catch(() => {
         setData(null);
         setGatewayProviders([]);
+        setIsLoading(false);
       });
   }, []);
 
@@ -74,5 +77,6 @@ export function useHistory() {
     clearing,
     canClear: (data?.archive.length ?? 0) > 0,
     pollIntervalMs: HISTORY_POLL_INTERVAL_MS,
+    isLoading,
   };
 }

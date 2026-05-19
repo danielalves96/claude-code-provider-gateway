@@ -24,6 +24,7 @@ export function useHistoryPage() {
 
   return {
     ...history,
+    isLoading: history.isLoading,
     confirmOpen,
     topProviderInfo,
     topModelInfo,

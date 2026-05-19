@@ -3,6 +3,7 @@ import { PageHeader } from "../../../../shared/components/PageHeader.js";
 import { useProvidersPage } from "../../hooks/useProvidersPage.js";
 import { ConfirmModal } from "../config/ConfirmModal.js";
 import { ProviderConfigModal } from "../config/ProviderConfigModal.js";
+import { ProviderGridSkeleton } from "../grid/ProviderCardSkeleton.js";
 import { AllProvidersTab, FavoritesTab } from "./ProviderTabs.js";
 import { ProviderToolbar } from "./ProviderToolbar.js";
 
@@ -31,7 +32,9 @@ export default function ProvidersPage() {
           {
             key: "all",
             label: "All Providers",
-            children: (
+            children: page.providersApi.isLoading ? (
+              <ProviderGridSkeleton />
+            ) : (
               <AllProvidersTab
                 groups={page.providerGroups}
                 testResults={page.providersApi.testResults}

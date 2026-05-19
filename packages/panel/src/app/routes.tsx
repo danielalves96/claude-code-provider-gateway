@@ -1,11 +1,13 @@
+import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
-import DashboardPage from "../features/dashboard/components/DashboardPage.js";
-import HistoryPage from "../features/history/components/page/HistoryPage.js";
-import ServerLogsPage from "../features/logs/components/page/ServerLogsPage.js";
-import ProvidersPage from "../features/providers/components/page/ProvidersPage.js";
-import RoutingPage from "../features/routing/components/page/RoutingPage.js";
-import SettingsPage from "../features/settings/components/page/SettingsPage.js";
 import { AppShell } from "../features/shell/components/AppShell.js";
+
+const DashboardPage = lazy(() => import("../features/dashboard/components/DashboardPage.js"));
+const HistoryPage = lazy(() => import("../features/history/components/page/HistoryPage.js"));
+const ServerLogsPage = lazy(() => import("../features/logs/components/page/ServerLogsPage.js"));
+const ProvidersPage = lazy(() => import("../features/providers/components/page/ProvidersPage.js"));
+const RoutingPage = lazy(() => import("../features/routing/components/page/RoutingPage.js"));
+const SettingsPage = lazy(() => import("../features/settings/components/page/SettingsPage.js"));
 
 export function AppRoutes() {
   return (
