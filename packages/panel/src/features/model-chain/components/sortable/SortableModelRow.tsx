@@ -39,13 +39,22 @@ export function SortableModelRow({ id, index, entry, options, onRemove }: Sortab
         position: "relative",
       }}
     >
-      <div
+      <button
         {...attributes}
         {...listeners}
-        style={{ cursor: "grab", display: "flex", color: token.colorTextTertiary }}
+        type="button"
+        aria-label="Drag to reorder"
+        style={{
+          cursor: "grab",
+          display: "flex",
+          color: token.colorTextTertiary,
+          background: "transparent",
+          border: 0,
+          padding: 0,
+        }}
       >
         <HolderOutlined />
-      </div>
+      </button>
       <Tag
         color={index === 0 ? "blue" : "default"}
         bordered={false}

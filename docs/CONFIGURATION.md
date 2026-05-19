@@ -81,14 +81,14 @@ It is a JSON file with the following top-level shape:
 }
 ```
 
-> **Important:** The `config.json` file on disk does **not** contain API keys, OAuth tokens, or the server auth token. These secrets are split out into `secrets.enc.json` and encrypted with AES-256-GCM. In the on-disk JSON, `apiKey`, `authToken`, `oauth.accessToken`, `oauth.refreshToken`, and `oauth.copilotToken` will always appear as empty strings or `undefined`.
+> **Important:** The `config.json` file on disk does **not** contain API keys, OAuth tokens, or the server auth token. These secrets are split out into `secrets.enc.json` and encrypted with AES-256-GCM. In the on-disk JSON, secret-backed fields (`apiKey`, `authToken`, `oauth.accessToken`, `oauth.refreshToken`, and `oauth.copilotToken`) will appear as empty strings or null (or omitted).
 
 ### Top-Level Keys
 
 | Key | Type | Description |
 |---|---|---|
 | `server` | object | Daemon network settings: proxy port, panel port, and internal auth token. |
-| `providers` | object | Per-provider configuration keyed by provider ID (e.g., `"openrouter"`, `"ollama"`). Contains 42 provider entries. |
+| `providers` | object | Per-provider configuration keyed by provider ID (e.g., `"openrouter"`, `"ollama"`). Contains multiple provider entries. |
 | `routing` | object | Model routing rules for Claude Code's tier-based model selection (`default`, `opus`, `sonnet`, `haiku`). |
 | `thinking` | object | Extended thinking toggle, with per-tier overrides. |
 | `webTools` | object | Web search and private-network access controls. |

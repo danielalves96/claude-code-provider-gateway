@@ -170,10 +170,10 @@ Use `--all` when you want to choose models from multiple providers inside one Cl
   <img src=".github/assets/claude_models.png" alt="Claude Code /model picker showing gateway-provided models" width="90%" />
 </p>
 
-## How Model Chain Works
+## How Model Chains Work
 
-Model Chain lets you create user-defined gateway models from the panel. Open
-**Model Chain**, create a chain with a name and slug, then add models from
+Model Chains let you create user-defined gateway models from the panel. Open
+**Model Chains**, create a chain with a name and `chain-slug`, then add models from
 active providers and enabled model lists. The order in the chain is the runtime
 priority.
 
@@ -199,7 +199,7 @@ Launch modes:
 | `ccpg --ModelChain` | All enabled Model Chains, and no provider models. |
 | `ccpg --all` | Enabled Model Chains plus all enabled provider models. |
 
-Use a single chain slug when you want one controlled fallback path. Use
+Use a single `chain-slug` when you want one controlled fallback path. Use
 `--ModelChain` when you want Claude Code's model picker to show every enabled
 chain.
 
@@ -408,7 +408,7 @@ Runtime files live in:
 |---|---|
 | `config.json` | Non-sensitive provider settings, routing rules, Model Chains, token saver settings, ports, and model mode. |
 | `secrets.enc.json` | API keys, OAuth tokens, and auth token encrypted with AES-256-GCM. |
-| `secret.key` | Local master key, unless `CC_GATEWAY_MASTER_KEY` is provided. |
+| `secret.key` | Local master key, unless `CC_GATEWAY_SECRET_KEY` is provided. |
 | `daemon.pid` | PID marker used by the daemon and desktop supervisor. |
 | `daemon.log` | Local daemon log file. May include provider errors and request diagnostics. |
 | `current-session.json` | Active session checkpoint. |

@@ -8,7 +8,7 @@ The project uses **Node.js built-in test runner** (`node:test`) together with th
 
 The root `package.json` delegates test execution to the daemon workspace:
 
-```
+```bash
 npm test --workspace @claude-code-provider-gateway/daemon
 ```
 
@@ -56,7 +56,7 @@ Run from `packages/desktop/src-tauri/`. There is no npm script wrapper — use `
 
 Tests live **co-located** with the source files they exercise. Every test file uses the suffix `.test.ts` and sits in the same directory as its corresponding module:
 
-```
+```text
 packages/daemon/src/
 ├── config/
 │   ├── validation.ts          ← source module

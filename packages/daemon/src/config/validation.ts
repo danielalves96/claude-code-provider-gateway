@@ -15,6 +15,8 @@ const MODEL_MODES = new Set<ModelMode>(["single", "all", "chains"]);
 const CAVEMAN_LEVELS = new Set<CavemanLevel>(["lite", "full", "ultra"]);
 
 export function normalizeConfig(config: Config, defaults: Config): Config {
+  const modelFallbacks = normalizeModelFallbacks(config.modelFallbacks, defaults.modelFallbacks);
+
   return {
     server: {
       proxyPort: numberOrDefault(config.server.proxyPort, defaults.server.proxyPort),
@@ -58,11 +60,12 @@ export function normalizeConfig(config: Config, defaults: Config): Config {
     },
     activeProvider: providerIdOrDefault(config.activeProvider, defaults.activeProvider),
     modelMode: modelModeOrDefault(config.modelMode, defaults.modelMode),
-    activeModelFallbackSlug: nullableSlugOrDefault(
+    activeModelFallbackSlug: normalizeActiveModelFallbackSlug(
       config.activeModelFallbackSlug,
       defaults.activeModelFallbackSlug,
+      modelFallbacks,
     ),
-    modelFallbacks: normalizeModelFallbacks(config.modelFallbacks, defaults.modelFallbacks),
+    modelFallbacks,
     panelSettings: {
       favoriteProviders: normalizeProviderIdList(
         config.panelSettings?.favoriteProviders,
@@ -118,6 +121,25 @@ function normalizeModelFallbackEntries(value: unknown): ModelFallbackEntry[] {
     out.push({ providerId, model });
   }
   return out;
+}
+
+function normalizeActiveModelFallbackSlug(
+  value: unknown,
+  fallback: string | null,
+  modelFallbacks: ModelFallbackConfig[],
+): string | null {
+  const normalized = nullableSlugOrDefault(value, fallback);
+  if (normalized && hasEnabledFallbackSlug(modelFallbacks, normalized)) return normalized;
+  if (fallback && fallback !== normalized && hasEnabledFallbackSlug(modelFallbacks, fallback)) {
+    return fallback;
+  }
+  return null;
+}
+
+function hasEnabledFallbackSlug(modelFallbacks: ModelFallbackConfig[], slug: string): boolean {
+  return modelFallbacks.some(
+    (fallback) => fallback.enabled && fallback.slug === slug && fallback.models.length > 0,
+  );
 }
 
 function normalizeProviders(

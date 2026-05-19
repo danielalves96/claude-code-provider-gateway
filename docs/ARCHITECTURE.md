@@ -4,7 +4,7 @@
 
 ## System Overview
 
-Claude Code Provider Gateway (CCPG) is a **local-first, desktop-hosted gateway** that interposes an Anthropic Messages API-compatible proxy between Claude Code and any of 43+ LLM providers. The system is organized as a monorepo with three packages:
+Claude Code Provider Gateway (CCPG) is a **local-first, desktop-hosted gateway** that interposes an Anthropic Messages API-compatible proxy between Claude Code and any of 40+ LLM providers. The system is organized as a monorepo with three packages:
 
 - **Daemon** — A TypeScript/Node.js backend that runs two Hono HTTP servers on `127.0.0.1`: an Anthropic-compatible proxy API and a web panel API.
 - **Panel** — A React 19 SPA (Ant Design, Zustand, React Router) that serves as the configuration UI, live session viewer, and provider management dashboard.
@@ -330,7 +330,7 @@ secrets.enc.json (AES-256-GCM encrypted JSON)
      │
      │ EncryptedFileSecretStore (encrypt/decrypt with master key)
      ▼
-secret.key (32-byte hex master key) or CC_GATEWAY_MASTER_KEY env var
+secret.key (32-byte hex master key) or CC_GATEWAY_SECRET_KEY env var
 ```
 
 - **Paths** (`paths.ts`) — centralized functions for all config directory paths: `getConfigDir()`, `getConfigPath()`, `getPidPath()`, `getLogPath()`, `getSecretsPath()`, `getMasterKeyPath()`, `getCurrentSessionPath()`, `getSessionArchivePath()`. Handles the Windows `%APPDATA%` path on Win32.

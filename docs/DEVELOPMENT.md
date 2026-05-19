@@ -438,6 +438,7 @@ import { loadConfig } from './config/index.js'
 
 // Incorrect
 import { loadConfig } from './config/index'
+```
 
 ## Build Commands
 

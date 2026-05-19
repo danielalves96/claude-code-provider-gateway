@@ -156,11 +156,11 @@ function isModelChainFlag(flag: string): boolean {
 function resolveFallbackFlag(config: Config, flag: string): { slug: string } | null {
   if (!flag.startsWith("--")) return null;
   const target = flag.slice(2).toLowerCase();
-  return (
-    config.modelFallbacks.find(
-      (fallback) => fallback.enabled && fallback.slug.toLowerCase() === target,
-    ) ?? null
+  const fallback = config.modelFallbacks.find(
+    (candidate) => candidate.enabled && candidate.slug.toLowerCase() === target,
   );
+  if (!fallback?.models.length) return null;
+  return fallback;
 }
 
 function buildEnvVars(config: Config, sessionId: string): LaunchEnvVars {

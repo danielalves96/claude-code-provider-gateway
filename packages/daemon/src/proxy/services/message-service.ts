@@ -99,9 +99,29 @@ export class MessageService {
       if (primary) {
         if (primary.providerId === "fallback") {
           const fallback = config.modelFallbacks.find(
-            (candidate) => candidate.enabled && candidate.slug === primary.providerModel,
+            (candidate) =>
+              candidate.enabled &&
+              candidate.slug === primary.providerModel &&
+              candidate.models.length > 0,
           );
           if (fallback) return await this.streamFallback(req, fallback, started);
+          const message = `Model chain "${primary.providerModel}" is not enabled or configured.`;
+          logger.error("proxy", `✗ ${req.model} → fallback/${primary.providerModel} unavailable`);
+          recordRequest("fallback", Date.now() - started, message);
+          recordSessionRequest({
+            requestedModel: req.model,
+            providerId: "fallback",
+            providerModel: primary.providerModel,
+            inputTokens: 0,
+            latencyMs: Date.now() - started,
+            status: "error",
+            error: message,
+          });
+          return {
+            kind: "error",
+            status: 404,
+            body: anthropicError("not_found_error", message),
+          };
         }
         providerId = primary.providerId as typeof providerId;
         providerModel = primary.providerModel;
@@ -376,7 +396,9 @@ export class MessageService {
       `→ ${fallback.slug} used ${displayTarget} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    setSessionPrimaryModel(providerId, providerModel);
+    if (getSessionPrimaryModel()?.providerId !== "fallback") {
+      setSessionPrimaryModel(providerId, providerModel);
+    }
     const prompt = serializePrompt(providerReq, isFirstSessionRequest());
     const logEntryId = recordSessionRequest({
       requestedModel: req.model,

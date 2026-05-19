@@ -67,7 +67,7 @@ The panel communicates with the CCPG daemon through a typed HTTP client in `src/
 import { http } from "../shared/api/http.js";
 
 // Fetch provider status
-const status = await http.get<DaemonStatus>("/status");
+const status = await http.get<DaemonStatus>("/api/status");
 ```
 
 ## Architecture
@@ -81,7 +81,7 @@ const status = await http.get<DaemonStatus>("/status");
 
 ### Directory structure
 
-```
+```text
 src/
 ├── app/             # App shell, routing, and theme provider
 ├── features/        # Feature-based modules (one folder per page)

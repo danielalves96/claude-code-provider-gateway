@@ -106,7 +106,7 @@ export type { Config, ProviderConfig, ProviderId, RoutingRule } from "./config/s
 
 ### Provider system
 
-The daemon supports **42 providers** (cloud API key, OAuth, and local) via a provider registry. Each provider implements a transport adapter — either Anthropic-native passthrough or OpenAI-format translation. Provider implementations live in `src/proxy/providers/`.
+The daemon supports **41 providers** (cloud API key, OAuth, and local) via a provider registry. Each provider implements a transport adapter — either Anthropic-native passthrough or OpenAI-format translation. Provider implementations live in `src/proxy/providers/`.
 
 OAuth providers (`openai_account`, `copilot`, `kiro`, `iflow`, `kilocode`, `cline`) include built-in token refresh logic.
 

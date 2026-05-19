@@ -54,7 +54,7 @@ On Linux this produces `.deb`, `.rpm`, and `.AppImage` bundles. On macOS it prod
 
 ## Architecture
 
-```
+```text
 packages/desktop/src-tauri/src/
 ├── main.rs              # Windows subsystem config, entry point
 ├── lib.rs               # Tauri builder setup, plugin registration, autostart
@@ -71,7 +71,7 @@ The Tauri app registers four IPC commands callable from the panel frontend:
 |---|---|
 | `start_daemon` | Starts the daemon sidecar process, passing the master key as `CC_GATEWAY_SECRET_KEY`. Returns the daemon PID. |
 | `stop_daemon` | Kills the running daemon sidecar. |
-| `daemon_status` | Returns `{ running: boolean, pid: number | null }`. |
+| `daemon_status` | Returns `{ running: boolean, pid: number \| null }`. |
 | `open_url` | Opens an external URL in the system browser. Only `https://` URLs with hosts on the allowlist are permitted. |
 
 The panel frontend is loaded from `../../daemon/dist/static` (built panel output). At dev time, Tauri opens `http://localhost:5173` (Vite dev server).

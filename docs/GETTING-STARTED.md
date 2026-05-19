@@ -107,7 +107,7 @@ Common causes and fixes:
 For local providers, make sure the upstream server is running:
 
 - **Ollama:** `http://localhost:11434`
-- **LM Studio:** `http://localhost:8080/v1` (with server enabled)
+- **LM Studio:** `http://localhost:1234/v1` (with server enabled)
 - **llama.cpp:** `http://localhost:8080/v1`
 
 ### Model picker shows stale providers or models

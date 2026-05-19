@@ -55,13 +55,25 @@ export function ChainCard({
           </Flex>
           <Space>
             <Switch
+              aria-label={`Enable ${chain.name} chain`}
               checked={chain.enabled}
               onChange={onToggleEnabled}
               disabled={saving}
               style={{ marginRight: 8 }}
             />
-            <Button icon={<EditOutlined />} onClick={onEdit} disabled={saving} />
-            <Button danger icon={<DeleteOutlined />} disabled={saving} onClick={onDelete} />
+            <Button
+              aria-label={`Edit ${chain.name}`}
+              icon={<EditOutlined />}
+              onClick={onEdit}
+              disabled={saving}
+            />
+            <Button
+              danger
+              aria-label={`Delete ${chain.name}`}
+              icon={<DeleteOutlined />}
+              disabled={saving}
+              onClick={onDelete}
+            />
           </Space>
         </Flex>
 

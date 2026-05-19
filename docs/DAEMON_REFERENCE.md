@@ -6,10 +6,10 @@
 
 The **daemon** (`@claude-code-provider-gateway/daemon`) is the backend process of CCPG, implemented in TypeScript. It runs two local HTTP servers — a **proxy API** (port `49250`) that speaks the Anthropic Messages API, and a **panel API** (port `6767`) that serves the configuration web UI and REST endpoints. Both servers bind to `127.0.0.1` only.
 
-The daemon's primary job is to intercept Claude Code API requests, route them to one of 43+ configured LLM providers, translate between Anthropic and OpenAI API formats, and stream responses back as Anthropic SSE. It also provides session tracking, runtime stats, live logging, and a full configuration API consumed by the panel frontend.
+The daemon's primary job is to intercept Claude Code API requests, route them to one of 41 configured LLM providers, translate between Anthropic and OpenAI API formats, and stream responses back as Anthropic SSE. It also provides session tracking, runtime stats, live logging, and a full configuration API consumed by the panel frontend.
 
-```
-Claude Code ── Anthropic API ──► Proxy (:49250) ──► 43+ LLM providers
+```text
+Claude Code ── Anthropic API ──► Proxy (:49250) ──► 41 LLM providers
 User Browser ─────────────────► Panel (:6767)  ──► Config + Session + Stats
 ```
 
@@ -33,12 +33,12 @@ startDaemon(config);
 
 ## Module Structure
 
-```
+```text
 packages/daemon/src/
 ├── index.ts               # Entry point: load config → configure network → start servers
 ├── config/                 # Schema, defaults, validation, paths, encrypted secrets
 │   ├── index.ts            # loadConfig(), saveConfig(), buildDefaultConfig(), ConfigManager logic
-│   ├── schema.ts           # Config type, ProviderConfig, ProviderId (43 constants), PROVIDER_DEFAULTS
+│   ├── schema.ts           # Config type, ProviderConfig, ProviderId (41 constants), PROVIDER_DEFAULTS
 │   ├── paths.ts            # OS-aware config dir paths (~/.config/... on Linux/Mac, %APPDATA% on Win)
 │   ├── validation.ts       # normalizeConfig() — validates and backfills all config fields
 │   └── secrets/            # Secret storage layer
@@ -72,7 +72,7 @@ packages/daemon/src/
 │   │   ├── native-claude-routing.ts # Native Claude passthrough detection
 │   │   ├── prompt-serializer.ts     # Request audit trail serialization
 │   │   └── stream-result.ts     # SSE stream response helpers with response capture
-│   ├── providers/           # 43+ provider implementations
+│   ├── providers/           # 41 provider implementations
 │   │   ├── base.ts              # BaseProvider abstract class
 │   │   ├── registry.ts          # ProviderRegistry — ID → constructor mapping + caching
 │   │   ├── provider-factory.ts  # createOpenAIProvider() / createAnthropicProvider() factories
@@ -334,7 +334,7 @@ While there isn't a single `ConfigManager` class, the configuration system is th
 ```ts
 interface Config {
   server: { proxyPort: 49250; panelPort: 6767; authToken: string };
-  providers: Record<ProviderId, ProviderConfig>;  // 43 providers
+  providers: Record<ProviderId, ProviderConfig>;  // 41 providers
   routing: Record<RoutingTier, RoutingRule>;       // default/opus/sonnet/haiku
   thinking: { enabled: boolean; opus: boolean|null; sonnet: boolean|null; haiku: boolean|null };
   webTools: { enabled: boolean; allowPrivateNetworks: boolean };
@@ -417,7 +417,7 @@ Fallback chains iterate through a configurable list of `{providerId, model}` pai
 
 ## Provider System
 
-The daemon supports **43 providers**. Each provider is represented by a `ProviderId` literal union type (defined in `config/schema.ts`). Providers are registered in `PROVIDER_MAP` inside `ProviderRegistry`.
+The daemon supports **41 providers**. Each provider is represented by a `ProviderId` literal union type (defined in `config/schema.ts`). Providers are registered in `PROVIDER_MAP` inside `ProviderRegistry`.
 
 ### Provider Categories
 
@@ -432,6 +432,7 @@ The daemon supports **43 providers**. Each provider is represented by a `Provide
 - Request/response conversion handled by `transport-openai.ts`
 
 **Special hand-written providers**:
+
 | Provider | File(s) | Auth | Key Features |
 |----------|---------|------|-------------|
 | OpenAI Account | `openai-account.ts` + auth/stream/catalog | OAuth (PKCE + callback server) | Uses ChatGPT account credentials, supports `responses` model endpoint |
@@ -471,7 +472,7 @@ The daemon supports **43 providers**. Each provider is represented by a `Provide
 
 ### Session Lifecycle
 
-```
+```text
 startSession() ──► running ──► endSession() ──► completed (archived)
                        │
                        └── crash ──► crashed (auto-recovered + archived)

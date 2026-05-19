@@ -13,7 +13,7 @@ The panel is a React 19 single-page application built with **Vite**, **Ant Desig
 
 The panel follows a **feature-based** directory structure under `packages/panel/src/features/`. Each feature contains its own `components/`, `hooks/`, `services/`, and `domain/` directories:
 
-```
+```text
 packages/panel/src/
 ├── app/             # App entry, routing, theme
 │   ├── App.tsx
@@ -396,7 +396,7 @@ The most feature-rich module. Manages all LLM providers: API key configuration, 
 | `SortableFavoritesGrid` | Drag-and-drop grid for favorite providers using `@dnd-kit`. |
 | `ProviderCard` | Individual provider card: logo, label, enabled switch, test button, status indicator, favorite star. |
 | `ProviderCardSkeleton` | Loading skeleton for a provider card. |
-| `ProviderLogo` | Provider logo image (80+ provider logos in `packages/panel/public/logos/`). |
+| `ProviderLogo` | Provider logo image (80+ provider logos in `packages/panel/public/providers/`). |
 | `ProviderConfigModal` | Full-featured configuration modal. Contains sections for API key, OAuth, base URL, model picker, and extra models. |
 | `ProviderConfigContent` | Modal content orchestrator — renders the appropriate sections based on provider type. |
 | `ApiKeySection` | API key input with preview, reveal/hide, and remove. |
@@ -533,7 +533,7 @@ type TokenSaversConfig = { rtkEnabled: boolean; cavemanEnabled: boolean; caveman
 
 All panel-daemon communication flows through the shared API layer:
 
-```
+```text
 Feature Hook → Feature Service → shared/api/http.ts → shared/api/client.ts → shared/api/base.ts
 ```
 

@@ -7,6 +7,8 @@ import { useModelChainPage } from "../../hooks/useModelChainPage.js";
 import { ChainCard } from "../card/ChainCard.js";
 import { ChainModal } from "../modal/ChainModal.js";
 
+const CHAIN_ALERT_KEY = "ccpg_dismiss_chain_alert";
+
 export default function ModelChainPage() {
   const { token } = theme.useToken();
   const { chains, options, loaded, saving, persist, deleteChain, toggleChainEnabled } =
@@ -15,9 +17,7 @@ export default function ModelChainPage() {
     chains,
     persist,
   );
-  const [showAlert, setShowAlert] = useState(
-    () => localStorage.getItem("ccpg_dismiss_chain_alert") !== "true",
-  );
+  const [showAlert, setShowAlert] = useState(() => !isChainAlertDismissed());
 
   return (
     <Flex vertical gap={token.paddingLG} style={{ paddingBottom: token.paddingLG * 2 }}>
@@ -37,7 +37,7 @@ export default function ModelChainPage() {
           showIcon
           closable
           onClose={() => {
-            localStorage.setItem("ccpg_dismiss_chain_alert", "true");
+            dismissChainAlert();
             setShowAlert(false);
           }}
           message="Model chains appear in Claude as Custom Models"
@@ -91,4 +91,22 @@ export default function ModelChainPage() {
       />
     </Flex>
   );
+}
+
+function isChainAlertDismissed(): boolean {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return false;
+    return window.localStorage.getItem(CHAIN_ALERT_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function dismissChainAlert(): void {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(CHAIN_ALERT_KEY, "true");
+  } catch {
+    // Ignore restricted storage environments.
+  }
 }

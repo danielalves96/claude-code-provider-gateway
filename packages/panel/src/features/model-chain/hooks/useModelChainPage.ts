@@ -8,6 +8,7 @@ export function useModelChainPage() {
   const [chains, setChains] = useState<ModelFallbackConfig[]>([]);
   const [options, setOptions] = useState<RoutingOption[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -15,30 +16,48 @@ export function useModelChainPage() {
       .then(([config, opts]) => {
         setChains(config.modelFallbacks ?? []);
         setOptions(opts);
+        setLoadError(null);
+      })
+      .catch((error) => {
+        const text = error instanceof Error ? error.message : "Failed to load model chains";
+        setLoadError(text);
+        message.error(text);
       })
       .finally(() => setLoaded(true));
-  }, []);
+  }, [message]);
 
   const persist = async (next: ModelFallbackConfig[]) => {
+    const previous = chains;
     setChains(next);
     setSaving(true);
     try {
       await modelChainService.save(next);
+    } catch (error) {
+      setChains(previous);
+      throw error;
     } finally {
       setSaving(false);
     }
   };
 
   const deleteChain = async (id: string) => {
-    await persist(chains.filter((chain) => chain.id !== id));
-    message.success("Chain deleted");
+    try {
+      await persist(chains.filter((chain) => chain.id !== id));
+      message.success("Chain deleted");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to delete chain");
+    }
   };
 
   const toggleChainEnabled = async (id: string, enabled: boolean) => {
     const next = chains.map((chain) => (chain.id === id ? { ...chain, enabled } : chain));
-    await persist(next);
-    message.success(`Chain ${enabled ? "enabled" : "disabled"}`);
+    try {
+      await persist(next);
+      message.success(`Chain ${enabled ? "enabled" : "disabled"}`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to update chain");
+    }
   };
 
-  return { chains, options, loaded, saving, persist, deleteChain, toggleChainEnabled };
+  return { chains, options, loaded, loadError, saving, persist, deleteChain, toggleChainEnabled };
 }
