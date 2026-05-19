@@ -26,6 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Alert,
+  App,
   Button,
   Card,
   Col,
@@ -34,7 +35,6 @@ import {
   Form,
   Input,
   Modal,
-  message,
   Row,
   Select,
   Space,
@@ -67,6 +67,7 @@ const emptyDraft = (): DraftChain => ({
 
 export default function ModelChainPage() {
   const { token } = theme.useToken();
+  const { message } = App.useApp();
   const [chains, setChains] = useState<ModelFallbackConfig[]>([]);
   const [options, setOptions] = useState<RoutingOption[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -301,6 +302,7 @@ function ChainCard({
 
 function CopySnippet({ snippet }: { snippet: string }) {
   const { token } = theme.useToken();
+  const { message } = App.useApp();
   const { copiedKey, copy } = useCopyToClipboard();
   const copied = copiedKey === snippet;
 
@@ -497,6 +499,7 @@ function SortableModels({
   options: RoutingOption[];
   onChange: (models: ModelFallbackEntry[]) => void;
 }) {
+  const { message } = App.useApp();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -616,6 +619,7 @@ function AddModelRow({
   onAdd: (entry: ModelFallbackEntry) => void;
 }) {
   const { token } = theme.useToken();
+  const { message } = App.useApp();
   const [providerId, setProviderId] = useState<string>();
   const [model, setModel] = useState<string>();
   const modelOptions = useMemo(() => {
