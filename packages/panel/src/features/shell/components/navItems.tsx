@@ -42,7 +42,7 @@ export function selectedKeyFromPath(pathname: string): string {
   if (pathname === "/") return "/";
   for (const item of BASE_ITEMS) {
     const key = String(item && "key" in item ? (item.key ?? "") : "");
-    if (key && key !== "/" && (pathname === key || pathname.startsWith(key + "/"))) return key;
+    if (key && key !== "/" && (pathname === key || pathname.startsWith(`${key}/`))) return key;
   }
   return "/";
 }

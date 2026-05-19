@@ -95,9 +95,7 @@ export default function HistoryPage() {
         </Card>
       ) : (
         <>
-          {page.globalProviderRows.length > 0 && (
-            <ProvidersTable rows={page.globalProviderRows} />
-          )}
+          {page.globalProviderRows.length > 0 && <ProvidersTable rows={page.globalProviderRows} />}
           <SessionsTable
             sessions={page.sessions}
             expandedKeys={page.expandedKeys}
