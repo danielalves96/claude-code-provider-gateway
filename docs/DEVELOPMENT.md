@@ -76,6 +76,8 @@ claude-code-provider-gateway/
 | [Architecture](ARCHITECTURE.md) | Runtime layers, request flow, provider transports, config, storage, and security model. |
 | [Providers](PROVIDERS.md) | Supported provider catalog, auth modes, CLI flags, model discovery, and provider UI behavior. |
 | [Adding a Provider](ADDING_PROVIDER.md) | Implementation checklist for new provider support. |
+| [API Reference](API_REFERENCE.md) | Local proxy and panel endpoints used by Claude Code, the panel, and `ccpg`. |
+| [Troubleshooting](TROUBLESHOOTING.md) | Common launch, provider, OAuth, Model Chain, history, and build issues. |
 | [Contributing](../CONTRIBUTING.md) | Issue/PR expectations and project contribution workflow. |
 | [Security](../SECURITY.md) | Local threat model and vulnerability reporting. |
 
@@ -216,6 +218,46 @@ Manual validation path:
 
 Caveman can be validated with a normal chat request after enabling **Caveman mode**. The session prompt should include the injected terse-response guidance, and responses should become shorter according to the selected level.
 
+### Model Chain development
+
+Model Chains touch daemon config, model discovery, launch preparation, routing,
+message fallback, session labels, and the panel editor. The main files are:
+
+| Area | Files |
+|---|---|
+| Config schema and normalization | `packages/daemon/src/config/schema.ts`, `packages/daemon/src/config/validation.ts` |
+| Launch modes and shell commands | `packages/daemon/src/panel/launch-prepare.ts`, `packages/daemon/src/panel/routes/shell-routes.ts` |
+| Model catalog and routing | `packages/daemon/src/proxy/services/model-service.ts`, `packages/daemon/src/proxy/model-router.ts` |
+| Runtime fallback execution | `packages/daemon/src/proxy/services/message-service.ts` |
+| Session history labels | `packages/daemon/src/runtime/sessions.ts`, `packages/daemon/src/runtime/session-types.ts` |
+| Panel UI | `packages/panel/src/features/model-chain/`, dashboard quick-launch components |
+
+Useful focused checks:
+
+```bash
+cd packages/daemon
+node --import tsx --test src/proxy/services/model-service.test.ts src/proxy/services/message-service.test.ts src/panel/launch-prepare.test.ts
+npm run typecheck
+```
+
+Manual validation path:
+
+1. Start the desktop dev app with `npm run dev:desk`.
+2. Enable and test at least two providers.
+3. In **Providers**, make sure the target models are enabled or manually added.
+4. Open **Model Chain** and create a chain with a name, slug, and two or more
+   ordered targets.
+5. Run `ccpg --<chain-slug>` and verify Claude Code sees only that chain.
+6. Run `ccpg --ModelChain` and verify Claude Code sees all enabled chains and
+   no raw provider models.
+7. Run `ccpg --all` and verify Claude Code sees enabled chains plus prefixed
+   provider models.
+8. Force the first target to fail, for example by disabling credentials or using
+   a bad model id, and verify the request retries/falls through to the next
+   target.
+9. Inspect **History** to confirm the session command and model labels match
+   the launch mode.
+
 ### Provider development
 
 Provider source of truth lives in the daemon:
@@ -235,13 +277,13 @@ Provider source of truth lives in the daemon:
 Panel provider support is intentionally thinner:
 
 - `packages/panel/public/providers/` for provider icons.
-- `packages/panel/src/features/providers/constants.ts` for local, OAuth,
+- `packages/panel/src/features/providers/domain/constants.ts` for local, OAuth,
   device-flow, and coming-soon grouping.
 - `packages/panel/src/features/providers/data/suggestedModels.ts` for manual
   model suggestions when discovery is missing or incomplete.
-- `packages/panel/src/features/providers/apiKeyLinks.ts` for key-management
+- `packages/panel/src/features/providers/domain/apiKeyLinks.ts` for key-management
   shortcuts.
-- `packages/panel/src/features/providers/oauthPresentation.ts` for OAuth copy
+- `packages/panel/src/features/providers/domain/oauthPresentation.ts` for OAuth copy
   and provider-specific sign-in presentation.
 
 Useful focused checks while working on providers:
@@ -266,7 +308,9 @@ Manual provider validation path:
 4. Check the model list and disable any models that should not be exposed.
 5. Launch Claude Code with the provider flag, or use `ccpg --all` to validate
    gateway-prefixed routing.
-6. Inspect **History** and daemon logs for routed model, provider errors,
+6. If the provider should participate in Model Chains, create a chain using one
+   of its enabled models and validate `ccpg --<chain-slug>`.
+7. Inspect **History** and daemon logs for routed model, provider errors,
    prompt serialization, and response previews.
 
 ## Build Pipeline
@@ -341,7 +385,7 @@ Three parallel jobs:
 ```bash
 # Get your auth token from ~/.config/claude-code-provider-gateway/config.json
 ANTHROPIC_AUTH_TOKEN=sk_xxxxxxxxxxxx \
-ANTHROPIC_BASE_URL=http://localhost:49250 \
+ANTHROPIC_BASE_URL=http://127.0.0.1:49250 \
 CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1 \
 claude
 ```

@@ -2,7 +2,7 @@
 
 All notable changes to Claude Code Provider Gateway will be documented here.
 
-The first public release is planned as **v0.1.0** with desktop installers attached to GitHub Releases.
+Release notes track the local desktop gateway, daemon, panel, providers, and documentation changes.
 
 ## v0.1.3
 

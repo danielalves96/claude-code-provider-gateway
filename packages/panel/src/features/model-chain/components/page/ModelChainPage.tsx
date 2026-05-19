@@ -1,8 +1,9 @@
 import {
   ApiOutlined,
+  CopyOutlined,
   DeleteOutlined,
-  DragOutlined,
   EditOutlined,
+  HolderOutlined,
   PlusOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
@@ -33,16 +34,19 @@ import {
   Form,
   Input,
   Modal,
+  message,
   Row,
   Select,
   Space,
   Switch,
   Tag,
+  Tooltip,
   Typography,
   theme,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "../../../../shared/components/PageHeader.js";
+import { useCopyToClipboard } from "../../../../shared/hooks/useCopyToClipboard.js";
 import { ProviderLogo } from "../../../providers/components/grid/ProviderLogo.js";
 import type { ModelFallbackConfig, ModelFallbackEntry, RoutingOption } from "../../domain/types.js";
 import { modelChainService } from "../../services/modelChainService.js";
@@ -69,6 +73,10 @@ export default function ModelChainPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<DraftChain | null>(null);
 
+  const [showAlert, setShowAlert] = useState(
+    () => localStorage.getItem("ccpg_dismiss_chain_alert") !== "true",
+  );
+
   useEffect(() => {
     Promise.all([modelChainService.getConfig(), modelChainService.getOptions()])
       .then(([config, opts]) => {
@@ -89,6 +97,7 @@ export default function ModelChainPage() {
   };
 
   const saveDraft = async (draft: DraftChain) => {
+    const isNew = draft.id.startsWith("chain_");
     const clean: ModelFallbackConfig = {
       ...draft,
       name: draft.name.trim(),
@@ -101,10 +110,18 @@ export default function ModelChainPage() {
       : [clean, ...chains];
     await persist(next);
     setEditing(null);
+    message.success(`Chain ${isNew ? "created" : "updated"} successfully`);
   };
 
   const deleteChain = async (id: string) => {
     await persist(chains.filter((chain) => chain.id !== id));
+    message.success("Chain deleted");
+  };
+
+  const toggleChainEnabled = async (id: string, enabled: boolean) => {
+    const next = chains.map((chain) => (chain.id === id ? { ...chain, enabled } : chain));
+    await persist(next);
+    message.success(`Chain ${enabled ? "enabled" : "disabled"}`);
   };
 
   return (
@@ -119,12 +136,19 @@ export default function ModelChainPage() {
         </Button>
       </Flex>
 
-      <Alert
-        type="info"
-        showIcon
-        message="Model chains appear in Claude as Custom Models"
-        description="Use the model picker entry, or launch directly with ccpg --yourSlug. The first model is tried first; failures move to the next entry."
-      />
+      {showAlert && (
+        <Alert
+          type="info"
+          showIcon
+          closable
+          onClose={() => {
+            localStorage.setItem("ccpg_dismiss_chain_alert", "true");
+            setShowAlert(false);
+          }}
+          message="Model chains appear in Claude as Custom Models"
+          description="Use the model picker entry, or launch directly with ccpg --yourSlug. The first model is tried first; failures move to the next entry."
+        />
+      )}
 
       {!loaded ? (
         <Card loading />
@@ -132,7 +156,11 @@ export default function ModelChainPage() {
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="No chains yet"
-          style={{ padding: token.paddingXL, border: `1px dashed ${token.colorBorder}` }}
+          style={{
+            padding: token.paddingXL,
+            border: `1px dashed ${token.colorBorderSecondary}`,
+            borderRadius: token.borderRadiusLG,
+          }}
         >
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditing(emptyDraft())}>
             Create your first chain
@@ -148,6 +176,7 @@ export default function ModelChainPage() {
                 saving={saving}
                 onEdit={() => setEditing({ ...chain })}
                 onDelete={() => deleteChain(chain.id)}
+                onToggleEnabled={(enabled) => toggleChainEnabled(chain.id, enabled)}
               />
             </Col>
           ))}
@@ -175,42 +204,57 @@ function ChainCard({
   saving,
   onEdit,
   onDelete,
+  onToggleEnabled,
 }: {
   chain: ModelFallbackConfig;
   options: RoutingOption[];
   saving: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleEnabled: (enabled: boolean) => void;
 }) {
   const { token } = theme.useToken();
   return (
     <Card
+      hoverable
       styles={{ body: { padding: token.paddingLG } }}
       style={{
         height: "100%",
-        borderColor: chain.enabled ? token.colorPrimaryBorder : undefined,
+        borderColor: chain.enabled ? token.colorPrimaryBorder : token.colorBorderSecondary,
       }}
     >
       <Flex vertical gap={token.padding}>
         <Flex justify="space-between" align="flex-start" gap={token.padding}>
-          <Flex vertical gap={4} style={{ minWidth: 0 }}>
+          <Flex vertical gap={12} style={{ minWidth: 0, flex: 1 }}>
             <Space wrap>
               <Title level={5} style={{ margin: 0 }}>
                 {chain.name}
               </Title>
-              <Tag color={chain.enabled ? "green" : "default"}>
-                {chain.enabled ? "enabled" : "disabled"}
+              <Tag
+                color={chain.enabled ? "success" : "error"}
+                bordered={false}
+                style={{ fontFamily: "monospace", margin: 0 }}
+              >
+                {chain.enabled ? "Enabled" : "Disabled"}
               </Tag>
             </Space>
-            <Text code copyable>{`ccpg --${chain.slug}`}</Text>
+            <div style={{ maxWidth: 280 }}>
+              <CopySnippet snippet={`ccpg --${chain.slug}`} />
+            </div>
           </Flex>
           <Space>
-            <Button icon={<EditOutlined />} onClick={onEdit} />
+            <Switch
+              checked={chain.enabled}
+              onChange={onToggleEnabled}
+              disabled={saving}
+              style={{ marginRight: 8 }}
+            />
+            <Button icon={<EditOutlined />} onClick={onEdit} disabled={saving} />
             <Button danger icon={<DeleteOutlined />} disabled={saving} onClick={onDelete} />
           </Space>
         </Flex>
 
-        <Flex vertical gap={8}>
+        <Flex vertical gap={8} style={{ marginTop: 8 }}>
           {chain.models.map((entry, index) => {
             const provider = options.find((option) => option.id === entry.providerId);
             const model = provider?.models.find((item) => item.id === entry.model);
@@ -226,14 +270,20 @@ function ChainCard({
                   background: token.colorFillQuaternary,
                 }}
               >
-                <Tag color={index === 0 ? "blue" : "default"}>#{index + 1}</Tag>
+                <Tag
+                  color={index === 0 ? "blue" : "default"}
+                  bordered={false}
+                  style={{ fontFamily: "monospace" }}
+                >
+                  #{index + 1}
+                </Tag>
                 <ProviderLogo
                   providerId={entry.providerId}
                   label={provider?.label ?? entry.providerId}
                   size={22}
                 />
                 <Flex vertical style={{ minWidth: 0 }}>
-                  <Text strong ellipsis>
+                  <Text strong ellipsis style={{ fontSize: 14 }}>
                     {provider?.label ?? entry.providerId}
                   </Text>
                   <Text type="secondary" ellipsis style={{ fontSize: 12 }}>
@@ -246,6 +296,52 @@ function ChainCard({
         </Flex>
       </Flex>
     </Card>
+  );
+}
+
+function CopySnippet({ snippet }: { snippet: string }) {
+  const { token } = theme.useToken();
+  const { copiedKey, copy } = useCopyToClipboard();
+  const copied = copiedKey === snippet;
+
+  return (
+    <Tooltip title={copied ? "Copied!" : "Copy"}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          copy(snippet, snippet);
+          message.success("Command copied to clipboard");
+        }}
+        style={{
+          cursor: "pointer",
+          background: copied ? `${token.colorSuccess}15` : `${token.colorText}08`,
+          border: `1px solid ${copied ? token.colorSuccess : token.colorBorderSecondary}`,
+          borderRadius: token.borderRadiusLG,
+          padding: `6px 12px`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          transition: "all 0.2s",
+          fontFamily: "inherit",
+          width: "100%",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: "monospace",
+            fontSize: 14,
+            fontWeight: 500,
+            color: copied ? token.colorSuccess : token.colorText,
+          }}
+          ellipsis
+        >
+          {snippet}
+        </Text>
+        <CopyOutlined style={{ color: copied ? token.colorSuccess : token.colorTextTertiary }} />
+      </button>
+    </Tooltip>
   );
 }
 
@@ -268,7 +364,18 @@ function ChainModal({
 }) {
   const { token } = theme.useToken();
   const [form] = Form.useForm();
-  const providerOptions = options.map((option) => ({ value: option.id, label: option.label }));
+
+  const providerOptions = options.map((option) => ({
+    value: option.id,
+    label: (
+      <Flex align="center" gap={8}>
+        <ProviderLogo providerId={option.id} label={option.label} size={16} />
+        <span>{option.label}</span>
+      </Flex>
+    ),
+    searchLabel: option.label,
+  }));
+
   const canSave =
     !!draft?.name.trim() &&
     !!draft?.slug.trim() &&
@@ -308,7 +415,7 @@ function ChainModal({
         <Flex vertical gap={token.paddingLG}>
           <Form form={form} layout="vertical">
             <Row gutter={token.padding}>
-              <Col xs={24} md={10}>
+              <Col flex="1">
                 <Form.Item label="Name" required>
                   <Input
                     value={draft.name}
@@ -320,7 +427,7 @@ function ChainModal({
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={10}>
+              <Col flex="1">
                 <Form.Item
                   label="Slug"
                   required
@@ -341,7 +448,7 @@ function ChainModal({
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={4}>
+              <Col flex="none">
                 <Form.Item label="Enabled">
                   <Switch checked={draft.enabled} onChange={(enabled) => update({ enabled })} />
                 </Form.Item>
@@ -419,7 +526,10 @@ function SortableModels({
               index={index}
               entry={entry}
               options={options}
-              onRemove={() => onChange(draft.models.filter((_, i) => i !== index))}
+              onRemove={() => {
+                onChange(draft.models.filter((_, i) => i !== index));
+                message.success("Model removed");
+              }}
             />
           ))}
         </Flex>
@@ -442,7 +552,9 @@ function SortableModelRow({
   onRemove: () => void;
 }) {
   const { token } = theme.useToken();
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
   const provider = options.find((option) => option.id === entry.providerId);
   const model = provider?.models.find((item) => item.id === entry.model);
 
@@ -456,12 +568,26 @@ function SortableModelRow({
         transition,
         padding: token.paddingSM,
         borderRadius: token.borderRadius,
-        border: `1px solid ${token.colorBorderSecondary}`,
-        background: token.colorBgContainer,
+        border: `1px solid ${isDragging ? token.colorPrimary : token.colorBorderSecondary}`,
+        background: isDragging ? `${token.colorPrimary}0A` : token.colorBgContainer,
+        zIndex: isDragging ? 10 : 1,
+        position: "relative",
       }}
     >
-      <Button type="text" icon={<DragOutlined />} {...attributes} {...listeners} />
-      <Tag color={index === 0 ? "blue" : "default"}>#{index + 1}</Tag>
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ cursor: "grab", display: "flex", color: token.colorTextTertiary }}
+      >
+        <HolderOutlined />
+      </div>
+      <Tag
+        color={index === 0 ? "blue" : "default"}
+        bordered={false}
+        style={{ fontFamily: "monospace" }}
+      >
+        #{index + 1}
+      </Tag>
       <ProviderLogo
         providerId={entry.providerId}
         label={provider?.label ?? entry.providerId}
@@ -486,7 +612,7 @@ function AddModelRow({
   onAdd,
 }: {
   options: RoutingOption[];
-  providerOptions: Array<{ value: string; label: string }>;
+  providerOptions: Array<{ value: string; label: React.ReactNode; searchLabel: string }>;
   onAdd: (entry: ModelFallbackEntry) => void;
 }) {
   const { token } = theme.useToken();
@@ -506,12 +632,14 @@ function AddModelRow({
           placeholder="Provider"
           value={providerId}
           options={providerOptions}
+          filterOption={(input, option) =>
+            (option?.searchLabel ?? "").toLowerCase().includes(input.toLowerCase())
+          }
           style={{ minWidth: 220, flex: "0 1 260px" }}
           onChange={(value) => {
             setProviderId(value);
             setModel(undefined);
           }}
-          optionFilterProp="label"
         />
         <Select
           showSearch
@@ -531,6 +659,7 @@ function AddModelRow({
             if (!providerId || !model) return;
             onAdd({ providerId: providerId as ModelFallbackEntry["providerId"], model });
             setModel(undefined);
+            message.success("Model added to chain");
           }}
         >
           Add
