@@ -32,13 +32,10 @@ export class ModelService {
               await Promise.all(
                 Object.keys(config.providers)
                   .filter((id) => config.providers[id]?.enabled)
-                  .map(
-                    (id) =>
-                      registry
-                        .get(id)
-                        ?.listEnabledModels()
-                        .catch(() => []) ?? [],
-                  ),
+                  .map((id) => {
+                    const p = registry.get(id);
+                    return p?.listEnabledModels ? p.listEnabledModels().catch(() => []) : Promise.resolve([]);
+                  }),
               )
             ).flat(),
           ]

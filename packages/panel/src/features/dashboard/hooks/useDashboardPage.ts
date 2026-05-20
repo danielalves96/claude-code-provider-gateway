@@ -46,8 +46,11 @@ export function useDashboardPage() {
   const topModel = useMemo(() => computeTopModel(allSessions), [allSessions]);
 
   const topProviders = useMemo(
-    () => buildTopProviders(gateway.stats?.providers ?? [], gateway.sessions?.archive ?? []),
-    [gateway.stats?.providers, gateway.sessions?.archive],
+    () =>
+      gateway.stats && gateway.sessions
+        ? buildTopProviders(gateway.stats.providers, gateway.sessions.archive ?? [])
+        : null,
+    [gateway.stats, gateway.sessions],
   );
 
   function dismissShellSetup(): void {
@@ -96,9 +99,12 @@ function buildTopProviders(
       provider.requests += stat.requests;
       provider.errors += stat.errors;
       provider.totalLatencyMs += stat.totalLatencyMs;
-      provider.lastActivityAt =
-        Math.max(provider.lastActivityAt ?? 0, stat.lastActivityAt ?? 0) || null;
-      provider.lastError = stat.lastError ?? provider.lastError;
+      const prevActivity = provider.lastActivityAt ?? 0;
+      const statActivity = stat.lastActivityAt ?? 0;
+      provider.lastActivityAt = Math.max(prevActivity, statActivity) || null;
+      if (stat.lastError != null && statActivity >= prevActivity) {
+        provider.lastError = stat.lastError;
+      }
     }
   }
 

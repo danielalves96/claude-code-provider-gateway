@@ -259,7 +259,9 @@ function createSessionRecord(config: Config): SessionRecord {
       ? "all"
       : config.modelMode === "chains"
         ? "modelchain"
-        : config.activeProvider;
+        : config.activeModelFallbackSlug
+          ? `chain/${config.activeModelFallbackSlug}`
+          : config.activeProvider;
 
   return {
     id: `${Date.now().toString(36)}-${randomBytes(8).toString("hex")}`,
