@@ -361,14 +361,26 @@ This table is about product focus, not a claim that other projects are bad. Term
 | Capability | CCPG | LiteLLM | claude-code-router |
 | --- | --- | --- | --- |
 | **Install path** | Desktop installer | `pip install` + config file | `npm install` + config file |
-| **User interface** | Desktop app | Terminal / API-first | Terminal-first |
-| **Session history** | ✅ Full UI | ⚠️ Depends on observability setup | ❌ Limited |
-| **Per-request token visibility** | ✅ Yes | ⚠️ Often provider-dependent | ❌ Limited |
+| **User interface** | Desktop app | Web admin + terminal | Terminal-first + basic web UI |
+| **Session history** | ✅ Full UI with prompt/response preview | ⚠️ Opt-in via `store_prompts_in_spend_logs` | ❌ Plaintext log files only |
+| **Per-request token visibility** | ✅ Yes, in history UI | ✅ Yes, in admin UI | ❌ No |
 | **Background prompt visibility** | ✅ Yes | ❌ No | ❌ No |
-| **OpenAI Account OAuth** | ✅ Built-in | ❌ Manual / custom | ❌ Manual / custom |
-| **GitHub Copilot OAuth** | ✅ Built-in | ❌ Manual / custom | ❌ Manual / custom |
+| **OpenAI Account OAuth** | ✅ Built-in PKCE | ❌ Manual / custom | ❌ Manual / custom |
+| **GitHub Copilot OAuth** | ✅ Built-in Device Flow | ❌ Manual / custom | ❌ Manual / custom |
+| **Kilo Code OAuth** | ✅ Built-in Device Flow | ❌ No | ❌ No |
+| **Cline OAuth** | ✅ Built-in authorization code | ❌ No | ❌ No |
 | **Local model support** | ✅ Ollama, LM Studio, llama.cpp | ✅ Yes | ✅ Yes |
-| **Secrets storage** | ✅ AES-256-GCM encrypted store | ⚠️ Deployment-dependent | ⚠️ Config-dependent |
+| **Model Chains / fallback routing** | ✅ Declarative UI, retry + next-model | ✅ Declarative config, error-type chains | ⚠️ Custom JS scripting only |
+| **All-providers aggregation** | ✅ `--all` flag, unified model picker | ⚠️ API-level `/models` list, no UI picker | ❌ No |
+| **Model tier routing** | ✅ Map opus/sonnet/haiku to any model | ✅ `model_group_alias` + router config | ✅ Slot-based (default/think/background/long) |
+| **Parallel terminal sessions** | ✅ Per-session isolation, routing + logs | ⚠️ Concurrent connections, no session isolation | ⚠️ Stateless, no per-session tracking |
+| **Token saver / compression** | ✅ RTK tool-result compression + Caveman mode | ✅ `compress()` SDK + `/responses/compact` | ❌ No |
+| **Outbound proxy support** | ✅ HTTP/HTTPS proxy in Settings UI | ✅ Via `HTTPS_PROXY` env var | ✅ Via `PROXY_URL` in config |
+| **Provider management UI** | ✅ Search, test, favorite, custom logos | ✅ Admin dashboard (add/edit/delete) | ⚠️ Config editor UI, no provider lifecycle |
+| **Secrets storage** | ✅ AES-256-GCM encrypted store | ✅ Encrypted via `LITELLM_MASTER_KEY` | ❌ Env variable interpolation only |
+| **Windows support** | ✅ `.msi` / `-setup.exe` native installer | ⚠️ Docker or `pip install` | ✅ npm package (Node 18+) |
+| **ARM64 / Apple Silicon support** | ✅ Native `.dmg` and Linux ARM builds | ⚠️ pip works natively; Docker ARM images are secondary | ✅ Native via Node.js |
+| **No-install desktop experience** | ✅ Download and open | ❌ CLI / Docker setup required | ❌ CLI setup required |
 | **Non-technical user focus** | ✅ First-class | ❌ Not the primary target | ❌ Not the primary target |
 
 ## How It Works
