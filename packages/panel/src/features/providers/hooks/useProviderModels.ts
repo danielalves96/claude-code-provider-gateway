@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { providersService } from "../providersService.js";
-import type { ModelInfo } from "../types.js";
+import type { ModelInfo } from "../domain/types.js";
+import { providersService } from "../services/providersService.js";
 
 export function useProviderModels(providerId: string) {
   const [models, setModels] = useState<ModelInfo[] | null>(null);

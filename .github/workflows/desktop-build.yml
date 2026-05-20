@@ -176,32 +176,6 @@ jobs:
             mv "$f" "${f%.$ext} (${LABEL}).$ext"
           done
 
-      # ── Windows portable zip ───────────────────────────────────────────────
-      # Bundles the Tauri shell exe + daemon sidecar into a single zip so users
-      # can run without installing. WebView2 must already be installed on the
-      # system (ships with Windows 10/11 via Windows Update).
-      - name: Create Windows portable zip
-        if: matrix.os == 'windows-latest'
-        id: portable
-        shell: pwsh
-        run: |
-          $releaseDir  = "packages/desktop/src-tauri/target/${{ matrix.rust-target }}/release"
-          $binariesDir = "packages/desktop/src-tauri/binaries"
-          $mainExe     = "$releaseDir/claude-code-provider-gateway-desktop.exe"
-          $sidecarExe  = "$binariesDir/claude-code-provider-gateway-daemon-${{ matrix.rust-target }}.exe"
-          $version     = (Get-Content "packages/desktop/src-tauri/tauri.conf.json" | ConvertFrom-Json).version
-          $label       = "${{ matrix.platform-label }}"
-          $zipName     = "claude-code-provider-gateway_${version}_x64_portable (${label}).zip"
-
-          if ((Test-Path $mainExe) -and (Test-Path $sidecarExe)) {
-            Compress-Archive -Path @($mainExe, $sidecarExe) -DestinationPath $zipName
-            echo "zip=$zipName" >> $env:GITHUB_OUTPUT
-            echo "created=true"  >> $env:GITHUB_OUTPUT
-          } else {
-            echo "created=false" >> $env:GITHUB_OUTPUT
-            Write-Warning "Skipping portable zip — exe or sidecar not found"
-          }
-
       # ── Upload to release on tag push ─────────────────────────────────────
       - name: Upload macOS artifacts to release
         if: matrix.os == 'macos-latest' && startsWith(github.ref, 'refs/tags/v')
@@ -221,16 +195,6 @@ jobs:
           files: |
             packages/desktop/src-tauri/${{ matrix.bundle-path }}/msi/*.msi
             packages/desktop/src-tauri/${{ matrix.bundle-path }}/nsis/*.exe
-
-      - name: Upload Windows portable to release
-        if: >
-          matrix.os == 'windows-latest' &&
-          steps.portable.outputs.created == 'true' &&
-          startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: ${{ steps.portable.outputs.zip }}
 
       - name: Upload Linux artifacts to release
         if: matrix.linux && startsWith(github.ref, 'refs/tags/v')

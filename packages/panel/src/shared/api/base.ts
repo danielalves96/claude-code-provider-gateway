@@ -6,8 +6,7 @@ declare global {
 
 const DEFAULT_DAEMON_PANEL_ORIGIN = "http://127.0.0.1:6767";
 
-const externalDevDaemon =
-  import.meta.env.VITE_CC_GATEWAY_EXTERNAL_DAEMON === "1";
+const externalDevDaemon = import.meta.env.VITE_CC_GATEWAY_EXTERNAL_DAEMON === "1";
 
 function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && window.__TAURI_INTERNALS__ != null;
