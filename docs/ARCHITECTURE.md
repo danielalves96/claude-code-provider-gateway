@@ -126,7 +126,7 @@ Three model catalog modes are controlled by `config.modelMode`:
 
 | Mode | How routing works |
 |---|---|
-| `single` | Normal launch mode. Models list shows enabled Model Chains plus the active provider's models. If `activeModelFallbackSlug` is set, the list shows only that chain. |
+| `single` | Normal launch mode. Models list shows only the active provider's models. If `activeModelFallbackSlug` is set, the list shows only that chain. |
 | `all` | Aggregates enabled Model Chains and models from all enabled providers. Requests are routed by chain slug or provider/model prefix, not round-robin. |
 | `chains` | Shows only enabled Model Chains. Used by `ccpg --ModelChain`. |
 
@@ -136,7 +136,7 @@ In `all` mode, provider-discovered models are exposed to Claude Code with a gate
 
 Model Chains are exposed as synthetic model ids such as
 `anthropic/chain/my-chain`. The chain display name shown to Claude Code is
-`{Name} · Gateway : Custom Models (Defined by user)`. A chain stores an ordered
+`{Name} · Gateway:custom-model (Defined by user)`. A chain stores an ordered
 list of `{ providerId, model }` targets; the order is user-defined priority.
 When a chain request fails because of an upstream API error, rate limit,
 quota/credit issue, network failure, or other non-success response, the message
@@ -358,17 +358,18 @@ secret.key (32-byte hex master key) or CC_GATEWAY_SECRET_KEY env var
 
 ### 6. Session System (`packages/daemon/src/runtime/`)
 
-Each daemon process = one session. Tracked in memory with disk persistence. The session module is split into three focused files:
+Each `ccpg` launch creates one active session inside the single daemon process. Multiple terminals can run at the same time because `prepareLaunch()` issues a per-launch gateway auth token; the proxy maps that token back to the session profile for `/v1/models` and `/v1/messages`. The session module is split into three focused files:
 
 - **`session-types.ts`** — TypeScript interfaces: `SessionRecord`, `SessionModelStat`, `SessionProviderStat`, `SessionRequestLogEntry`
 - **`session-stats.ts`** — Pure functions for applying a request entry to session stats (`applyRequestToSessionStats`), computing totals, and normalizing legacy records
-- **`session-store.ts`** — Disk I/O: `readCurrentSession`, `writeCurrentSession`, `archiveSession`, `listArchivedSessions`, `clearArchivedSessions`. Uses `appendPrivateFile`/`writePrivateFile` so files are written with restricted permissions
-- **`sessions.ts`** — Orchestration: session start/end/heartbeat, crash recovery, checkpoint timer, process watching; composes the three modules above
+- **`session-store.ts`** — Disk I/O: current active sessions, archive append/list/delete, and legacy single-session recovery. Uses `appendPrivateFile`/`writePrivateFile` so files are written with restricted permissions
+- **`sessions.ts`** — Orchestration: session start/end/heartbeat, per-launch token mapping, per-session primary model, crash recovery, checkpoint timer, process watching; composes the three modules above
 
 Behavioral properties:
-- **Checkpoint**: full session serialized to `current-session.json` every 10 seconds
-- **Crash recovery**: on startup, any leftover session from a crash is recovered and archived
-- **Heartbeat**: if the launching process stops heartbeating, session auto-ends
+- **Checkpoint**: active sessions serialized to `current-session.json` every 10 seconds
+- **Crash recovery**: on startup, any leftover active session from a crash is recovered and archived
+- **Heartbeat**: if a launching process stops heartbeating, only that session auto-ends
+- **Isolation**: provider/model mode/chain selection and primary model memory are scoped to the launching session
 - **Per-model and per-provider stats**: requests, errors, latency, last activity
 - **Rolling request log**: last 120 entries preserved in session record
 - **Archive**: completed sessions appended to `sessions.jsonl` (max 200, newest first)
@@ -381,7 +382,7 @@ Hono-based REST API for the web panel. The panel module is composed of:
 
 **`app.ts`** — thin coordinator. Creates the Hono app, instantiates `PanelRuntime`, mounts `requirePanelAccess` middleware on `/api/*`, and delegates to each route module.
 
-**`contracts.ts`** — shared TypeScript types for every panel API request and response shape (`GatewayStatusResponse`, `StatsResponse`, `ProviderInfo`, `SessionsResponse`, etc.). Imported by route modules and consumed by the React panel.
+**`contracts.ts`** — shared TypeScript types for every panel API request and response shape (`GatewayStatusResponse`, `StatsResponse`, `ProviderInfo`, `RoutingConfigResponse`, `SessionsResponse`, etc.). Imported by route modules and consumed by the React panel. Note: `RoutingTier` is defined in `config/schema.ts`, not re-exported from `contracts.ts`.
 
 **`runtime.ts`** — `PanelRuntime` class. Holds the live `Config`, a `ProviderRegistry` instance, and in-memory OAuth flow maps (PKCE/browser callback flows for OpenAI Account and Cline, device-code flows for GitHub Copilot and Kilo Code). Exposes `saveAndUpdateConfig()` so route handlers can persist and hot-reload config in one call.
 
@@ -640,6 +641,6 @@ Desktop Build (GitHub Actions — .github/workflows/desktop-build.yml, on tag pu
 ├── provider-logos/          # Uploaded custom provider PNG/WebP logos
 ├── daemon.pid               # Process ID
 ├── daemon.log               # Log output (rotating buffer)
-├── current-session.json     # Active session (checkpointed every 10s)
+├── current-session.json     # Active sessions (checkpointed every 10s)
 └── sessions.jsonl           # Session archive (append-only, max 200)
 ```

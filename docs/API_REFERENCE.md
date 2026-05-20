@@ -19,7 +19,7 @@ The proxy implements the Anthropic-compatible surface Claude Code needs.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/` | No | Basic status JSON with active provider and proxy port. |
+| `GET` | `/` | No | Basic status JSON: `{ status, provider, proxy_port }`. |
 | `GET` | `/health` | No | Health check returning `{ "status": "ok" }`. |
 | `GET` | `/v1/models` | `x-api-key` | Returns Claude Code model discovery catalog. |
 | `POST` | `/v1/messages` | `x-api-key` | Main Anthropic Messages streaming endpoint. |
@@ -120,13 +120,13 @@ their OAuth routes are not implemented yet.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/api/sessions` | Origin/token policy | Returns current session and archived sessions. |
+| `GET` | `/api/sessions` | Origin/token policy | Returns active sessions (`currentSessions`), the newest active session (`current`), and archived sessions. |
 | `DELETE` | `/api/sessions` | Token required | Clears archived sessions. |
 | `DELETE` | `/api/sessions/:id` | Origin/token policy | Deletes one archived session. |
-| `POST` | `/api/launch/prepare` | Origin/token policy | Mutates launch mode, clears Claude model cache, starts a session, returns shell exports or JSON env. |
-| `POST` | `/api/launch/heartbeat` | Origin/token policy | Keeps the active launched session alive. |
+| `POST` | `/api/launch/prepare` | Origin/token policy | Prepares a launch profile, clears Claude model cache, starts a session, and returns per-session shell exports or JSON env. |
+| `POST` | `/api/launch/heartbeat` | Origin/token policy | Keeps the launched session alive by `sessionId`. |
 | `POST` | `/api/launch/attach` | Origin/token policy | Attaches the Claude Code child PID to the session. |
-| `POST` | `/api/launch/end` | Origin/token policy | Ends and archives the active session. |
+| `POST` | `/api/launch/end` | Origin/token policy | Ends and archives the launched session by `sessionId`. |
 
 `POST /api/launch/prepare` understands:
 

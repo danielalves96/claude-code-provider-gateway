@@ -114,6 +114,7 @@ The next documentation step is a separate official docs site repository. Until t
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
 - **Request history** - see model, provider, prompt, response preview, input tokens, latency, errors, and session totals.
+- **Parallel terminal sessions** - launch multiple `ccpg --<provider>` terminals at once; each session keeps its own provider/model mode, primary model memory, heartbeat, and live request log.
 - **Encrypted secrets** - API keys, OAuth tokens, and gateway auth token are split out of config and stored with AES-256-GCM.
 - **No telemetry** - no cloud service, no database server, no analytics, no account.
 
@@ -180,7 +181,7 @@ priority.
 Claude Code sees each chain as a single custom model:
 
 ```text
-{Chain Name} · Gateway : Custom Models (Defined by user)
+{Chain Name} · Gateway:custom-model (Defined by user)
 ```
 
 Internally, the daemon exposes the model as `anthropic/chain/<slug>`. When a
@@ -414,7 +415,7 @@ Runtime files live in:
 | `provider-logos/` | Uploaded PNG/WebP logos for user-created custom providers. |
 | `daemon.pid` | PID marker used by the daemon and desktop supervisor. |
 | `daemon.log` | Local daemon log file. May include provider errors and request diagnostics. |
-| `current-session.json` | Active session checkpoint. |
+| `current-session.json` | Active session checkpoints for currently running `ccpg` launches. |
 | `sessions.jsonl` | Completed session archive, capped to 200 sessions. |
 
 ## Documentation

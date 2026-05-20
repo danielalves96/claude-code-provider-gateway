@@ -21,8 +21,17 @@ export function readCurrentSession(): SessionRecord {
   return JSON.parse(readFileSync(CURRENT_PATH, "utf-8")) as SessionRecord;
 }
 
+export function readCurrentSessions(): SessionRecord[] {
+  const parsed = JSON.parse(readFileSync(CURRENT_PATH, "utf-8")) as SessionRecord | SessionRecord[];
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
 export function writeCurrentSession(session: SessionRecord): void {
   writePrivateFile(CURRENT_PATH, JSON.stringify(session));
+}
+
+export function writeCurrentSessions(sessions: SessionRecord[]): void {
+  writePrivateFile(CURRENT_PATH, JSON.stringify(sessions));
 }
 
 export function removeCurrentSession(): void {

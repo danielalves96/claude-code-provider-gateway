@@ -29,7 +29,7 @@ startDaemon(config);
 
 2. **`configureOutboundNetwork()`** — If the user has configured an HTTP/HTTPS proxy (e.g., corporate network), sets the global `undici` dispatcher and overrides `globalThis.fetch` so all outbound provider requests route through the proxy. Localhost no-proxy hosts (`127.0.0.1`, `::1`, `localhost`) are added automatically.
 
-3. **`startDaemon()`** — Creates two Hono apps (proxy + panel), binds them via `@hono/node-server` `serve()`, and registers `SIGINT`/`SIGTERM` handlers for graceful shutdown (ends the active session, removes the PID file, closes all connections).
+3. **`startDaemon()`** — Creates two Hono apps (proxy + panel), binds them via `@hono/node-server` `serve()`, and registers `SIGINT`/`SIGTERM` handlers for graceful shutdown (ends active sessions, removes the PID file, closes all connections).
 
 ## Module Structure
 
@@ -450,8 +450,8 @@ The daemon ships with a built-in provider catalog and also supports user-created
 | Ollama / Ollama Cloud | `ollama.ts`, `ollama-cloud.ts` | None / API key | Local Ollama instance or Ollama Cloud |
 | Cline | `cline.ts` + auth | OAuth (browser callback) | OAuth flow with PKCE-like state parameter, callback server on `127.0.0.1:1456` |
 | KiloCode | `kilocode.ts` + auth | OAuth (device flow) | Device flow with org-id resolution |
-| Kiro | `kiro.ts` | OAuth | Custom OAuth implementation |
-| iFlow | `iflow.ts` | API key | Custom API integration |
+| Kiro | `kiro.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
+| iFlow | `iflow.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
 | CommandCode | `commandcode.ts` | API key | Custom API integration |
 
 ### Transport Layer
@@ -486,13 +486,13 @@ startSession() ──► running ──► endSession() ──► completed (arc
                        └── crash ──► crashed (auto-recovered + archived)
 ```
 
-- **Start**: Called by `prepareLaunch()` when the user issues a `ccpg` command. Creates a `SessionRecord` with `id`, `startedAt`, `modelMode`, `activeProvider`, `enabledProviders`, empty request log.
+- **Start**: Called by `prepareLaunch()` when the user issues a `ccpg` command. Creates a `SessionRecord` with `id`, `startedAt`, `modelMode`, `activeProvider`, `enabledProviders`, empty request log, and a per-launch auth token mapped to that session.
 - **Running**: Every `/v1/messages` request calls `recordSessionRequest()`, which appends to `requestLog` (max 120 entries) and updates `modelStats` and `providerStats` in memory.
 - **Heartbeat**: The CLI launcher sends `POST /api/launch/heartbeat` every 30s. If no heartbeat arrives within 60s, the daemon marks the session as "crashed".
 - **PID attachment**: The CLI launcher sends `POST /api/launch/attach` with the Claude process PID. If that PID dies, the session ends.
-- **Checkpoint**: Every 10s, the session is written to `current-session.json` for crash recovery.
-- **End**: Called explicitly (via `POST /api/launch/end`) or on daemon shutdown. Finalizes duration, totals, archives to `sessions.jsonl` (max 200 sessions), removes checkpoint.
-- **Crash recovery**: On daemon startup, if `current-session.json` exists from a previous run, it's archived with status `crashed`.
+- **Checkpoint**: Every 10s, active sessions are written to `current-session.json` for crash recovery.
+- **End**: Called explicitly (via `POST /api/launch/end`) or on daemon shutdown. Finalizes duration, totals, archives the target session to `sessions.jsonl` (max 200 sessions), and updates the active-session checkpoint.
+- **Crash recovery**: On daemon startup, if `current-session.json` exists from a previous run, its active sessions are archived with status `crashed`.
 
 ### Session Record
 

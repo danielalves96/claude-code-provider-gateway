@@ -24,7 +24,7 @@ packages/panel/src/
 ├── features/
 │   ├── dashboard/   # Landing page with status overview, quick launch, shell setup
 │   ├── history/     # Session archive, provider/model stats, request logs
-│   ├── live-session/# Live monitoring of the currently active session
+│   ├── live-session/# Live monitoring of currently active sessions
 │   ├── logs/        # Real-time server log viewer via SSE
 │   ├── model-chain/ # Model fallback chain editor with drag-and-drop
 │   ├── providers/   # Provider management: API keys, OAuth, model selection, favorites
@@ -132,7 +132,7 @@ The shell feature provides the application chrome — layout, navigation, and da
 | Component | Purpose |
 |---|---|
 | `AppShell` | Root layout using Ant Design `Layout` with `Sidebar` + `TopBar` + `Outlet`. Handles lazy route loading with a `Skeleton` fallback. |
-| `Sidebar` | Left sidebar with brand logo, navigation menu, GitHub link, and version display. Uses `useLiveIndicator()` to pulse the "Live Session" nav item. Collapsible. |
+| `Sidebar` | Left sidebar with brand logo, navigation menu, GitHub link, and version display. Uses `useLiveIndicator()` to pulse the "Live Sessions" nav item. Collapsible. |
 | `TopBar` | Top header bar showing daemon status (running/stopped/checking) with a `Badge` indicator and a Start/Stop control button. |
 | `navItems` | Navigation menu configuration — maps each route to an icon and label. |
 
@@ -142,7 +142,7 @@ The shell feature provides the application chrome — layout, navigation, and da
 |---|---|
 | `useDaemonStatus` | Polls `GET /api/status` every 5 seconds. Returns `state` (`"running"`/`"offline"`/`"unknown"`), `status`, `refresh()`, `pause()`, `resume()`. |
 | `useGatewayControl` | Wraps `useDaemonStatus` with start/stop actions. Start delegates to Tauri `start_daemon` (in Tauri mode) or shows an error (dev mode). Stop calls `POST /api/control/shutdown` (dev) or Tauri `stop_daemon`. Includes a lifecycle lock to prevent concurrent start/stop. |
-| `useLiveIndicator` | Polls `GET /api/sessions` every 10 seconds to check if a live session exists. Returns a boolean. Used by the sidebar to show a processing dot on the Live Session nav item. |
+| `useLiveIndicator` | Polls `GET /api/sessions` every 10 seconds to check if any live sessions exist. Returns a boolean. Used by the sidebar to show a processing dot on the Live Sessions nav item. |
 
 ### Services
 
@@ -166,8 +166,8 @@ The landing page. Composed of four main card sections.
 | Component | Purpose |
 |---|---|
 | `DashboardPage` | Main page layout combining all dashboard cards. Conditionally shows `ShellSetupCard` based on shell setup state. |
-| `StatusOverview` | Shows gateway running status, PID, uptime, proxy port, panel port, model mode, and active provider. |
-| `EnabledProvidersCard` | Displays per-provider stats (request count, errors) for enabled providers. |
+| `StatusOverview` | Shows gateway running status, uptime, top model (most-used model from session history), and daemon PID. |
+| `EnabledProvidersCard` | Displays per-provider stats (request count, avg latency, last activity) for enabled providers. |
 | `QuickLaunchCard` | Copyable CLI launch commands for quick provider selection: "All providers", "All Model Chains", and per-provider flags. |
 | `LiveLogsPanel` | Real-time streaming log viewer (last 1000 lines) embedded on the dashboard. Uses SSE. |
 | `ShellSetupCard` | Guided shell integration setup: shows shell-appropriate `ccpg` command aliases, provides one-click install for zsh/bash/fish/powershell. Expandable/collapsible with dismiss. |
@@ -179,20 +179,20 @@ The landing page. Composed of four main card sections.
 
 | Hook | File | Purpose |
 |---|---|---|
-| `useDashboardPage` | `useDashboardPage.ts` | Orchestrator hook composing `useGatewayStatus`, `useLaunchCommands`, and `useShellSetup`. Handles shell setup card dismiss state via `localStorage`. |
-| `useGatewayStatus` | `useGatewayStatus.ts` | Polls `GET /api/status` and `GET /api/stats` every 5 seconds. Returns `status`, `stats`, `isLoading`. |
+| `useDashboardPage` | `useDashboardPage.ts` | Orchestrator hook composing `useGatewayStatus`, `useLaunchCommands`, and `useShellSetup`. Computes `topProviders` and `topModel` from session history. Handles shell setup card dismiss state via `localStorage`. |
+| `useGatewayStatus` | `useGatewayStatus.ts` | Polls `GET /api/status`, `GET /api/stats`, and `GET /api/sessions` every 5 seconds. Returns `status`, `stats`, `sessions`, `isLoading`. |
 | `useLaunchCommands` | `useLaunchCommands.ts` | Fetches `GET /api/quick-launch` once on mount. Derives `LaunchItem[]` for quick launch cards including CLI flags. |
 | `useShellSetup` | `useShellSetup.ts` | Fetches `GET /api/shell-setup` once on mount. Returns `setup` and `refresh()`. |
 | `useShellSetupCard` | `useShellSetupCard.ts` | Manages shell install flow: `install(shells, key)`, install state, open/collapsed state. Announces install results via Ant Design `message`. |
 | `useLiveLogs` | `useLiveLogs.ts` | Subscribes to SSE at `/api/logs`. Maintains last 1000 lines with `paused`, `clear`, and `togglePaused` controls. |
-| `useStatusOverview` | `useStatusOverview.tsx` | Derives counts (total providers, enabled, errored) from gateway stats. |
+| `useStatusOverview` | `useStatusOverview.tsx` | Builds the 4 status cards: running status, uptime, top model (from session history), and daemon PID. |
 | `useProviderStatCard` | `useProviderStatCard.ts` | Fetches per-provider models for a single stat card. |
 
 ### Services
 
 | Service | Endpoints Used |
 |---|---|
-| `dashboardService` | `GET /api/status`, `GET /api/stats`, `GET /api/launch-commands`, `GET /api/quick-launch`, `GET /api/shell-setup`, `POST /api/shell-setup/install` |
+| `dashboardService` | `GET /api/status`, `GET /api/stats`, `GET /api/sessions`, `GET /api/launch-commands`, `GET /api/quick-launch`, `GET /api/shell-setup`, `POST /api/shell-setup/install` |
 
 ### Domain Types
 
@@ -208,21 +208,21 @@ type InstallResponse = InstallShellSetupResponse
 
 ---
 
-## Feature: Live Session (`features/live-session/`)
+## Feature: Live Sessions (`features/live-session/`)
 
-Monitors the **currently active** Claude Code session in real time.
+Monitors all currently active Claude Code sessions in real time.
 
 ### Components
 
 | Component | Purpose |
 |---|---|
-| `LiveSessionPage` | Shows the active session with a "RUNNING"/"IDLE" badge, metric summary (requests, errors, duration, avg latency), session metadata, provider stats table, models used table, and request log. Auto-refreshes every 5 seconds. |
+| `LiveSessionPage` | Shows all active sessions with a "RUNNING"/"IDLE" badge, aggregate metric summary, and one collapsed-by-default panel per session containing metadata, provider stats, models used, and request log. Auto-refreshes every 5 seconds. |
 
 ### Hooks
 
 | Hook | Purpose |
 |---|---|
-| `useLiveSession` | Polls `GET /api/sessions` every 5 seconds, extracting the `.current` session. Uses a request ID ref to ignore stale responses. Returns `session`, `isLoading`, `refresh()`, `pollIntervalMs`. |
+| `useLiveSession` | Polls `GET /api/sessions` every 5 seconds, extracting `currentSessions` (all active sessions). Uses a request ID ref to ignore stale responses. Returns `sessions`, `isLoading`, `refresh()`, `pollIntervalMs`. |
 | `useLiveIndicator` | Lightweight poll (every 10s) that checks if `current` is non-null. Used by the Sidebar for the pulsing dot indicator. |
 
 ### Relation to History
@@ -527,7 +527,7 @@ Configures server, web tools, proxy, and token saver settings.
 type ServerConfig = Partial<Config["server"]>
 type WebToolsConfig = { enabled: boolean; allowPrivateNetworks: boolean }
 type ProxyConfig = { enabled: boolean; url: string }
-type TokenSaversConfig = { rtkEnabled: boolean; cavemanEnabled: boolean; cavemanLevel: "lite" | "full" }
+type TokenSaversConfig = { rtkEnabled: boolean; cavemanEnabled: boolean; cavemanLevel: "lite" | "full" | "ultra" }
 ```
 
 ---
@@ -572,7 +572,7 @@ All types shared between panel and daemon are defined in `packages/daemon/src/pa
 | `ModelInfo` | Providers (model selector) |
 | `ProviderTestResult` | Providers (connection testing) |
 | `OAuthInfo`, `OAuthStatusResponse` | Providers (OAuth flow) |
-| `SessionsResponse`, `SessionRecord` | Live Session, History |
+| `SessionsResponse`, `SessionRecord` | Live Sessions, History |
 | `RoutingConfigResponse`, `RoutingOption`, `RoutingTier` | Routing, Model Chain |
 | `ShellSetupResponse`, `ShellInfo` | Dashboard (shell setup) |
 | `LaunchCommandsResponse`, `QuickLaunchResponse` | Dashboard (quick launch) |

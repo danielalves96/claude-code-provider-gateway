@@ -9,7 +9,7 @@ Symptoms:
 
 - Claude Code still uses the default Anthropic endpoint.
 - Provider switching with `ccpg --<provider>` appears to do nothing.
-- History and Live Session stay empty.
+- History and Live Sessions stay empty.
 
 Checks:
 
@@ -184,7 +184,7 @@ Useful files:
 | `daemon.log` | Provider errors, OAuth failures, RTK/Caveman logs, startup/shutdown messages. |
 | `config.json` | Non-secret provider settings, model mode, Model Chains, ports, token saver settings. |
 | `provider-logos/` | Uploaded PNG/WebP logos for user-created custom providers. |
-| `current-session.json` | Active session checkpoint. |
+| `current-session.json` | Active session checkpoints. |
 | `sessions.jsonl` | Archived sessions. |
 
 The desktop app can also export the current Server Logs buffer as a `.log` file

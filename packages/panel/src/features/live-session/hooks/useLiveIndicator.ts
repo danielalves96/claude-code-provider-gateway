@@ -10,9 +10,9 @@ export function useLiveIndicator(): boolean {
     const requestId = ++latestRequestIdRef.current;
     historyService
       .list()
-      .then(({ current }) => {
+      .then(({ current, currentSessions }) => {
         if (requestId === latestRequestIdRef.current) {
-          setIsLive(current !== null);
+          setIsLive((currentSessions?.length ?? 0) > 0 || current !== null);
         }
       })
       .catch(() => {

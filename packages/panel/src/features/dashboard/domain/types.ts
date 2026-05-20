@@ -8,6 +8,7 @@ import type {
   ShellInfo,
   ShellName,
   ShellSetupResponse,
+  SessionsResponse,
 } from "../../../../../daemon/src/panel/contracts.js";
 
 export type GatewayStatus = GatewayStatusResponse;
@@ -15,6 +16,7 @@ export type ProviderStat = GatewayProviderStat;
 export type StatsResponse = {
   providers: GatewayProviderStat[];
 };
+export type GatewaySessions = SessionsResponse;
 export type LaunchCommands = LaunchCommandsResponse;
 export type QuickLaunch = QuickLaunchResponse;
 

@@ -297,5 +297,5 @@ This means the config format is forward-compatible: adding new top-level keys to
 | `provider-logos/` | Config directory | Uploaded PNG/WebP logos for user-created custom providers. |
 | `daemon.pid` | Config directory | PID marker for the running daemon process. |
 | `daemon.log` | Config directory | Local daemon log (provider errors, request diagnostics). |
-| `current-session.json` | Config directory | Active Claude Code session checkpoint. |
+| `current-session.json` | Config directory | Active Claude Code session checkpoints. |
 | `sessions.jsonl` | Config directory | Completed session archive (capped at 200 sessions). |

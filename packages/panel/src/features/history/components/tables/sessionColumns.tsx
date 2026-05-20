@@ -15,10 +15,10 @@ import type { Session } from "../../domain/types.js";
 const { Text } = Typography;
 
 interface SessionColumnsOptions {
-  onDelete: (id: string) => void;
-  onExport: (session: Session) => void;
-  deletingId: string | null;
-  exportingId: string | null;
+  onDelete?: (id: string) => void;
+  onExport?: (session: Session) => void;
+  deletingId?: string | null;
+  exportingId?: string | null;
 }
 
 export function useSessionColumns({
@@ -28,8 +28,10 @@ export function useSessionColumns({
   exportingId,
 }: SessionColumnsOptions): TableColumnsType<Session> {
   const { token } = theme.useToken();
+  const activeDeletingId = deletingId ?? null;
+  const activeExportingId = exportingId ?? null;
 
-  return [
+  const columns: TableColumnsType<Session> = [
     {
       title: "Status",
       key: "status",
@@ -85,47 +87,57 @@ export function useSessionColumns({
       align: "right",
       render: (value: number) => <ErrorCount value={value} />,
     },
-    {
+  ];
+
+  if (onDelete || onExport) {
+    columns.push({
       key: "actions",
       width: 88,
       render: (_, session) => (
         <div style={{ display: "flex", justifyContent: "center", gap: 4, paddingInlineEnd: 8 }}>
-          <Button
-            type="text"
-            size="small"
-            icon={<DownloadOutlined />}
-            loading={exportingId === session.id}
-            disabled={
-              deletingId === session.id || (exportingId !== null && exportingId !== session.id)
-            }
-            aria-label={`Export session ${session.id} as JSON`}
-            title="Export as JSON"
-            onClick={() => onExport(session)}
-          />
-          <Popconfirm
-            title="Delete this session?"
-            okText="Delete"
-            okButtonProps={{ danger: true }}
-            cancelText="Cancel"
-            placement="left"
-            overlayInnerStyle={{ background: "#1a1915" }}
-            onConfirm={() => onDelete(session.id)}
-          >
+          {onExport && (
             <Button
               type="text"
               size="small"
-              danger
-              icon={<DeleteOutlined />}
-              loading={deletingId === session.id}
-              disabled={exportingId === session.id}
-              aria-label={`Delete session ${session.id}`}
-              title="Delete Session"
+              icon={<DownloadOutlined />}
+              loading={activeExportingId === session.id}
+              disabled={
+                activeDeletingId === session.id ||
+                (activeExportingId !== null && activeExportingId !== session.id)
+              }
+              aria-label={`Export session ${session.id} as JSON`}
+              title="Export as JSON"
+              onClick={() => onExport(session)}
             />
-          </Popconfirm>
+          )}
+          {onDelete && (
+            <Popconfirm
+              title="Delete this session?"
+              okText="Delete"
+              okButtonProps={{ danger: true }}
+              cancelText="Cancel"
+              placement="left"
+              overlayInnerStyle={{ background: "#1a1915" }}
+              onConfirm={() => onDelete(session.id)}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                loading={activeDeletingId === session.id}
+                disabled={activeExportingId === session.id}
+                aria-label={`Delete session ${session.id}`}
+                title="Delete Session"
+              />
+            </Popconfirm>
+          )}
         </div>
       ),
-    },
-  ];
+    });
+  }
+
+  return columns;
 }
 
 export function getSessionStatusBorderColor(

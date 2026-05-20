@@ -205,7 +205,7 @@ Launch behavior:
 | `ccpg --<chain-slug>` | Sets `activeModelFallbackSlug` and exposes only that chain. |
 | `ccpg --ModelChain` | Sets `modelMode` to `chains` and exposes every enabled chain. |
 | `ccpg --all` | Sets `modelMode` to `all` and exposes enabled chains plus all enabled provider models. |
-| `ccpg --<Provider>` | Sets `modelMode` to `single`, clears active chain state, and exposes chains plus the selected provider's models. |
+| `ccpg --<Provider>` | Sets `modelMode` to `single`, clears active chain state, and exposes only the selected provider's models. |
 
 At request time, the message service calls the first target in the chain. If
 that target returns a non-successful response such as an API error, rate limit,

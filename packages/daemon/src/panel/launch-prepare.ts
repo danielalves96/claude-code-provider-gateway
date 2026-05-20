@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { saveConfig } from "../config/index.js";
 import type { Config, ProviderId } from "../config/schema.js";
 import { CLI_FLAGS, PROVIDER_IDS } from "../config/schema.js";
-import { endSession, startSession } from "../runtime/sessions.js";
+import { createLaunchAuthToken, startSession } from "../runtime/sessions.js";
 
 export interface LaunchPrepareRequest {
   flag: string;
@@ -57,16 +57,16 @@ export function prepareLaunch(
     saveConfig(config);
     clearClaudeGatewayCache();
 
-    endSession();
-    const session = startSession(config);
+    const authToken = createLaunchAuthToken();
+    const session = startSession(config, authToken);
 
     return {
       ok: true,
       providerId: null,
       fallbackSlug: null,
       sessionId: session.id,
-      shellScript: buildShellExports(config, session.id),
-      envVars: buildEnvVars(config, session.id),
+      shellScript: buildShellExports(config, session.id, authToken),
+      envVars: buildEnvVars(config, session.id, authToken),
     };
   }
 
@@ -82,16 +82,16 @@ export function prepareLaunch(
     saveConfig(config);
     clearClaudeGatewayCache();
 
-    endSession();
-    const session = startSession(config);
+    const authToken = createLaunchAuthToken();
+    const session = startSession(config, authToken);
 
     return {
       ok: true,
       providerId: null,
       fallbackSlug: null,
       sessionId: session.id,
-      shellScript: buildShellExports(config, session.id),
-      envVars: buildEnvVars(config, session.id),
+      shellScript: buildShellExports(config, session.id, authToken),
+      envVars: buildEnvVars(config, session.id, authToken),
     };
   }
 
@@ -106,16 +106,16 @@ export function prepareLaunch(
     saveConfig(config);
     clearClaudeGatewayCache();
 
-    endSession();
-    const session = startSession(config);
+    const authToken = createLaunchAuthToken();
+    const session = startSession(config, authToken);
 
     return {
       ok: true,
       providerId: null,
       fallbackSlug: fallback.slug,
       sessionId: session.id,
-      shellScript: buildShellExports(config, session.id),
-      envVars: buildEnvVars(config, session.id),
+      shellScript: buildShellExports(config, session.id, authToken),
+      envVars: buildEnvVars(config, session.id, authToken),
     };
   }
 
@@ -133,18 +133,16 @@ export function prepareLaunch(
   saveConfig(config);
   clearClaudeGatewayCache();
 
-  // End any session that was running (e.g. user switching providers), then
-  // start a new one now that the user has issued a terminal launch command.
-  endSession();
-  const session = startSession(config);
+  const authToken = createLaunchAuthToken();
+  const session = startSession(config, authToken);
 
   return {
     ok: true,
     providerId,
     fallbackSlug: null,
     sessionId: session.id,
-    shellScript: buildShellExports(config, session.id),
-    envVars: buildEnvVars(config, session.id),
+    shellScript: buildShellExports(config, session.id, authToken),
+    envVars: buildEnvVars(config, session.id, authToken),
   };
 }
 
@@ -174,17 +172,17 @@ function resolveFallbackFlag(config: Config, flag: string): { slug: string } | n
   return fallback;
 }
 
-function buildEnvVars(config: Config, sessionId: string): LaunchEnvVars {
+function buildEnvVars(config: Config, sessionId: string, authToken: string): LaunchEnvVars {
   return {
-    authToken: config.server.authToken,
+    authToken,
     baseUrl: `http://127.0.0.1:${config.server.proxyPort}`,
     sessionId,
   };
 }
 
-function buildShellExports(config: Config, sessionId: string): string {
+function buildShellExports(config: Config, sessionId: string, authToken: string): string {
   return [
-    `export ANTHROPIC_AUTH_TOKEN=${shellQuote(config.server.authToken)}`,
+    `export ANTHROPIC_AUTH_TOKEN=${shellQuote(authToken)}`,
     `export ANTHROPIC_BASE_URL=${shellQuote(`http://127.0.0.1:${config.server.proxyPort}`)}`,
     `export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`,
     `export CC_GATEWAY_SESSION_ID=${shellQuote(sessionId)}`,

@@ -48,7 +48,7 @@ export function EnabledProvidersCard({ stats, isLoading }: EnabledProvidersCardP
             <ThunderboltOutlined />
           </div>
           <Text strong style={{ fontSize: 16 }}>
-            Current Session — Enabled Providers
+            Top Enabled Providers
           </Text>
           {stats && (
             <Tag
@@ -62,7 +62,7 @@ export function EnabledProvidersCard({ stats, isLoading }: EnabledProvidersCardP
       }
       extra={
         <Text type="secondary" style={{ fontSize: 13 }}>
-          Stats reset on restart · <ThemedLink to="/history">History</ThemedLink>
+          From session history · <ThemedLink to="/history">History</ThemedLink>
         </Text>
       }
     >
@@ -79,7 +79,7 @@ export function EnabledProvidersCard({ stats, isLoading }: EnabledProvidersCardP
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <Text type="secondary">
-              No providers enabled. <ThemedLink to="/providers">Configure providers</ThemedLink>
+              No enabled providers. <ThemedLink to="/providers">Configure providers</ThemedLink>
             </Text>
           }
         />

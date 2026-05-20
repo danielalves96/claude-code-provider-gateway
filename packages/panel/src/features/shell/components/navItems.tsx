@@ -15,7 +15,7 @@ export type NavItem = NonNullable<MenuProps["items"]>[number];
 
 const BASE_ITEMS: NavItem[] = [
   { key: "/", icon: <DashboardOutlined />, label: "Dashboard" },
-  { key: "/live", icon: <ThunderboltOutlined />, label: "Live Session" },
+  { key: "/live", icon: <ThunderboltOutlined />, label: "Live Sessions" },
   { key: "/providers", icon: <ApiOutlined />, label: "Providers" },
   { key: "/model-chain", icon: <PartitionOutlined />, label: "Model Chain" },
   { key: "/routing", icon: <ForkOutlined />, label: "Routing" },
