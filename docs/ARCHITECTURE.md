@@ -424,6 +424,7 @@ Tauri v2 app (Rust + webview). Architecture:
 - **Production mode**: the daemon runs as a Tauri sidecar (Bun-compiled binary)
 - **External daemon mode**: development-only path where the daemon runs outside Tauri for hot reload
 - **Panel served as static files**: the React build output is served by the daemon, not by Tauri
+- **Tray/menu bar background mode**: closing the main window hides it; the process and sidecar continue until the tray `Quit` action exits the app
 - **Build pipeline**: Bun compiles the daemon → binary copied to Tauri's `binaries/` directory → Tauri bundles everything
 
 The Rust layer is deliberately narrow. Its job is to integrate with the OS, own the sidecar process, and expose a small command surface to the panel. Provider logic, panel APIs, config semantics, and session history remain in the TypeScript daemon.
@@ -435,6 +436,7 @@ The Rust layer is deliberately narrow. Its job is to integrate with the OS, own 
 | `src/lib.rs` | Application composition: plugins, managed state, setup hook, command registration, exit shutdown |
 | `src/commands.rs` | Tauri command facade. Converts internal errors into serializable `{ code, message }` command errors |
 | `src/daemon_supervisor.rs` | Async sidecar supervisor protected by a Tokio mutex. Starts, stops, reports status, drains process output, and cleans stale daemon PIDs before spawning |
+| `src/tray.rs` | System tray/menu bar integration. Intercepts main-window close requests, shows/hides the window, and marks intentional quits before calling `app.exit(0)` |
 | `src/external_url.rs` | External browser policy. Only allowlisted `https://` hosts can be opened from the panel |
 | `src/master_key.rs` | OS keychain-backed 32-byte hex master key generation and validation |
 | `src/config.rs` | Desktop-specific environment flags shared across modules |
@@ -469,6 +471,8 @@ Tauri setup
 Tauri ExitRequested
   └─ best-effort supervisor.stop()
 ```
+
+The main-window close button is not treated as app exit. `WindowEvent::CloseRequested` for the main window calls `prevent_close()` and hides the window to the tray/menu bar. The tray menu contains `Show App`, `Hide`, and `Quit`; `Quit` sets an internal quitting flag and calls Tauri's `app.exit(0)`, allowing the normal `ExitRequested` sidecar cleanup to run.
 
 The stale PID cleanup performs blocking OS process operations through `spawn_blocking`, keeping the async command path responsive. The supervisor checks for an already-owned child before cleanup so repeated `start_daemon` calls cannot terminate the current sidecar.
 

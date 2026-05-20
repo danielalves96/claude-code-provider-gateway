@@ -11,6 +11,7 @@ Part of the [Claude Code Provider Gateway](../../README.md) monorepo.
 The desktop package wraps the [panel](../panel) (React-based configuration UI) and [daemon](../daemon) (local proxy server) into a single Tauri desktop application. It handles:
 
 - **Daemon lifecycle management** — starts the daemon as a sidecar process on app launch, stops it on exit, and cleans up stale processes from previous runs.
+- **Background tray behavior** — closing the main window hides it to the OS tray/menu bar while the app and daemon keep running. The tray menu exposes `Show App`, `Hide`, and `Quit`; only `Quit` exits the process.
 - **Master key generation** — creates and stores a 32-byte master key in the OS keychain (`keyring` crate), passed to the daemon via the `CC_GATEWAY_SECRET_KEY` environment variable.
 - **Secure external URL opening** — opens links to known provider dashboards (e.g., OpenRouter, Groq, DeepSeek) while blocking unlisted hosts.
 - **Cross-platform packaging** — produces `.deb`, `.rpm`, `.AppImage` (Linux), `.dmg` (macOS), and `.msi`/`.exe` (Windows) installers.
@@ -60,6 +61,7 @@ packages/desktop/src-tauri/src/
 ├── lib.rs               # Tauri builder setup, plugin registration, autostart
 ├── commands.rs          # Tauri IPC commands: start_daemon, stop_daemon, daemon_status, open_url
 ├── daemon_supervisor.rs # Daemon sidecar process lifecycle (spawn, kill, status)
+├── tray.rs              # System tray/menu bar lifecycle: show, hide, quit
 ├── config.rs            # Environment variable reading (external daemon flag, secret key)
 ├── master_key.rs        # OS keychain read/write for master key (keyring crate)
 └── external_url.rs      # Secure external URL validation and opening (allowlist-based)
@@ -75,6 +77,8 @@ The Tauri app registers four IPC commands callable from the panel frontend:
 | `open_url` | Opens an external URL in the system browser. Only `https://` URLs with hosts on the allowlist are permitted. |
 
 The panel frontend is loaded from `../../daemon/dist/static` (built panel output). At dev time, Tauri opens `http://localhost:5173` (Vite dev server).
+
+Closing the main window does not exit the app. The close request is intercepted in Rust, the window is hidden, and the sidecar keeps running in the background. Use the tray/menu bar `Quit` action for a real app exit and sidecar shutdown.
 
 ## Scripts
 
