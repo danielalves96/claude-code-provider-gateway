@@ -39,6 +39,8 @@ pub fn run() {
             commands::stop_daemon,
             commands::daemon_status,
             commands::open_url,
+            commands::save_server_logs,
+            commands::save_session_json,
         ])
         .build(tauri::generate_context!())
         .expect("failed to build Tauri app")

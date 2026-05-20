@@ -1,6 +1,6 @@
 [package]
 name = "claude-code-provider-gateway-desktop"
-version = "0.1.3"
+version = "0.2.0"
 description = "Claude Code Provider Gateway — desktop shell"
 edition = "2021"
 rust-version = "1.77"
@@ -23,7 +23,7 @@ keyring = { version = "3", features = ["apple-native", "windows-native", "linux-
 rand = "0.8"
 hex = "0.4"
 anyhow = "1"
-tokio = { version = "1", features = ["sync", "time"] }
+tokio = { version = "1", features = ["fs", "sync", "time"] }
 log = "0.4"
 url = "2"
 

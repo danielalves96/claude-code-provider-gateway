@@ -1,4 +1,6 @@
-import { Card, Col, Empty, Flex, Row, Skeleton, Typography, theme } from "antd";
+import { App, Card, Col, Empty, Flex, Row, Skeleton, Typography, theme } from "antd";
+import { useCallback } from "react";
+import type { Session } from "../../domain/types.js";
 import { useHistoryPage } from "../../hooks/useHistoryPage.js";
 import { ProvidersTable } from "../tables/ProvidersTable.js";
 import { SessionsTable } from "../tables/SessionsTable.js";
@@ -57,8 +59,24 @@ function HistorySkeletonSummary() {
 }
 
 export default function HistoryPage() {
+  const { message } = App.useApp();
   const { token } = theme.useToken();
   const page = useHistoryPage();
+  const handleExportSession = useCallback(
+    async (session: Session) => {
+      try {
+        const result = await page.exportSession(session);
+        if (result.target === "desktop") {
+          message.success(`Session JSON saved to ${result.path}`);
+        } else {
+          message.success(`Downloaded ${result.fileName}`);
+        }
+      } catch (err) {
+        message.error(err instanceof Error ? err.message : "Failed to export session JSON");
+      }
+    },
+    [message, page],
+  );
 
   return (
     <Flex vertical gap={token.paddingLG}>
@@ -101,7 +119,9 @@ export default function HistoryPage() {
             expandedKeys={page.expandedKeys}
             onToggleExpanded={page.toggleExpanded}
             onDeleteSession={page.deleteSession}
+            onExportSession={handleExportSession}
             deletingId={page.deletingId}
+            exportingId={page.exportingId}
           />
         </>
       )}

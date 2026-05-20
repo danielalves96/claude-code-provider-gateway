@@ -187,5 +187,9 @@ Useful files:
 | `current-session.json` | Active session checkpoint. |
 | `sessions.jsonl` | Archived sessions. |
 
+The desktop app can also export the current Server Logs buffer as a `.log` file
+and individual History sessions as `session-{id}.json` in Downloads.
+
 Do not share `secrets.enc.json`, `secret.key`, `config.json`, session files, or
 daemon logs publicly unless you have reviewed them for secrets and private code.
+This includes exported `.log` and `session-{id}.json` files.

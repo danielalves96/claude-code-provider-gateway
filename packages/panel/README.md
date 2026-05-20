@@ -49,8 +49,8 @@ The panel exposes the following pages:
 | **Providers** | `/providers` | Add custom OpenAI/Anthropic-compatible providers, configure, test, reorder, and favorite LLM providers. Supports search and status filtering. |
 | **Model Chain** | `/model-chain` | Create custom fallback chains from active provider models. Chains try models in priority order on failure. |
 | **Routing** | `/routing` | Map Claude model tiers (Opus, Sonnet, Haiku) to specific providers and models. |
-| **History** | `/history` | Browse completed session history with request details, token counts, latency, and response previews. |
-| **Server Logs** | `/logs` | View the daemon's structured log output with filtering and severity indicators. |
+| **History** | `/history` | Browse completed session history with request details, token counts, latency, response previews, and per-session JSON export. |
+| **Server Logs** | `/logs` | View the daemon's structured log output with filtering, severity indicators, and `.log` export. |
 | **Settings** | `/settings` | Configure token savers (RTK compression, Caveman mode), outbound proxy, port settings, and other preferences. |
 
 ## API Layer
