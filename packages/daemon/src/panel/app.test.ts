@@ -285,6 +285,127 @@ test("PUT /api/config tolerates legacy config without panel settings", async () 
   });
 });
 
+test("PUT /api/config rejects model chain slugs that collide with providers", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  config.providers.acme_ai = {
+    enabled: true,
+    apiKey: "sk-acme",
+    authType: "api_key",
+    models: ["acme-large"],
+    disabledModels: [],
+    baseUrl: "https://api.acme.test/v1",
+    rateLimit: 40,
+    rateWindow: 60,
+    maxConcurrency: 5,
+    custom: {
+      label: "Acme AI",
+      slug: "acme_ai",
+      compatibility: "openai",
+    },
+  };
+  const app = testPanelApp(config);
+
+  for (const slug of ["openrouter", "acme_ai"]) {
+    const response = await app.request("/api/config", {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer secret",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        modelFallbacks: [
+          {
+            id: `chain_${slug}`,
+            name: `${slug} Chain`,
+            slug,
+            enabled: true,
+            models: [
+              { providerId: "nvidia_nim", model: "meta/llama" },
+              { providerId: "openrouter", model: "anthropic/claude-sonnet" },
+            ],
+          },
+        ],
+      }),
+    });
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as { error: string };
+    assert.match(body.error, /conflicts with an existing provider/);
+  }
+});
+
+test("PUT /api/config rejects duplicate model chain slugs", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  const app = testPanelApp(config);
+
+  const response = await app.request("/api/config", {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      modelFallbacks: [
+        {
+          id: "chain_one",
+          name: "One",
+          slug: "rescue-chain",
+          enabled: true,
+          models: [
+            { providerId: "nvidia_nim", model: "meta/llama" },
+            { providerId: "openrouter", model: "anthropic/claude-sonnet" },
+          ],
+        },
+        {
+          id: "chain_two",
+          name: "Two",
+          slug: "--Rescue-Chain",
+          enabled: true,
+          models: [
+            { providerId: "nvidia_nim", model: "meta/llama" },
+            { providerId: "openrouter", model: "anthropic/claude-sonnet" },
+          ],
+        },
+      ],
+    }),
+  });
+
+  assert.equal(response.status, 409);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /already exists/);
+});
+
+test("PUT /api/config rejects model chains with fewer than two models", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  const app = testPanelApp(config);
+
+  const response = await app.request("/api/config", {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      modelFallbacks: [
+        {
+          id: "chain_one",
+          name: "One",
+          slug: "one-chain",
+          enabled: true,
+          models: [{ providerId: "nvidia_nim", model: "meta/llama" }],
+        },
+      ],
+    }),
+  });
+
+  assert.equal(response.status, 409);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /at least 2 models/);
+});
+
 test("PUT /api/config rejects invalid proxy URL when enabled", async () => {
   const config = buildDefaultConfig();
   config.server.authToken = "secret";

@@ -1,5 +1,6 @@
 import type {
   CavemanLevel,
+  ChainRoutingStrategy,
   Config,
   ModelFallbackConfig,
   ModelFallbackEntry,
@@ -13,6 +14,7 @@ import { PROVIDER_IDS } from "./schema.js";
 const PROVIDER_ID_SET = new Set<string>(PROVIDER_IDS);
 const MODEL_MODES = new Set<ModelMode>(["single", "all", "chains"]);
 const CAVEMAN_LEVELS = new Set<CavemanLevel>(["lite", "full", "ultra"]);
+const CHAIN_ROUTING_STRATEGIES = new Set<ChainRoutingStrategy>(["waterfall", "round_robin"]);
 
 export function normalizeConfig(config: Config, defaults: Config): Config {
   const providers = normalizeProviders(config.providers, defaults.providers);
@@ -121,7 +123,15 @@ function normalizeModelFallbacks(
         : `chain_${slug.replaceAll("-", "_")}`;
     const models = normalizeModelFallbackEntries(raw.models, knownProviderIds);
     seen.add(slug);
-    out.push({ id, name, slug, models, enabled: raw.enabled !== false && models.length > 0 });
+    out.push({
+      id,
+      name,
+      slug,
+      models,
+      enabled: raw.enabled !== false && models.length > 0,
+      routingStrategy: normalizeChainRoutingStrategy(raw.routingStrategy),
+      primaryAttempts: normalizeChainPrimaryAttempts(raw.primaryAttempts),
+    });
   }
   return out;
 }
@@ -402,4 +412,15 @@ function normalizeProviderIdList(
 
 function isKnownProviderId(id: string, knownProviderIds: Set<string>): boolean {
   return knownProviderIds.has(id);
+}
+
+function normalizeChainRoutingStrategy(value: unknown): ChainRoutingStrategy {
+  return typeof value === "string" && CHAIN_ROUTING_STRATEGIES.has(value as ChainRoutingStrategy)
+    ? (value as ChainRoutingStrategy)
+    : "waterfall";
+}
+
+function normalizeChainPrimaryAttempts(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 2;
+  return Math.min(10, Math.max(1, Math.round(value)));
 }

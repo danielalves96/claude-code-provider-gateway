@@ -104,12 +104,16 @@ export interface ModelFallbackEntry {
   model: string;
 }
 
+export type ChainRoutingStrategy = "waterfall" | "round_robin";
+
 export interface ModelFallbackConfig {
   id: string;
   name: string;
   slug: string;
   models: ModelFallbackEntry[];
   enabled: boolean;
+  routingStrategy?: ChainRoutingStrategy;
+  primaryAttempts?: number;
 }
 
 export interface Config {

@@ -12,6 +12,7 @@ interface ClearHistoryModalProps {
 export function ClearHistoryModal({ open, loading, onCancel, onConfirm }: ClearHistoryModalProps) {
   return (
     <Modal
+      centered
       open={open}
       title="Clear archived history?"
       onCancel={() => !loading && onCancel()}

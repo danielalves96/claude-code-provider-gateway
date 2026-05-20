@@ -1,5 +1,10 @@
 import type { Hono } from "hono";
-import type { Config, ProviderConfig, ProviderId } from "../../config/schema.js";
+import type {
+  Config,
+  ModelFallbackConfig,
+  ProviderConfig,
+  ProviderId,
+} from "../../config/schema.js";
 import { normalizeConfig } from "../../config/validation.js";
 import type { PanelRuntime } from "../runtime.js";
 
@@ -49,7 +54,11 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.activeModelFallbackSlug !== undefined) {
       merged.activeModelFallbackSlug = update.activeModelFallbackSlug;
     }
-    if (update.modelFallbacks) merged.modelFallbacks = update.modelFallbacks;
+    if (update.modelFallbacks) {
+      const modelFallbackError = validateModelFallbackSlugs(update.modelFallbacks, merged);
+      if (modelFallbackError) return c.json({ error: modelFallbackError }, 409);
+      merged.modelFallbacks = update.modelFallbacks;
+    }
     merged.panelSettings ??= { favoriteProviders: [], favoritesTipDismissed: false };
     if (update.panelSettings) {
       Object.assign(merged.panelSettings, update.panelSettings);
@@ -77,6 +86,40 @@ function validateProxyUrl(url: string): string | null {
     return "Proxy URL is not a valid URL";
   }
   return null;
+}
+
+function validateModelFallbackSlugs(
+  modelFallbacks: ModelFallbackConfig[],
+  config: Config,
+): string | null {
+  const providerSlugs = new Set(
+    Object.entries(config.providers).flatMap(([id, provider]) => [
+      normalizeSlug(id),
+      normalizeSlug(provider.custom?.slug ?? ""),
+    ]),
+  );
+  const chainSlugs = new Set<string>();
+
+  for (const fallback of modelFallbacks) {
+    const slug = normalizeSlug(fallback.slug);
+    if (!slug) continue;
+    if ((fallback.models?.length ?? 0) < 2) {
+      return `Model chain "${slug}" requires at least 2 models`;
+    }
+    if (providerSlugs.has(slug)) {
+      return `Model chain slug "${slug}" conflicts with an existing provider`;
+    }
+    if (chainSlugs.has(slug)) {
+      return `Model chain slug "${slug}" already exists`;
+    }
+    chainSlugs.add(slug);
+  }
+
+  return null;
+}
+
+function normalizeSlug(value: string): string {
+  return value.trim().toLowerCase().replace(/^--/, "");
 }
 
 function maskConfig(config: Config): Config {

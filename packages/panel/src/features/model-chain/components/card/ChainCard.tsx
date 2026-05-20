@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { BranchesOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from "@ant-design/icons";
 import { Button, Card, Flex, Space, Switch, Tag, Typography, theme } from "antd";
 import { ProviderLogo } from "../../../providers/components/grid/ProviderLogo.js";
 import type { ModelFallbackConfig, RoutingOption } from "../../domain/types.js";
@@ -25,6 +25,8 @@ export function ChainCard({
 }: ChainCardProps) {
   const { token } = theme.useToken();
 
+  const isRoundRobin = chain.routingStrategy === "round_robin";
+
   return (
     <Card
       hoverable
@@ -48,6 +50,20 @@ export function ChainCard({
               >
                 {chain.enabled ? "Enabled" : "Disabled"}
               </Tag>
+              {isRoundRobin ? (
+                <Tag icon={<SyncOutlined />} color="purple" bordered={false} style={{ margin: 0 }}>
+                  Round Robin
+                </Tag>
+              ) : (
+                <Tag
+                  icon={<BranchesOutlined />}
+                  color="geekblue"
+                  bordered={false}
+                  style={{ margin: 0 }}
+                >
+                  Waterfall
+                </Tag>
+              )}
             </Space>
             <div style={{ maxWidth: 280 }}>
               <CopySnippet snippet={`ccpg --${chain.slug}`} />
@@ -94,11 +110,11 @@ export function ChainCard({
                 }}
               >
                 <Tag
-                  color={index === 0 ? "blue" : "default"}
+                  color={isRoundRobin ? "purple" : index === 0 ? "blue" : "default"}
                   bordered={false}
                   style={{ fontFamily: "monospace" }}
                 >
-                  #{index + 1}
+                  {isRoundRobin ? `~${index + 1}` : `#${index + 1}`}
                 </Tag>
                 <ProviderLogo
                   providerId={entry.providerId}
