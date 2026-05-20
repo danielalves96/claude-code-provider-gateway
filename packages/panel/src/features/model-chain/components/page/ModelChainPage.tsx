@@ -56,7 +56,13 @@ export default function ModelChainPage() {
       )}
 
       {!loaded ? (
-        <Card loading />
+        <Row gutter={[token.paddingLG, token.paddingLG]}>
+          {[1, 2].map((key) => (
+            <Col xs={24} xl={12} key={key}>
+              <Card loading style={{ height: "100%", minHeight: 250 }} />
+            </Col>
+          ))}
+        </Row>
       ) : chains.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
