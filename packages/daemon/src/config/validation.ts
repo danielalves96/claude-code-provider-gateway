@@ -128,7 +128,7 @@ function normalizeModelFallbacks(
       name,
       slug,
       models,
-      enabled: raw.enabled !== false && models.length > 0,
+      enabled: raw.enabled !== false && models.length >= 2,
       routingStrategy: normalizeChainRoutingStrategy(raw.routingStrategy),
       primaryAttempts: normalizeChainPrimaryAttempts(raw.primaryAttempts),
     });

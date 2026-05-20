@@ -406,6 +406,57 @@ test("PUT /api/config rejects model chains with fewer than two models", async ()
   assert.match(body.error, /at least 2 models/);
 });
 
+test("PUT /api/config rejects malformed modelFallbacks payloads", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  const app = testPanelApp(config);
+
+  const response = await app.request("/api/config", {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ modelFallbacks: { slug: "not-an-array" } }),
+  });
+
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /invalid request shape/i);
+});
+
+test("PUT /api/config rejects model chains with invalid slugs", async () => {
+  const config = buildDefaultConfig();
+  config.server.authToken = "secret";
+  const app = testPanelApp(config);
+
+  const response = await app.request("/api/config", {
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      modelFallbacks: [
+        {
+          id: "chain_invalid",
+          name: "Invalid",
+          slug: "bad slug!",
+          enabled: true,
+          models: [
+            { providerId: "nvidia_nim", model: "meta/llama" },
+            { providerId: "openrouter", model: "anthropic/claude-sonnet" },
+          ],
+        },
+      ],
+    }),
+  });
+
+  assert.equal(response.status, 409);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /invalid slug|slug.*invalid/i);
+});
+
 test("PUT /api/config rejects invalid proxy URL when enabled", async () => {
   const config = buildDefaultConfig();
   config.server.authToken = "secret";

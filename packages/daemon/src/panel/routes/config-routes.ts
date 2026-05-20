@@ -54,7 +54,10 @@ export function registerConfigRoutes(app: Hono, runtime: PanelRuntime): void {
     if (update.activeModelFallbackSlug !== undefined) {
       merged.activeModelFallbackSlug = update.activeModelFallbackSlug;
     }
-    if (update.modelFallbacks) {
+    if (update.modelFallbacks !== undefined) {
+      if (!Array.isArray(update.modelFallbacks)) {
+        return c.json({ error: "Invalid request shape: modelFallbacks must be an array" }, 400);
+      }
       const modelFallbackError = validateModelFallbackSlugs(update.modelFallbacks, merged);
       if (modelFallbackError) return c.json({ error: modelFallbackError }, 409);
       merged.modelFallbacks = update.modelFallbacks;
@@ -101,8 +104,13 @@ function validateModelFallbackSlugs(
   const chainSlugs = new Set<string>();
 
   for (const fallback of modelFallbacks) {
+    if (!fallback || typeof fallback !== "object") {
+      return "Model chain entry has an invalid slug";
+    }
     const slug = normalizeSlug(fallback.slug);
-    if (!slug) continue;
+    if (!slug || !isValidSlug(slug)) {
+      return `Model chain slug "${String(fallback.slug ?? "")}" is invalid`;
+    }
     if ((fallback.models?.length ?? 0) < 2) {
       return `Model chain "${slug}" requires at least 2 models`;
     }
@@ -120,6 +128,10 @@ function validateModelFallbackSlugs(
 
 function normalizeSlug(value: string): string {
   return value.trim().toLowerCase().replace(/^--/, "");
+}
+
+function isValidSlug(value: string): boolean {
+  return /^[a-z0-9_-]+$/.test(value);
 }
 
 function maskConfig(config: Config): Config {

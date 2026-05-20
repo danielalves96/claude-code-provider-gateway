@@ -46,7 +46,17 @@ function StrategyCard({ selected, onSelect, icon, label, description }: Strategy
   return (
     <Card
       size="small"
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      aria-pressed={selected}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       style={{
         flex: 1,
         cursor: "pointer",
@@ -82,13 +92,13 @@ function StrategyCard({ selected, onSelect, icon, label, description }: Strategy
 const ATTEMPTS_HINT: Record<ChainRoutingStrategy, string> = {
   waterfall: "Number of times the primary model is tried before falling through to the next.",
   round_robin:
-    "Number of times each randomly-picked model is tried before moving to the next random pick.",
+    "Number of times the initially selected model is tried; later fallback picks get one attempt each.",
 };
 
 const CHAIN_ORDER_HINT: Record<ChainRoutingStrategy, string> = {
   waterfall: "Drag to reorder · tried top-to-bottom, falls through on failure",
   round_robin:
-    "Order doesn't matter · all picks are random, each failure tries another random model",
+    "Order doesn't matter · the initial random pick can retry, then later random fallback picks get one attempt",
 };
 
 export function ChainModal({

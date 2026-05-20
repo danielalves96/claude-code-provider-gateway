@@ -6,7 +6,7 @@
 
 The project uses **Node.js built-in test runner** (`node:test`) together with the standard assertion library (`node:assert/strict`). There is no external test framework (no Jest, Vitest, or Mocha). TypeScript source files are executed directly via the [`tsx`](https://tsx.is) loader, which handles on-the-fly compilation without a separate build step.
 
-**Why node:test instead of Jest or Vitest?** The daemon is a Node.js ESM project compiled by `tsup`. External test frameworks add a transitive dependency footprint and require configuration to align with `"type": "module"` + path aliases. The built-in runner needs only `tsx` (already a dev dependency for the build pipeline), handles async tests and subtests natively since Node 18, and produces TAP-compatible output understood by the CI quality gate without extra reporters. The trade-off is no code coverage, no snapshot testing, and no watch mode — none of which are currently required.
+**Why node:test instead of Jest or Vitest?** The daemon is a Node.js ESM project compiled by `tsup`. External test frameworks add a transitive dependency footprint and require configuration to align with `"type": "module"` + path aliases. The built-in runner needs only `tsx` (already a dev dependency for the build pipeline), handles async tests and subtests natively since Node 18, supports watch mode via `--watch` in Node 19+, and produces TAP-compatible output understood by the CI quality gate without extra reporters. The trade-off is no code coverage and no snapshot testing — neither of which is currently required.
 
 The root `package.json` delegates test execution to the daemon workspace:
 

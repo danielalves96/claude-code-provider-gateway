@@ -159,7 +159,10 @@ test("normalizeConfig preserves active model fallback when the chain is enabled"
         name: "Rescue Chain",
         slug: "rescue-chain",
         enabled: true,
-        models: [{ providerId: "nvidia_nim" as const, model: "meta/llama" }],
+        models: [
+          { providerId: "nvidia_nim" as const, model: "meta/llama" },
+          { providerId: "openrouter" as const, model: "anthropic/claude-sonnet" },
+        ],
       },
     ],
   };
