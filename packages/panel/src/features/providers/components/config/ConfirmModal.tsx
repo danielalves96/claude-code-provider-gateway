@@ -48,6 +48,7 @@ export function ConfirmModal({ action, providers, onCancel, onConfirm }: Confirm
 
   return (
     <Modal
+      centered
       open
       title={copy.title}
       onCancel={onCancel}

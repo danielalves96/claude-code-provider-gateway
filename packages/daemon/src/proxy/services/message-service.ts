@@ -29,7 +29,7 @@ export { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 
 import { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 
-const FALLBACK_ATTEMPTS_PER_MODEL = 2;
+const DEFAULT_PRIMARY_ATTEMPTS = 2;
 
 export type MessageServiceResult =
   | {
@@ -301,15 +301,30 @@ export class MessageService {
     started: number,
     sessionId: string | null | undefined,
   ): Promise<MessageServiceResult> {
+    if (fallback.routingStrategy === "round_robin") {
+      return this.streamFallbackRoundRobin(req, fallback, started, sessionId);
+    }
+    return this.streamFallbackWaterfall(req, fallback, started, sessionId);
+  }
+
+  private async streamFallbackWaterfall(
+    req: MessagesRequest,
+    fallback: ModelFallbackConfig,
+    started: number,
+    sessionId: string | null | undefined,
+  ): Promise<MessageServiceResult> {
     let lastError: {
       status: ErrorStatus;
       message: string;
       type: ReturnType<typeof providerErrorType>;
     } | null = null;
 
+    const primaryAttempts = fallback.primaryAttempts ?? DEFAULT_PRIMARY_ATTEMPTS;
+
     for (let index = 0; index < fallback.models.length; index++) {
       const target = fallback.models[index];
-      for (let attempt = 1; attempt <= FALLBACK_ATTEMPTS_PER_MODEL; attempt++) {
+      const maxAttempts = index === 0 ? primaryAttempts : 1;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const result = await this.tryFallbackTarget(
           req,
           fallback,
@@ -325,7 +340,63 @@ export class MessageService {
           message: result.body.error.message,
           type: result.body.error.type as ReturnType<typeof providerErrorType>,
         };
-        if (attempt < FALLBACK_ATTEMPTS_PER_MODEL && shouldRetryFallbackResult(result)) {
+        if (attempt < maxAttempts && shouldRetryFallbackResult(result)) {
+          await sleep(250 * attempt);
+          continue;
+        }
+        break;
+      }
+    }
+
+    const message = lastError?.message ?? `Model chain "${fallback.name}" has no available models.`;
+    return {
+      kind: "error",
+      status: lastError?.status ?? 500,
+      body: anthropicError(lastError?.type ?? "api_error", message),
+    };
+  }
+
+  private async streamFallbackRoundRobin(
+    req: MessagesRequest,
+    fallback: ModelFallbackConfig,
+    started: number,
+    sessionId: string | null | undefined,
+  ): Promise<MessageServiceResult> {
+    const primaryAttempts = fallback.primaryAttempts ?? DEFAULT_PRIMARY_ATTEMPTS;
+    // Fisher-Yates shuffle so every pick — primary and fallbacks — is random
+    const indices = Array.from({ length: fallback.models.length }, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    let lastError: {
+      status: ErrorStatus;
+      message: string;
+      type: ReturnType<typeof providerErrorType>;
+    } | null = null;
+
+    for (let pos = 0; pos < indices.length; pos++) {
+      const index = indices[pos];
+      const target = fallback.models[index];
+      const maxAttempts = pos === 0 ? primaryAttempts : 1;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const result = await this.tryFallbackTarget(
+          req,
+          fallback,
+          target,
+          index,
+          attempt,
+          started,
+          sessionId,
+        );
+        if (result.kind === "stream") return result;
+        lastError = {
+          status: result.status,
+          message: result.body.error.message,
+          type: result.body.error.type as ReturnType<typeof providerErrorType>,
+        };
+        if (attempt < maxAttempts && shouldRetryFallbackResult(result)) {
           await sleep(250 * attempt);
           continue;
         }

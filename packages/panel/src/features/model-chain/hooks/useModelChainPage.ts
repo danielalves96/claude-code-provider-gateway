@@ -1,12 +1,14 @@
 import { App } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { ModelFallbackConfig, RoutingOption } from "../domain/types.js";
+import { normalizeSlug } from "../domain/utils.js";
 import { modelChainService } from "../services/modelChainService.js";
 
 export function useModelChainPage() {
   const { message } = App.useApp();
   const [chains, setChains] = useState<ModelFallbackConfig[]>([]);
   const [options, setOptions] = useState<RoutingOption[]>([]);
+  const [providerSlugs, setProviderSlugs] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -17,6 +19,7 @@ export function useModelChainPage() {
       .then(([config, opts]) => {
         setChains(config.modelFallbacks ?? []);
         setOptions(opts);
+        setProviderSlugs(getProviderSlugs(config.providers));
         setLoadError(null);
       })
       .catch((error) => {
@@ -66,5 +69,28 @@ export function useModelChainPage() {
     }
   };
 
-  return { chains, options, loaded, loadError, saving, persist, deleteChain, toggleChainEnabled };
+  return {
+    chains,
+    options,
+    providerSlugs,
+    loaded,
+    loadError,
+    saving,
+    persist,
+    deleteChain,
+    toggleChainEnabled,
+  };
+}
+
+function getProviderSlugs(
+  providers: Awaited<ReturnType<typeof modelChainService.getConfig>>["providers"],
+) {
+  return Array.from(
+    new Set(
+      Object.entries(providers ?? {}).flatMap(([id, provider]) => [
+        normalizeSlug(id),
+        normalizeSlug(provider.custom?.slug ?? ""),
+      ]),
+    ),
+  ).filter(Boolean);
 }

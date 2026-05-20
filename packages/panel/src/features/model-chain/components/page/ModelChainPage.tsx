@@ -2,6 +2,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Col, Empty, Flex, Row, theme } from "antd";
 import { useState } from "react";
 import { PageHeader } from "../../../../shared/components/PageHeader.js";
+import { normalizeSlug } from "../../domain/utils.js";
 import { useChainDraft } from "../../hooks/useChainDraft.js";
 import { useModelChainPage } from "../../hooks/useModelChainPage.js";
 import { ChainCard } from "../card/ChainCard.js";
@@ -11,11 +12,20 @@ const CHAIN_ALERT_KEY = "ccpg_dismiss_chain_alert";
 
 export default function ModelChainPage() {
   const { token } = theme.useToken();
-  const { chains, options, loaded, saving, persist, deleteChain, toggleChainEnabled } =
-    useModelChainPage();
+  const {
+    chains,
+    options,
+    providerSlugs,
+    loaded,
+    saving,
+    persist,
+    deleteChain,
+    toggleChainEnabled,
+  } = useModelChainPage();
   const { editing, setEditing, openNew, openEdit, cancelEdit, saveDraft } = useChainDraft(
     chains,
     persist,
+    providerSlugs,
   );
   const [showAlert, setShowAlert] = useState(() => !isChainAlertDismissed());
 
@@ -84,7 +94,8 @@ export default function ModelChainPage() {
         options={options}
         existingSlugs={chains
           .filter((chain) => chain.id !== editing?.id)
-          .map((chain) => chain.slug)}
+          .map((chain) => normalizeSlug(chain.slug))
+          .concat(providerSlugs)}
         onChange={setEditing}
         onCancel={cancelEdit}
         onSave={saveDraft}

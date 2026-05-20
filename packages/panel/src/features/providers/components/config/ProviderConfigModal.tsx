@@ -39,6 +39,7 @@ export function ProviderConfigModal({
 
   return (
     <Modal
+      centered
       title={<ProviderConfigTitle provider={p} onToggleEnabled={onToggleEnabled} />}
       open={open}
       onCancel={onClose}

@@ -6,10 +6,11 @@ import type { ModelFallbackEntry, RoutingOption } from "../../domain/types.js";
 
 interface AddModelRowProps {
   options: RoutingOption[];
+  selectedModels: ModelFallbackEntry[];
   onAdd: (entry: ModelFallbackEntry) => void;
 }
 
-export function AddModelRow({ options, onAdd }: AddModelRowProps) {
+export function AddModelRow({ options, selectedModels, onAdd }: AddModelRowProps) {
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const [providerId, setProviderId] = useState<string>();
@@ -32,13 +33,21 @@ export function AddModelRow({ options, onAdd }: AddModelRowProps) {
 
   const modelOptions = useMemo(() => {
     const provider = options.find((option) => option.id === providerId);
-    return provider?.models.map((item) => ({ value: item.id, label: item.display_name })) ?? [];
-  }, [options, providerId]);
+    if (!provider) return [];
+
+    const usedModels = new Set(
+      selectedModels.filter((sm) => sm.providerId === providerId).map((sm) => sm.model),
+    );
+
+    return provider.models
+      .filter((item) => !usedModels.has(item.id))
+      .map((item) => ({ value: item.id, label: item.display_name }));
+  }, [options, providerId, selectedModels]);
 
   return (
     <Card size="small" style={{ background: token.colorFillQuaternary }}>
-      <Flex gap={token.padding} align="center" wrap>
-        <ApiOutlined style={{ color: token.colorPrimary }} />
+      <Flex gap={token.paddingSM} align="center" wrap={false}>
+        <ApiOutlined style={{ color: token.colorPrimary, flexShrink: 0 }} />
         <Select
           showSearch
           placeholder="Provider"
@@ -47,7 +56,7 @@ export function AddModelRow({ options, onAdd }: AddModelRowProps) {
           filterOption={(input, option) =>
             (option?.searchLabel ?? "").toLowerCase().includes(input.toLowerCase())
           }
-          style={{ minWidth: 220, flex: "0 1 260px" }}
+          style={{ minWidth: 140, flex: "1 1 auto" }}
           onChange={(value) => {
             setProviderId(value);
             setModel(undefined);
@@ -59,7 +68,7 @@ export function AddModelRow({ options, onAdd }: AddModelRowProps) {
           value={model}
           options={modelOptions}
           disabled={!providerId}
-          style={{ minWidth: 280, flex: "1 1 320px" }}
+          style={{ minWidth: 180, flex: "2 1 auto" }}
           onChange={setModel}
           optionFilterProp="label"
         />
@@ -67,6 +76,7 @@ export function AddModelRow({ options, onAdd }: AddModelRowProps) {
           type="primary"
           icon={<PlusOutlined />}
           disabled={!providerId || !model}
+          style={{ flexShrink: 0 }}
           onClick={() => {
             if (!providerId || !model) return;
             onAdd({ providerId: providerId as ModelFallbackEntry["providerId"], model });

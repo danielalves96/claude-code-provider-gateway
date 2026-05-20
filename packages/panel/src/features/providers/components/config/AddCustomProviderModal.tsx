@@ -75,6 +75,7 @@ export function AddCustomProviderModal({
 
   return (
     <Modal
+      centered
       title={`Add ${compatibility === "anthropic" ? "Anthropic" : "OpenAI"} Compatible Provider`}
       open={open}
       onCancel={onCancel}
