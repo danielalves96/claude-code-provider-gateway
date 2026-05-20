@@ -34,7 +34,10 @@ export default function ServerLogsPage() {
   const handleDownload = useCallback(async () => {
     try {
       const result = await downloadLogs();
-      if (!result) return;
+      if (!result) {
+        message.info("No logs were downloaded");
+        return;
+      }
       if (result.target === "desktop") {
         message.success(`Logs saved to ${result.path}`);
       } else {

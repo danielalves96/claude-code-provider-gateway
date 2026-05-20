@@ -105,7 +105,9 @@ pub async fn save_server_logs(
     let line_count = lines.len();
 
     path.push(safe_name);
-    std::fs::write(&path, contents).map_err(CommandError::internal)?;
+    tokio::fs::write(&path, contents)
+        .await
+        .map_err(CommandError::internal)?;
 
     Ok(SaveServerLogsResult {
         path: path.to_string_lossy().into_owned(),
@@ -125,7 +127,9 @@ pub async fn save_session_json(
     let bytes = contents.len();
 
     path.push(safe_name);
-    std::fs::write(&path, contents).map_err(CommandError::internal)?;
+    tokio::fs::write(&path, contents)
+        .await
+        .map_err(CommandError::internal)?;
 
     Ok(SaveSessionJsonResult {
         path: path.to_string_lossy().into_owned(),

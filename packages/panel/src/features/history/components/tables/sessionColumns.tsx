@@ -95,6 +95,9 @@ export function useSessionColumns({
             size="small"
             icon={<DownloadOutlined />}
             loading={exportingId === session.id}
+            disabled={
+              deletingId === session.id || (exportingId !== null && exportingId !== session.id)
+            }
             aria-label={`Export session ${session.id} as JSON`}
             title="Export as JSON"
             onClick={() => onExport(session)}
@@ -114,6 +117,7 @@ export function useSessionColumns({
               danger
               icon={<DeleteOutlined />}
               loading={deletingId === session.id}
+              disabled={exportingId === session.id}
               aria-label={`Delete session ${session.id}`}
               title="Delete Session"
             />

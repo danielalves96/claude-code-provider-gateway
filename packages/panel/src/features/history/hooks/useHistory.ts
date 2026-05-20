@@ -74,11 +74,12 @@ export function useHistory() {
   }, []);
 
   const exportSession = useCallback(async (session: Session) => {
-    setExportingId(session.id);
+    const myId = session.id;
+    setExportingId(myId);
     try {
       return await exportSessionJson(session);
     } finally {
-      setExportingId(null);
+      setExportingId((prev) => (prev === myId ? null : prev));
     }
   }, []);
 
