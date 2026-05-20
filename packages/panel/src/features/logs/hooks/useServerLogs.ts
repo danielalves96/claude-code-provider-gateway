@@ -9,6 +9,22 @@ interface LogEvent {
 
 export type LogLevel = "all" | "error" | "warn" | "info" | "debug";
 
+interface SaveServerLogsResult {
+  path: string;
+  bytes: number;
+  lines: number;
+}
+
+type DownloadLogsResult =
+  | { target: "desktop"; path: string; bytes: number; lines: number }
+  | { target: "browser"; fileName: string; lines: number };
+
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+
 export function detectLogLevel(line: string): "error" | "warn" | "info" | "debug" {
   if (/\[ERROR\]/i.test(line)) return "error";
   if (/\[WARN\]/i.test(line)) return "warn";
@@ -23,6 +39,7 @@ export function useServerLogs() {
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
   const [wrapLines, setWrapLines] = useState(false);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const [downloadingLogs, setDownloadingLogs] = useState(false);
 
   useSSE<LogEvent>(
     "/api/logs",
@@ -62,14 +79,34 @@ export function useServerLogs() {
     return result;
   }, [logs, levelFilter, search]);
 
-  const downloadLogs = useCallback(() => {
+  const downloadLogs = useCallback(async (): Promise<DownloadLogsResult | null> => {
+    if (logs.length === 0) return null;
+
+    const fileName = `server-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
+    if (typeof window !== "undefined" && window.__TAURI_INTERNALS__ != null) {
+      setDownloadingLogs(true);
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const result = await invoke<SaveServerLogsResult>("save_server_logs", {
+          fileName,
+          lines: logs,
+        });
+        return { target: "desktop", ...result };
+      } finally {
+        setDownloadingLogs(false);
+      }
+    }
+
     const blob = new Blob([logs.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `server-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
+    a.download = fileName;
+    document.body.append(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
+    return { target: "browser", fileName, lines: logs.length };
   }, [logs]);
 
   return {
@@ -87,6 +124,7 @@ export function useServerLogs() {
     toggleWrap,
     showLineNumbers,
     toggleLineNumbers,
+    downloadingLogs,
     downloadLogs,
   };
 }

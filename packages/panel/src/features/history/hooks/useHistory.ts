@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { usePolling } from "../../../shared/hooks/usePolling.js";
 import type { GatewayProviderStat, Session, SessionsResponse } from "../domain/types.js";
 import { historyService } from "../services/historyService.js";
+import { exportSessionJson } from "../services/sessionExport.js";
 
 export const HISTORY_POLL_INTERVAL_MS = 5000;
 
@@ -11,6 +12,7 @@ export function useHistory() {
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [clearing, setClearing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
@@ -71,6 +73,15 @@ export function useHistory() {
     }
   }, []);
 
+  const exportSession = useCallback(async (session: Session) => {
+    setExportingId(session.id);
+    try {
+      return await exportSessionJson(session);
+    } finally {
+      setExportingId(null);
+    }
+  }, []);
+
   const toggleExpanded = useCallback((id: string, expanded: boolean) => {
     setExpandedKeys((prev) => (expanded ? [...prev, id] : prev.filter((k) => k !== id)));
   }, []);
@@ -84,8 +95,10 @@ export function useHistory() {
     refresh,
     clearArchive,
     deleteSession,
+    exportSession,
     clearing,
     deletingId,
+    exportingId,
     canClear: (data?.archive.length ?? 0) > 0,
     pollIntervalMs: HISTORY_POLL_INTERVAL_MS,
     isLoading,

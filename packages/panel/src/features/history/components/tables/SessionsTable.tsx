@@ -11,7 +11,9 @@ interface SessionsTableProps {
   expandedKeys: string[];
   onToggleExpanded: (id: string, expanded: boolean) => void;
   onDeleteSession: (id: string) => void;
+  onExportSession: (session: Session) => void;
   deletingId: string | null;
+  exportingId: string | null;
 }
 
 export function SessionsTable({
@@ -19,10 +21,17 @@ export function SessionsTable({
   expandedKeys,
   onToggleExpanded,
   onDeleteSession,
+  onExportSession,
   deletingId,
+  exportingId,
 }: SessionsTableProps) {
   const { token } = theme.useToken();
-  const columns = useSessionColumns({ onDelete: onDeleteSession, deletingId });
+  const columns = useSessionColumns({
+    onDelete: onDeleteSession,
+    onExport: onExportSession,
+    deletingId,
+    exportingId,
+  });
 
   return (
     <Card styles={{ body: { padding: 0 } }}>

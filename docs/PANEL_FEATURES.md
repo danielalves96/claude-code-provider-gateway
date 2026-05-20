@@ -243,12 +243,12 @@ Displays archived Claude Code sessions with detailed breakdowns.
 
 | Component | Purpose |
 |---|---|
-| `HistoryPage` | Main page: summary stats, session list with expandable rows, filtering by provider/model. |
+| `HistoryPage` | Main page: summary stats, session list with expandable rows, per-session JSON export, and clear-history controls. |
 | `HistorySummary` | Aggregated high-level stats (total sessions, requests, errors). |
 | `HistoryTopStats` | Top provider and top model cards derived from session data. |
 | `HistoryHeader` | Page controls: clear history button, help tooltip. |
 | `ClearHistoryModal` | Confirmation modal for clearing the entire archive. |
-| `SessionsTable` | Expandable table of archived sessions. Each row expands to show request log details. |
+| `SessionsTable` | Expandable table of archived sessions. Each row expands to show request log details and includes export/delete actions. |
 | `SessionDetails` | Expanded row content: request log entries and metadata for a session. |
 | `SessionMetadataCards` | Shows session metadata: launch hint, provider, model, duration. |
 | `RequestLogTable` | Table of individual API requests within a session (model, provider, latency, status). |
@@ -262,7 +262,7 @@ Displays archived Claude Code sessions with detailed breakdowns.
 
 | Hook | Purpose |
 |---|---|
-| `useHistory` | Polls `GET /api/sessions` and `GET /api/stats` every 5 seconds. Manages sessions, provider stats, totals, expanded keys, clear/delete operations. |
+| `useHistory` | Polls `GET /api/sessions` and `GET /api/stats` every 5 seconds. Manages sessions, provider stats, totals, expanded keys, clear/delete/export operations. |
 | `useHistoryPage` | Orchestrator hook that filters and sorts sessions, derives top provider/model info, manages the clear modal. |
 
 ### Services
@@ -270,6 +270,7 @@ Displays archived Claude Code sessions with detailed breakdowns.
 | Service | Endpoints Used |
 |---|---|
 | `historyService` | `GET /api/sessions`, `GET /api/stats`, `DELETE /api/sessions` (clear archive), `DELETE /api/sessions/:id` (delete single session) |
+| `sessionExport` | Exports a single `SessionRecord` as formatted JSON. In Tauri it invokes `save_session_json`; in browser/dev fallback it downloads a Blob. |
 
 ### Domain
 
@@ -286,7 +287,8 @@ Displays archived Claude Code sessions with detailed breakdowns.
 2. Sessions are stored in `archive` (sorted newest-first) with per-session `requestLog`, `modelStats`, and `providerStats`.
 3. `SessionsTable` renders sessions as expandable Ant Design table rows.
 4. Expanding a row renders `SessionDetails`, which shows `RequestLogTable` from the session's `requestLog` entries.
-5. Global aggregate stats come from the `/api/stats` endpoint.
+5. Exporting a row serializes that session to `session-{id}.json`. Desktop builds save it through Tauri to the user's Downloads directory; browser/dev builds use a normal Blob download.
+6. Global aggregate stats come from the `/api/stats` endpoint.
 
 ---
 
@@ -307,7 +309,7 @@ Real-time server log viewer using Server-Sent Events.
 
 | Hook | Purpose |
 |---|---|
-| `useServerLogs` | Subscribes to SSE at `/api/logs`. Maintains last 5000 lines. Provides `filteredLogs` (by level + search), `stats` (counts per level), and all toolbar state (paused, search, levelFilter, wrapLines, showLineNumbers). Includes `downloadLogs()` to export as `.log` file. |
+| `useServerLogs` | Subscribes to SSE at `/api/logs`. Maintains last 5000 lines. Provides `filteredLogs` (by level + search), `stats` (counts per level), and all toolbar state (paused, search, levelFilter, wrapLines, showLineNumbers). Includes `downloadLogs()` to export as `.log`; desktop builds invoke `save_server_logs`, while browser/dev builds use a Blob download. |
 | `useLogViewerScroll` | Manages auto-scroll behavior. Tracks whether the user is at bottom, scrolls to bottom on new lines when unpaused and at bottom. |
 
 ### Domain

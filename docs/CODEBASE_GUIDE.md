@@ -86,7 +86,7 @@ belongs in the TypeScript daemon or React panel unless it needs native OS access
 | Rust module | Responsibility |
 |---|---|
 | `lib.rs` | Tauri builder composition, plugin registration, app setup, sidecar startup, and shutdown hooks. |
-| `commands.rs` | Stable Tauri command boundary used by the panel. |
+| `commands.rs` | Stable Tauri command boundary used by the panel, including daemon lifecycle, safe URL opening, and native file exports. |
 | `daemon_supervisor.rs` | Sidecar start/stop/status, stale PID cleanup, and stdout/stderr draining. |
 | `tray.rs` | Tray/menu bar behavior for background execution, including hide-on-close, show/hide, and real quit. |
 | `external_url.rs` | Allowlisted external URL validation and opening in the OS browser. |

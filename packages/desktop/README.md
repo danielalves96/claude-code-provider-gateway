@@ -59,7 +59,7 @@ On Linux this produces `.deb`, `.rpm`, and `.AppImage` bundles. On macOS it prod
 packages/desktop/src-tauri/src/
 ├── main.rs              # Windows subsystem config, entry point
 ├── lib.rs               # Tauri builder setup, plugin registration, autostart
-├── commands.rs          # Tauri IPC commands: start_daemon, stop_daemon, daemon_status, open_url
+├── commands.rs          # Tauri IPC commands: daemon lifecycle, safe URL opening, desktop file exports
 ├── daemon_supervisor.rs # Daemon sidecar process lifecycle (spawn, kill, status)
 ├── tray.rs              # System tray/menu bar lifecycle: show, hide, quit
 ├── config.rs            # Environment variable reading (external daemon flag, secret key)
@@ -67,7 +67,7 @@ packages/desktop/src-tauri/src/
 └── external_url.rs      # Secure external URL validation and opening (allowlist-based)
 ```
 
-The Tauri app registers four IPC commands callable from the panel frontend:
+The Tauri app registers IPC commands callable from the panel frontend:
 
 | Command | Description |
 |---|---|
@@ -75,6 +75,8 @@ The Tauri app registers four IPC commands callable from the panel frontend:
 | `stop_daemon` | Kills the running daemon sidecar. |
 | `daemon_status` | Returns `{ running: boolean, pid: number \| null }`. |
 | `open_url` | Opens an external URL in the system browser. Only `https://` URLs with hosts on the allowlist are permitted. |
+| `save_server_logs` | Saves the Server Logs buffer as a `.log` file in the user's Downloads directory. |
+| `save_session_json` | Saves one History session as `session-{id}.json` in the user's Downloads directory. |
 
 The panel frontend is loaded from `../../daemon/dist/static` (built panel output). At dev time, Tauri opens `http://localhost:5173` (Vite dev server).
 

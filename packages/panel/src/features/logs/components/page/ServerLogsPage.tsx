@@ -1,4 +1,5 @@
-import { Badge, Card, Flex, Typography, theme } from "antd";
+import { App, Badge, Card, Flex, Typography, theme } from "antd";
+import { useCallback } from "react";
 import { PageHeader } from "../../../../shared/components/PageHeader.js";
 import { useServerLogs } from "../../hooks/useServerLogs.js";
 import { LogsSummary } from "../summary/LogsSummary.js";
@@ -8,6 +9,7 @@ import { LogViewer } from "../terminal/LogViewer.js";
 const { Text } = Typography;
 
 export default function ServerLogsPage() {
+  const { message } = App.useApp();
   const { token } = theme.useToken();
   const {
     logs,
@@ -24,10 +26,24 @@ export default function ServerLogsPage() {
     toggleWrap,
     showLineNumbers,
     toggleLineNumbers,
+    downloadingLogs,
     downloadLogs,
   } = useServerLogs();
 
   const pageHeight = `calc(100vh - 56px - ${token.paddingLG * 2}px)`;
+  const handleDownload = useCallback(async () => {
+    try {
+      const result = await downloadLogs();
+      if (!result) return;
+      if (result.target === "desktop") {
+        message.success(`Logs saved to ${result.path}`);
+      } else {
+        message.success(`Downloaded ${result.fileName}`);
+      }
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Failed to save logs");
+    }
+  }, [downloadLogs, message]);
 
   return (
     <Flex vertical gap={token.paddingLG} style={{ height: pageHeight }}>
@@ -74,13 +90,14 @@ export default function ServerLogsPage() {
           wrapLines={wrapLines}
           showLineNumbers={showLineNumbers}
           hasLogs={logs.length > 0}
+          downloading={downloadingLogs}
           onSearchChange={setSearch}
           onLevelFilterChange={setLevelFilter}
           onTogglePaused={togglePaused}
           onToggleWrap={toggleWrap}
           onToggleLineNumbers={toggleLineNumbers}
           onClear={clear}
-          onDownload={downloadLogs}
+          onDownload={handleDownload}
         />
         <LogViewer
           logs={filteredLogs}

@@ -2,6 +2,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
@@ -15,12 +16,16 @@ const { Text } = Typography;
 
 interface SessionColumnsOptions {
   onDelete: (id: string) => void;
+  onExport: (session: Session) => void;
   deletingId: string | null;
+  exportingId: string | null;
 }
 
 export function useSessionColumns({
   onDelete,
+  onExport,
   deletingId,
+  exportingId,
 }: SessionColumnsOptions): TableColumnsType<Session> {
   const { token } = theme.useToken();
 
@@ -82,9 +87,18 @@ export function useSessionColumns({
     },
     {
       key: "actions",
-      width: 56,
+      width: 88,
       render: (_, session) => (
-        <div style={{ display: "flex", justifyContent: "center", paddingInlineEnd: 8 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 4, paddingInlineEnd: 8 }}>
+          <Button
+            type="text"
+            size="small"
+            icon={<DownloadOutlined />}
+            loading={exportingId === session.id}
+            aria-label={`Export session ${session.id} as JSON`}
+            title="Export as JSON"
+            onClick={() => onExport(session)}
+          />
           <Popconfirm
             title="Delete this session?"
             okText="Delete"
@@ -101,7 +115,7 @@ export function useSessionColumns({
               icon={<DeleteOutlined />}
               loading={deletingId === session.id}
               aria-label={`Delete session ${session.id}`}
-              title={`Delete session ${session.id}`}
+              title="Delete Session"
             />
           </Popconfirm>
         </div>

@@ -25,13 +25,14 @@ interface LogsToolbarProps {
   wrapLines: boolean;
   showLineNumbers: boolean;
   hasLogs: boolean;
+  downloading: boolean;
   onSearchChange: (value: string) => void;
   onLevelFilterChange: (value: LogLevel) => void;
   onTogglePaused: () => void;
   onToggleWrap: () => void;
   onToggleLineNumbers: () => void;
   onClear: () => void;
-  onDownload: () => void;
+  onDownload: () => void | Promise<void>;
 }
 
 export function LogsToolbar({
@@ -42,6 +43,7 @@ export function LogsToolbar({
   wrapLines,
   showLineNumbers,
   hasLogs,
+  downloading,
   onSearchChange,
   onLevelFilterChange,
   onTogglePaused,
@@ -135,7 +137,12 @@ export function LogsToolbar({
         </Space.Compact>
 
         <Tooltip title="Download full log buffer as .log file">
-          <Button icon={<DownloadOutlined />} onClick={onDownload} disabled={!hasLogs}>
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={onDownload}
+            disabled={!hasLogs}
+            loading={downloading}
+          >
             Download
           </Button>
         </Tooltip>

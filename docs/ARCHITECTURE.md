@@ -414,7 +414,8 @@ React 19 SPA built with Vite 6 + Ant Design 5 + Zustand 5.
 - **Providers** — toggle providers, edit API keys, OAuth login, test connections, add extra/manual models, create/delete custom OpenAI/Anthropic-compatible providers
 - **Model Chain** — create, edit, reorder, enable, and launch ordered fallback chains built from active provider models
 - **Routing** — tier-based model routing UI
-- **History** — session archive with per-request drill-down
+- **History** — session archive with per-request drill-down and per-session JSON export
+- **Server Logs** — live daemon log viewer with filtering and `.log` export
 - **Settings** — daemon configuration, outbound proxy, web tools, and token savers
 
 ### 9. Desktop Shell (`packages/desktop/`)
@@ -434,7 +435,7 @@ The Rust layer is deliberately narrow. Its job is to integrate with the OS, own 
 | Module | Role |
 |---|---|
 | `src/lib.rs` | Application composition: plugins, managed state, setup hook, command registration, exit shutdown |
-| `src/commands.rs` | Tauri command facade. Converts internal errors into serializable `{ code, message }` command errors |
+| `src/commands.rs` | Tauri command facade. Converts internal errors into serializable `{ code, message }` command errors and owns native file-save helpers for panel exports |
 | `src/daemon_supervisor.rs` | Async sidecar supervisor protected by a Tokio mutex. Starts, stops, reports status, drains process output, and cleans stale daemon PIDs before spawning |
 | `src/tray.rs` | System tray/menu bar integration. Intercepts main-window close requests, shows/hides the window, and marks intentional quits before calling `app.exit(0)` |
 | `src/external_url.rs` | External browser policy. Only allowlisted `https://` hosts can be opened from the panel |
@@ -449,6 +450,8 @@ The Rust layer is deliberately narrow. Its job is to integrate with the OS, own 
 | `stop_daemon` | Stop the supervised sidecar | Idempotent when no child is running |
 | `daemon_status` | Return `{ running, pid }` for the current supervised child | Tracks the sidecar owned by this Tauri process |
 | `open_url` | Open an allowlisted external URL in the OS browser | Validates scheme and host before calling the shell plugin |
+| `save_server_logs` | Save the Server Logs buffer as a `.log` file | Writes to the user's Downloads directory from the desktop app |
+| `save_session_json` | Save one History session as formatted JSON | Writes `session-{id}.json` to the user's Downloads directory from the desktop app |
 
 Command errors are structured as `{ code, message }`. This keeps the panel from depending on free-form Rust error strings while still preserving useful diagnostic text.
 
