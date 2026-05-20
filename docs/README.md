@@ -19,6 +19,7 @@ cleaner, source-linked form.
 
 | Document | Purpose |
 |---|---|
+| [App Screens](APP_SCREENS.md) | Preview the desktop app UI before installing it. |
 | [Getting Started](GETTING-STARTED.md) | Install the desktop app, complete first-run setup, and launch Claude Code through `ccpg`. |
 | [Configuration](CONFIGURATION.md) | Runtime config shape, environment variables, defaults, secrets, and storage locations. |
 | [Providers](PROVIDERS.md) | Provider catalog, auth modes, CLI flags, model discovery, Model Chains, and provider UX. |

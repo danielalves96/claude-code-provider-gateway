@@ -6,7 +6,7 @@
 
 Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Groq, xAI, Mistral, GLM, Minimax, Command Code, Ollama, LM Studio, llama.cpp, custom OpenAI/Anthropic-compatible endpoints, and many other providers, while keeping the Claude Code workflow intact.
 
-[![Version](https://img.shields.io/badge/v0.1-early_release-111827?style=for-the-badge)](#status)
+[![Version](https://img.shields.io/badge/v0.2-early_release-111827?style=for-the-badge)](#status)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Desktop App](https://img.shields.io/badge/desktop_app-Tauri-24c8db?style=for-the-badge)](packages/desktop)
 [![Providers](https://img.shields.io/badge/providers-40%2B-2563eb?style=for-the-badge)](#supported-providers)
@@ -20,7 +20,11 @@ Run Claude Code through OpenAI Account, GitHub Copilot, OpenRouter, DeepSeek, Gr
 </div>
 
 <p align="center">
-  <img src=".github/assets/home.gif" alt="Claude Code Provider Gateway desktop app demo" width="95%" />
+  <img src=".github/assets/home.png" alt="Claude Code Provider Gateway desktop app demo" width="95%" />
+</p>
+
+<p align="center">
+  <a href="docs/APP_SCREENS.md">View app screens</a>
 </p>
 
 ---
@@ -435,6 +439,7 @@ Runtime files live in:
 | Document | Use it for |
 |---|---|
 | [Documentation Hub](docs/README.md) | The complete docs map and reading paths for users, contributors, and maintainers. |
+| [App Screens](docs/APP_SCREENS.md) | Preview the desktop app UI before installing it. |
 | [Getting Started](docs/GETTING-STARTED.md) | Install the desktop app, configure a provider, and launch Claude Code through `ccpg`. |
 | [Providers](docs/PROVIDERS.md) | Provider catalog, auth modes, CLI flags, model discovery, Model Chains, and panel behavior. |
 | [Configuration](docs/CONFIGURATION.md) | Config file shape, environment variables, defaults, secrets, and runtime storage. |

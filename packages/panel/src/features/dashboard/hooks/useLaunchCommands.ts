@@ -20,20 +20,36 @@ export function useLaunchCommands() {
 
   const items: LaunchItem[] = useMemo(() => {
     if (!launch) return [];
-    return [
-      { id: "all", label: "All providers", badge: "--all", cmd: launch.all },
-      {
-        id: "model-chains",
-        label: "All Model Chains",
-        badge: "--ModelChain",
-        cmd: launch.modelChains,
-      },
-      ...launch.perProvider.map((p) => ({
+    const providerItems = launch.perProvider
+      .filter((p) => !p.id.startsWith("chain:"))
+      .map((p) => ({
         id: p.id,
         label: p.label,
         badge: flagFromCommand(p.cli),
         cmd: p.cli,
-      })),
+      }));
+    const chainItems = launch.perProvider
+      .filter((p) => p.id.startsWith("chain:"))
+      .map((p) => ({
+        id: p.id,
+        label: p.label,
+        badge: flagFromCommand(p.cli),
+        cmd: p.cli,
+      }));
+    return [
+      { id: "all", label: "All providers", badge: "--all", cmd: launch.all },
+      ...providerItems,
+      ...(chainItems.length >= 2
+        ? [
+            {
+              id: "model-chains",
+              label: "All Model Chains",
+              badge: "--ModelChain",
+              cmd: launch.modelChains,
+            },
+          ]
+        : []),
+      ...chainItems,
     ];
   }, [launch]);
 
