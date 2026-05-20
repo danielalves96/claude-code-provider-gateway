@@ -136,6 +136,7 @@ The Rust crate is intentionally small. Keep the desktop shell as orchestration c
 | `src/lib.rs` | Tauri builder composition, plugin registration, app setup, sidecar autostart, and best-effort shutdown on exit |
 | `src/commands.rs` | Public Tauri command boundary used by the React panel |
 | `src/daemon_supervisor.rs` | Sidecar lifecycle: start, stop, status, stdout/stderr draining, stale PID cleanup |
+| `src/tray.rs` | System tray/menu bar behavior: hide-on-close, show/hide actions, and intentional quit handling |
 | `src/external_url.rs` | Allowlisted external URL validation and OS browser opening |
 | `src/master_key.rs` | OS keychain integration for the 32-byte daemon secret key |
 | `src/config.rs` | Environment variable names and desktop runtime flags |
@@ -152,6 +153,8 @@ There are two daemon ownership modes:
 | Sidecar daemon | Default production/dev Tauri path | Rust starts and supervises the bundled sidecar |
 
 In external daemon mode, Rust intentionally refuses `start_daemon`/`stop_daemon`; the panel should treat the daemon as managed by the dev watcher. In sidecar mode, Rust obtains the master key from the OS keychain, passes it to the daemon via `CC_GATEWAY_SECRET_KEY`, drains sidecar output into logs, and stops the sidecar when the desktop app exits.
+
+Closing the main desktop window should keep the app running in the background. For lifecycle work, validate both paths: the window close button hides the window, while tray/menu bar `Quit` performs a real app exit and stops the sidecar through the normal shutdown hook.
 
 #### Desktop validation
 
