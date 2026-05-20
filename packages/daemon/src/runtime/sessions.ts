@@ -144,7 +144,10 @@ export function recordSessionRequest(
   return `${session.id}:${logEntry.id}`;
 }
 
-export function updateSessionRequestResponse(compositeId: string | undefined, response: string): void {
+export function updateSessionRequestResponse(
+  compositeId: string | undefined,
+  response: string,
+): void {
   if (!compositeId) return;
   const { sessionId, entryId } = splitCompositeLogId(compositeId);
   const session = activeSessions.get(sessionId);

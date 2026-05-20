@@ -6,8 +6,8 @@ import {
   endSession,
   getCurrentSession,
   heartbeatSession,
-  listCurrentSessions,
   listArchivedSessions,
+  listCurrentSessions,
 } from "../../runtime/sessions.js";
 import type { SessionsResponse } from "../contracts.js";
 

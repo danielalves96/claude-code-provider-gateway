@@ -445,7 +445,10 @@ export class MessageService {
     return countRequestTokens(transformed);
   }
 
-  private applyTokenSavers(req: MessagesRequest, config: Config): {
+  private applyTokenSavers(
+    req: MessagesRequest,
+    config: Config,
+  ): {
     req: MessagesRequest;
     stats: TokenSaverStats | undefined;
   } {

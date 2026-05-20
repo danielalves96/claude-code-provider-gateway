@@ -103,5 +103,8 @@ test("ModelService does not advertise model chains during single provider launch
 
   const result = await service.listModels();
 
-  assert.equal(result.data.some((model) => model.id.startsWith("anthropic/chain/")), false);
+  assert.equal(
+    result.data.some((model) => model.id.startsWith("anthropic/chain/")),
+    false,
+  );
 });

@@ -5,10 +5,10 @@ import type {
   InstallShellSetupResponse,
   LaunchCommandsResponse,
   QuickLaunchResponse,
+  SessionsResponse,
   ShellInfo,
   ShellName,
   ShellSetupResponse,
-  SessionsResponse,
 } from "../../../../../daemon/src/panel/contracts.js";
 
 export type GatewayStatus = GatewayStatusResponse;

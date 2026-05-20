@@ -5,9 +5,21 @@ import {
   ThunderboltOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
-import { Badge, Button, Card, Collapse, Empty, Flex, Skeleton, Space, Tag, Typography, theme } from "antd";
-import { useMemo, useState } from "react";
+import {
+  Badge,
+  Button,
+  Card,
+  Collapse,
+  Empty,
+  Flex,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+  theme,
+} from "antd";
 import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { MetricSummaryGrid } from "../../../shared/components/MetricSummaryGrid.js";
 import { PageHeader } from "../../../shared/components/PageHeader.js";
 import { formatUptime } from "../../../shared/utils/time.js";
