@@ -1,5 +1,5 @@
 import { CodeOutlined, CopyOutlined } from "@ant-design/icons";
-import { Card, Empty, Flex, Tooltip, Typography, theme } from "antd";
+import { Card, Divider, Empty, Flex, Tooltip, Typography, theme } from "antd";
 import { useCopyToClipboard } from "../../../../shared/hooks/useCopyToClipboard.js";
 import type { LaunchItem } from "../../domain/types.js";
 
@@ -69,6 +69,8 @@ function AvailableProviders({
   onCopy: (key: string, value: string) => void;
 }) {
   const { token } = theme.useToken();
+  const providerItems = items.filter((item) => !isChainLaunchItem(item));
+  const chainItems = items.filter(isChainLaunchItem);
 
   if (error) {
     return (
@@ -93,20 +95,46 @@ function AvailableProviders({
   return (
     <Flex vertical gap={token.padding}>
       <Text type="secondary" style={{ fontSize: 14 }}>
-        Run Claude Code targeting a specific provider instantly:
+        Run Claude Code with a provider or Model Chain shortcut:
       </Text>
-      <Flex wrap gap={token.padding}>
-        {items.map((item) => (
-          <QuickLaunchTag
-            key={item.id}
-            item={item}
-            copied={copiedKey === item.id}
-            onCopy={onCopy}
-          />
-        ))}
-      </Flex>
+      {providerItems.length > 0 && (
+        <Flex wrap gap={token.padding}>
+          {providerItems.map((item) => (
+            <QuickLaunchTag
+              key={item.id}
+              item={item}
+              copied={copiedKey === item.id}
+              onCopy={onCopy}
+            />
+          ))}
+        </Flex>
+      )}
+      {chainItems.length > 0 && (
+        <>
+          <Divider style={{ margin: `${token.marginXS}px 0 0` }} />
+          <Flex vertical gap={token.paddingSM}>
+            <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase" }}>
+              Model Chains
+            </Text>
+            <Flex wrap gap={token.padding}>
+              {chainItems.map((item) => (
+                <QuickLaunchTag
+                  key={item.id}
+                  item={item}
+                  copied={copiedKey === item.id}
+                  onCopy={onCopy}
+                />
+              ))}
+            </Flex>
+          </Flex>
+        </>
+      )}
     </Flex>
   );
+}
+
+function isChainLaunchItem(item: LaunchItem): boolean {
+  return item.id.startsWith("chain:") || item.id === "model-chains";
 }
 
 function QuickLaunchTag({
@@ -119,7 +147,7 @@ function QuickLaunchTag({
   onCopy: (key: string, value: string) => void;
 }) {
   const { token } = theme.useToken();
-  const isChain = item.id.startsWith("chain:") || item.id === "model-chains";
+  const isChain = isChainLaunchItem(item);
 
   return (
     <Tooltip title={copied ? "Copied!" : `Copy ${item.label}`}>
