@@ -1,5 +1,6 @@
 import { http } from "../../../shared/api/http.js";
 import type {
+  GatewaySessions,
   GatewayStatus,
   InstallResponse,
   LaunchCommands,
@@ -12,6 +13,7 @@ import type {
 export const dashboardService = {
   getStatus: () => http.get<GatewayStatus>("/status"),
   getStats: () => http.get<StatsResponse>("/stats"),
+  getSessions: () => http.get<GatewaySessions>("/sessions"),
   getLaunchCommands: () => http.get<LaunchCommands>("/launch-commands"),
   getQuickLaunch: () => http.get<QuickLaunch>("/quick-launch"),
   getShellSetup: () => http.get<ShellSetup>("/shell-setup"),

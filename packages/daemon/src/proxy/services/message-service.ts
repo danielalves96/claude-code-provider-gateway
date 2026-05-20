@@ -1,9 +1,10 @@
-import type { ModelFallbackConfig, ModelFallbackEntry } from "../../config/schema.js";
+import type { Config, ModelFallbackConfig, ModelFallbackEntry } from "../../config/schema.js";
 import { countRequestTokens } from "../../core/anthropic/tokens.js";
 import type { MessagesRequest } from "../../core/anthropic/types.js";
 import { logger } from "../../observability/log.js";
 import type { TokenSaverStats } from "../../runtime/session-types.js";
 import {
+  getSessionConfig,
   getSessionPrimaryModel,
   isFirstSessionRequest,
   recordSessionRequest,
@@ -46,21 +47,25 @@ export type MessageServiceResult =
 export class MessageService {
   constructor(private readonly runtime: ProxyRuntime) {}
 
-  async createMessage(req: MessagesRequest): Promise<MessageServiceResult> {
+  async createMessage(
+    req: MessagesRequest,
+    sessionId?: string | null,
+  ): Promise<MessageServiceResult> {
     const started = Date.now();
+    const config = getSessionConfig(sessionId) ?? this.runtime.currentConfig();
     const isClaudeTierRequest = /^claude-/i.test(req.model);
     const optimized = isClaudeTierRequest ? { handled: false as const } : tryOptimize(req);
 
     if (optimized.handled) {
       const latency = Date.now() - started;
       logger.info("proxy", `→ local optimization for ${req.model} (${latency}ms)`);
-      const resolved = resolveModel(req.model, this.runtime.currentConfig());
+      const resolved = resolveModel(req.model, config);
       if (resolved.source === "prefix") {
-        setSessionPrimaryModel(resolved.providerId, resolved.providerModel);
+        setSessionPrimaryModel(sessionId, resolved.providerId, resolved.providerModel);
       }
       const inputTokens = countRequestTokens(req);
-      const prompt = serializePrompt(req, isFirstSessionRequest());
-      recordSessionRequest({
+      const prompt = serializePrompt(req, isFirstSessionRequest(sessionId));
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId: "local",
         providerModel: req.model,
@@ -73,13 +78,12 @@ export class MessageService {
       return streamResult(optimized.stream);
     }
 
-    const config = this.runtime.currentConfig();
     const registry = this.runtime.providers();
 
     const resolved = resolveModel(req.model, config);
     if (resolved.source === "fallback") {
-      setSessionPrimaryModel("fallback", resolved.fallback.slug);
-      return await this.streamFallback(req, resolved.fallback, started);
+      setSessionPrimaryModel(sessionId, "fallback", resolved.fallback.slug);
+      return await this.streamFallback(req, resolved.fallback, started, sessionId);
     }
 
     let { providerId, providerModel } = resolved;
@@ -87,7 +91,7 @@ export class MessageService {
     // When the user explicitly picks a model via provider prefix (e.g. anthropic/copilot/gemini-2.5-pro),
     // remember it as the session's primary model so background Claude Code calls get routed there too.
     if (resolved.source === "prefix") {
-      setSessionPrimaryModel(providerId, providerModel);
+      setSessionPrimaryModel(sessionId, providerId, providerModel);
     }
 
     // Background calls from Claude Code (claude-haiku-*, claude-sonnet-*, etc.) arrive without a
@@ -95,7 +99,7 @@ export class MessageService {
     // model so they use whatever the user is actually running instead of a hardcoded Claude
     // model name.
     if (resolved.source === "passthrough" && isClaudeTierRequest) {
-      const primary = getSessionPrimaryModel();
+      const primary = getSessionPrimaryModel(sessionId);
       if (primary) {
         if (primary.providerId === "fallback") {
           const fallback = config.modelFallbacks.find(
@@ -104,11 +108,11 @@ export class MessageService {
               candidate.slug === primary.providerModel &&
               candidate.models.length > 0,
           );
-          if (fallback) return await this.streamFallback(req, fallback, started);
+          if (fallback) return await this.streamFallback(req, fallback, started, sessionId);
           const message = `Model chain "${primary.providerModel}" is not enabled or configured.`;
           logger.error("proxy", `✗ ${req.model} → fallback/${primary.providerModel} unavailable`);
           recordRequest("fallback", Date.now() - started, message);
-          recordSessionRequest({
+          recordSessionRequest(sessionId, {
             requestedModel: req.model,
             providerId: "fallback",
             providerModel: primary.providerModel,
@@ -128,7 +132,7 @@ export class MessageService {
       }
     }
 
-    const primaryModel = getSessionPrimaryModel();
+    const primaryModel = getSessionPrimaryModel(sessionId);
     if (
       resolved.source === "passthrough" &&
       providerId === config.activeProvider &&
@@ -136,7 +140,7 @@ export class MessageService {
       shouldUseNativeClaudePassthrough(req.model, config, primaryModel) &&
       getAnthropicCredentialsStatus().available
     ) {
-      return await this.streamNativeClaude(req, started);
+      return await this.streamNativeClaude(req, started, sessionId, config);
     }
 
     const provider = registry.get(providerId);
@@ -145,7 +149,7 @@ export class MessageService {
       const message = `Provider "${providerId}" is not enabled or configured.`;
       logger.error("proxy", `✗ ${req.model} → ${providerId} disabled`);
       recordRequest(providerId, Date.now() - started, message);
-      recordSessionRequest({
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId,
         providerModel,
@@ -161,10 +165,13 @@ export class MessageService {
       };
     }
 
-    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers({
-      ...cloneMessagesRequest(req),
-      model: providerModel,
-    });
+    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers(
+      {
+        ...cloneMessagesRequest(req),
+        model: providerModel,
+      },
+      config,
+    );
     const inputTokens = countRequestTokens(providerReq);
     const result = await provider.streamResponse(providerReq, inputTokens);
     const latency = Date.now() - started;
@@ -181,7 +188,7 @@ export class MessageService {
         latency,
         `HTTP ${result.error.status}: ${result.error.message.slice(0, 200)}`,
       );
-      recordSessionRequest({
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId,
         providerModel,
@@ -205,8 +212,8 @@ export class MessageService {
       `→ ${providerId}/${providerModel} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(providerReq, isFirstSessionRequest());
-    const logEntryId = recordSessionRequest({
+    const prompt = serializePrompt(providerReq, isFirstSessionRequest(sessionId));
+    const logEntryId = recordSessionRequest(sessionId, {
       requestedModel: req.model,
       providerId,
       providerModel,
@@ -223,9 +230,12 @@ export class MessageService {
   private async streamNativeClaude(
     req: MessagesRequest,
     started: number,
+    sessionId: string | null | undefined,
+    config: Config,
   ): Promise<MessageServiceResult> {
     const { req: nativeReq, stats: tokenSaverStats } = this.applyTokenSavers(
       cloneMessagesRequest(req),
+      config,
     );
     const inputTokens = countRequestTokens(nativeReq);
     const result = await streamAnthropicNative(nativeReq, nativeReq.model, undefined);
@@ -246,7 +256,7 @@ export class MessageService {
         latency,
         `HTTP ${result.error.status}: ${result.error.message.slice(0, 200)}`,
       );
-      recordSessionRequest({
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId,
         providerModel: req.model,
@@ -270,8 +280,8 @@ export class MessageService {
       `→ ${providerId}/${req.model} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    const prompt = serializePrompt(nativeReq, isFirstSessionRequest());
-    const logEntryId = recordSessionRequest({
+    const prompt = serializePrompt(nativeReq, isFirstSessionRequest(sessionId));
+    const logEntryId = recordSessionRequest(sessionId, {
       requestedModel: req.model,
       providerId,
       providerModel: req.model,
@@ -289,6 +299,7 @@ export class MessageService {
     req: MessagesRequest,
     fallback: ModelFallbackConfig,
     started: number,
+    sessionId: string | null | undefined,
   ): Promise<MessageServiceResult> {
     let lastError: {
       status: ErrorStatus;
@@ -299,7 +310,15 @@ export class MessageService {
     for (let index = 0; index < fallback.models.length; index++) {
       const target = fallback.models[index];
       for (let attempt = 1; attempt <= FALLBACK_ATTEMPTS_PER_MODEL; attempt++) {
-        const result = await this.tryFallbackTarget(req, fallback, target, index, attempt, started);
+        const result = await this.tryFallbackTarget(
+          req,
+          fallback,
+          target,
+          index,
+          attempt,
+          started,
+          sessionId,
+        );
         if (result.kind === "stream") return result;
         lastError = {
           status: result.status,
@@ -329,6 +348,7 @@ export class MessageService {
     index: number,
     attempt: number,
     started: number,
+    sessionId: string | null | undefined,
   ): Promise<MessageServiceResult> {
     const providerId = target.providerId;
     const providerModel = normalizeFallbackModel(target);
@@ -339,7 +359,7 @@ export class MessageService {
       const message = `Model chain ${fallback.name}: provider "${providerId}" is not enabled or configured.`;
       logger.error("proxy", `✗ ${fallback.slug} → ${displayTarget} disabled`);
       recordRequest(providerId, Date.now() - started, message);
-      recordSessionRequest({
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId,
         providerModel,
@@ -355,10 +375,13 @@ export class MessageService {
       };
     }
 
-    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers({
-      ...cloneMessagesRequest(req),
-      model: providerModel,
-    });
+    const { req: providerReq, stats: tokenSaverStats } = this.applyTokenSavers(
+      {
+        ...cloneMessagesRequest(req),
+        model: providerModel,
+      },
+      getSessionConfig(sessionId) ?? this.runtime.currentConfig(),
+    );
     const inputTokens = countRequestTokens(providerReq);
     const result = await provider.streamResponse(providerReq, inputTokens);
     const latency = Date.now() - started;
@@ -372,7 +395,7 @@ export class MessageService {
         `↷ ${fallback.slug} ${index + 1}/${fallback.models.length} attempt ${attempt} failed: ${displayTarget} ${error}`,
       );
       recordRequest(providerId, latency, error);
-      recordSessionRequest({
+      recordSessionRequest(sessionId, {
         requestedModel: req.model,
         providerId,
         providerModel,
@@ -396,11 +419,11 @@ export class MessageService {
       `→ ${fallback.slug} used ${displayTarget} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
     recordRequest(providerId, latency, null);
-    if (getSessionPrimaryModel()?.providerId !== "fallback") {
-      setSessionPrimaryModel(providerId, providerModel);
+    if (getSessionPrimaryModel(sessionId)?.providerId !== "fallback") {
+      setSessionPrimaryModel(sessionId, providerId, providerModel);
     }
-    const prompt = serializePrompt(providerReq, isFirstSessionRequest());
-    const logEntryId = recordSessionRequest({
+    const prompt = serializePrompt(providerReq, isFirstSessionRequest(sessionId));
+    const logEntryId = recordSessionRequest(sessionId, {
       requestedModel: req.model,
       providerId,
       providerModel,
@@ -414,16 +437,22 @@ export class MessageService {
     return streamResultWithCapture(result.stream, logEntryId);
   }
 
-  countTokens(req: MessagesRequest): number {
-    const { req: transformed } = this.applyTokenSavers(cloneMessagesRequest(req));
+  countTokens(req: MessagesRequest, sessionId?: string | null): number {
+    const { req: transformed } = this.applyTokenSavers(
+      cloneMessagesRequest(req),
+      getSessionConfig(sessionId) ?? this.runtime.currentConfig(),
+    );
     return countRequestTokens(transformed);
   }
 
-  private applyTokenSavers(req: MessagesRequest): {
+  private applyTokenSavers(
+    req: MessagesRequest,
+    config: Config,
+  ): {
     req: MessagesRequest;
     stats: TokenSaverStats | undefined;
   } {
-    const { tokenSavers } = this.runtime.currentConfig();
+    const { tokenSavers } = config;
     const rtkStats = compressMessages(req, tokenSavers.rtkEnabled);
     const rtkLine = formatRtkLog(rtkStats);
     if (rtkLine) logger.info("rtk", rtkLine);

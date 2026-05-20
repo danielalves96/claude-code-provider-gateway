@@ -5,6 +5,7 @@ import type {
   InstallShellSetupResponse,
   LaunchCommandsResponse,
   QuickLaunchResponse,
+  SessionsResponse,
   ShellInfo,
   ShellName,
   ShellSetupResponse,
@@ -15,6 +16,7 @@ export type ProviderStat = GatewayProviderStat;
 export type StatsResponse = {
   providers: GatewayProviderStat[];
 };
+export type GatewaySessions = SessionsResponse;
 export type LaunchCommands = LaunchCommandsResponse;
 export type QuickLaunch = QuickLaunchResponse;
 

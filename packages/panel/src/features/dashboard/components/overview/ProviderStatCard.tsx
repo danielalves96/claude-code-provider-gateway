@@ -17,8 +17,9 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
     <Card
       size="small"
       style={{
-        background: token.colorFillAlter,
+        background: p.requests > 0 ? token.colorFillAlter : token.colorFillQuaternary,
         borderColor: token.colorBorder,
+        opacity: p.requests > 0 ? 1 : 0.78,
       }}
       styles={{
         header: {
@@ -31,6 +32,11 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
         <Flex align="center" gap={token.paddingSM}>
           <ProviderLogo providerId={p.id} label={p.label} size={20} />
           <Text strong>{p.label}</Text>
+          {p.requests === 0 && (
+            <Text type="secondary" style={{ marginLeft: "auto", fontSize: 12 }}>
+              NO HISTORY
+            </Text>
+          )}
           {view.hasErrors && (
             <div
               style={{
@@ -78,11 +84,6 @@ export function ProviderStatCard({ provider: p }: ProviderStatCardProps) {
         <Text type="secondary" style={{ fontSize: 12 }}>
           Last active: {view.lastActivity}
         </Text>
-        {view.lastError && (
-          <Text type="danger" style={{ fontSize: 12, marginLeft: "auto" }}>
-            {view.lastError}
-          </Text>
-        )}
       </Flex>
     </Card>
   );

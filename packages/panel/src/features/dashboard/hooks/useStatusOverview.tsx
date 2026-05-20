@@ -2,8 +2,8 @@ import {
   CheckCircleFilled,
   ClockCircleOutlined,
   CloseCircleFilled,
-  CodeOutlined,
   DesktopOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import { theme } from "antd";
 import type { ReactNode } from "react";
@@ -18,7 +18,10 @@ export interface StatusOverviewCard {
   active: boolean;
 }
 
-export function useStatusOverview(status: GatewayStatus | null): StatusOverviewCard[] {
+export function useStatusOverview(
+  status: GatewayStatus | null,
+  topModel?: string | null,
+): StatusOverviewCard[] {
   const { token } = theme.useToken();
 
   return [
@@ -37,11 +40,11 @@ export function useStatusOverview(status: GatewayStatus | null): StatusOverviewC
       active: !!status,
     },
     {
-      title: "Model Mode",
-      value: status?.modelMode ?? "—",
-      icon: <CodeOutlined />,
+      title: "Top Model",
+      value: topModel ?? "—",
+      icon: <RobotOutlined />,
       color: token.colorInfo,
-      active: !!status,
+      active: !!topModel,
     },
     {
       title: "Daemon PID",

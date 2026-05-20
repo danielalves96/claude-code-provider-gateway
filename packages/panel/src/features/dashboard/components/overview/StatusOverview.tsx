@@ -6,12 +6,13 @@ const { Text } = Typography;
 
 interface StatusOverviewProps {
   status: GatewayStatus | null;
+  topModel?: string | null;
   isLoading?: boolean;
 }
 
-export function StatusOverview({ status, isLoading }: StatusOverviewProps) {
+export function StatusOverview({ status, topModel, isLoading }: StatusOverviewProps) {
   const { token } = theme.useToken();
-  const cards = useStatusOverview(status);
+  const cards = useStatusOverview(status, topModel);
 
   if (isLoading) {
     return (
@@ -62,7 +63,7 @@ export function StatusOverview({ status, isLoading }: StatusOverviewProps) {
               >
                 {c.icon}
               </div>
-              <Flex vertical flex={1}>
+              <Flex vertical flex={1} style={{ minWidth: 0 }}>
                 <Text
                   type="secondary"
                   style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}
@@ -76,6 +77,9 @@ export function StatusOverview({ status, isLoading }: StatusOverviewProps) {
                     color: c.active ? c.color : token.colorText,
                     fontFamily: "monospace",
                     marginTop: 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {c.value}

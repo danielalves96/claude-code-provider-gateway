@@ -82,3 +82,29 @@ test("ModelService advertises all model chains in chains mode", async () => {
     ["anthropic/chain/foode", "anthropic/chain/other"],
   );
 });
+
+test("ModelService does not advertise model chains during single provider launch", async () => {
+  const config = buildDefaultConfig();
+  config.providers.openrouter.enabled = true;
+  config.providers.openrouter.models = ["openrouter-model"];
+  config.activeProvider = "openrouter";
+  config.modelMode = "single";
+  config.activeModelFallbackSlug = null;
+  config.modelFallbacks = [
+    {
+      id: "chain_copilot",
+      name: "Copilot Chain",
+      slug: "copilot-chain",
+      enabled: true,
+      models: [{ providerId: "copilot", model: "anthropic/copilot/claude-sonnet-4" }],
+    },
+  ];
+  const service = new ModelService(new ProxyRuntime(config));
+
+  const result = await service.listModels();
+
+  assert.equal(
+    result.data.some((model) => model.id.startsWith("anthropic/chain/")),
+    false,
+  );
+});

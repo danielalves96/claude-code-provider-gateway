@@ -7,6 +7,7 @@ import {
   getCurrentSession,
   heartbeatSession,
   listArchivedSessions,
+  listCurrentSessions,
 } from "../../runtime/sessions.js";
 import type { SessionsResponse } from "../contracts.js";
 
@@ -14,6 +15,7 @@ export function registerSessionRoutes(app: Hono): void {
   app.get("/api/sessions", (c) => {
     const response = {
       current: getCurrentSession(),
+      currentSessions: listCurrentSessions(),
       archive: listArchivedSessions(),
     } satisfies SessionsResponse;
     return c.json(response);
@@ -24,6 +26,7 @@ export function registerSessionRoutes(app: Hono): void {
     const response = {
       ok: true,
       current: getCurrentSession(),
+      currentSessions: listCurrentSessions(),
       archive: listArchivedSessions(),
     } satisfies SessionsResponse & { ok: true };
     return c.json(response);

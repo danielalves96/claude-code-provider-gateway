@@ -1,6 +1,7 @@
 import type { Hono } from "hono";
 import type { CountTokensRequest, MessagesRequest } from "../../core/anthropic/types.js";
-import { requireAnthropicAuth } from "../middleware/auth.js";
+import { getSessionConfig } from "../../runtime/sessions.js";
+import { getProxySessionId, requireAnthropicAuth } from "../middleware/auth.js";
 import type { ProxyRuntime } from "../runtime.js";
 import { MessageService } from "../services/message-service.js";
 import { ModelService } from "../services/model-service.js";
@@ -20,17 +21,18 @@ export function registerAnthropicRoutes(app: Hono, runtime: ProxyRuntime): void 
 
   app.post("/v1/messages/count_tokens", async (c) => {
     const req = await c.req.json<CountTokensRequest>();
-    const tokens = messages.countTokens(req as MessagesRequest);
+    const tokens = messages.countTokens(req as MessagesRequest, getProxySessionId(c));
     return c.json({ input_tokens: tokens });
   });
 
   app.get("/v1/models", async (c) => {
-    return c.json(await models.listModels());
+    const sessionConfig = getSessionConfig(getProxySessionId(c));
+    return c.json(await models.listModels(sessionConfig ?? runtime.currentConfig()));
   });
 
   app.post("/v1/messages", async (c) => {
     const req = await c.req.json<MessagesRequest>();
-    const result = await messages.createMessage(req);
+    const result = await messages.createMessage(req, getProxySessionId(c));
 
     if (result.kind === "error") return c.json(result.body, result.status);
 

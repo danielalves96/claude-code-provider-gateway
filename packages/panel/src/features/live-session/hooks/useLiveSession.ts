@@ -6,7 +6,7 @@ import { historyService } from "../../history/services/historyService.js";
 const POLL_INTERVAL_MS = 5000;
 
 export function useLiveSession() {
-  const [current, setCurrent] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const latestRequestIdRef = useRef(0);
 
@@ -14,9 +14,9 @@ export function useLiveSession() {
     const requestId = ++latestRequestIdRef.current;
     historyService
       .list()
-      .then(({ current: c }) => {
+      .then(({ currentSessions, current }) => {
         if (requestId === latestRequestIdRef.current) {
-          setCurrent(c);
+          setSessions(currentSessions ?? (current ? [current] : []));
           setIsLoading(false);
         }
       })
@@ -30,5 +30,5 @@ export function useLiveSession() {
 
   usePolling(refresh, POLL_INTERVAL_MS);
 
-  return { session: current, isLoading, refresh, pollIntervalMs: POLL_INTERVAL_MS };
+  return { sessions, isLoading, refresh, pollIntervalMs: POLL_INTERVAL_MS };
 }

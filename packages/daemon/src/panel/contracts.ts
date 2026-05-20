@@ -144,6 +144,7 @@ export type RoutingConfigResponse = Pick<Config, "routing" | "thinking">;
 
 export type SessionsResponse = {
   current: SessionRecord | null;
+  currentSessions: SessionRecord[];
   archive: SessionRecord[];
 };
 

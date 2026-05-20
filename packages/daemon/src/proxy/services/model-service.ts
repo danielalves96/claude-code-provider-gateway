@@ -1,11 +1,11 @@
+import type { Config } from "../../config/schema.js";
 import type { ModelsListResponse } from "../../core/anthropic/types.js";
 import type { ProxyRuntime } from "../runtime.js";
 
 export class ModelService {
   constructor(private readonly runtime: ProxyRuntime) {}
 
-  async listModels(): Promise<ModelsListResponse> {
-    const config = this.runtime.currentConfig();
+  async listModels(config = this.runtime.currentConfig()): Promise<ModelsListResponse> {
     const registry = this.runtime.providers();
     const mode = config.modelMode ?? "single";
     const activeChainSlug = config.activeModelFallbackSlug;
@@ -15,7 +15,7 @@ export class ModelService {
     // and message-service intercepts those model names before routing — adding them
     // here would duplicate every native Claude entry as a redundant "From gateway" row.
     if (activeChainSlug || mode === "chains") {
-      const advertised = this.listChainModels(activeChainSlug ?? undefined);
+      const advertised = this.listChainModels(activeChainSlug ?? undefined, config);
       return {
         data: advertised,
         has_more: false,
@@ -26,25 +26,32 @@ export class ModelService {
 
     const data =
       mode === "all"
-        ? (
-            await Promise.all(
-              registry.all().map(({ provider }) => provider.listEnabledModels().catch(() => [])),
-            )
-          ).flat()
-        : await this.listActiveProviderModels();
-    const fallbackModels = this.listChainModels();
-    const advertised = [...fallbackModels, ...data];
+        ? [
+            ...this.listChainModels(undefined, config),
+            ...(
+              await Promise.all(
+                Object.keys(config.providers)
+                  .filter((id) => config.providers[id]?.enabled)
+                  .map((id) => {
+                    const p = registry.get(id);
+                    return p?.listEnabledModels
+                      ? p.listEnabledModels().catch(() => [])
+                      : Promise.resolve([]);
+                  }),
+              )
+            ).flat(),
+          ]
+        : await this.listActiveProviderModels(config);
 
     return {
-      data: advertised,
+      data,
       has_more: false,
-      first_id: advertised[0]?.id ?? null,
-      last_id: advertised[advertised.length - 1]?.id ?? null,
+      first_id: data[0]?.id ?? null,
+      last_id: data[data.length - 1]?.id ?? null,
     };
   }
 
-  private listChainModels(slug?: string) {
-    const config = this.runtime.currentConfig();
+  private listChainModels(slug?: string, config = this.runtime.currentConfig()) {
     return config.modelFallbacks
       .filter((fallback) => fallback.enabled && fallback.models.length > 0)
       .filter((fallback) => !slug || fallback.slug === slug)
@@ -56,8 +63,8 @@ export class ModelService {
       }));
   }
 
-  private async listActiveProviderModels() {
-    const provider = this.runtime.providers().getActive();
+  private async listActiveProviderModels(config: Config) {
+    const provider = this.runtime.providers().get(config.activeProvider);
     return provider ? await provider.listEnabledModels().catch(() => []) : [];
   }
 }
