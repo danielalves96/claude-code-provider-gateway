@@ -356,7 +356,7 @@ End-user releases are desktop installers produced by the Tauri build pipeline:
 
 - macOS: `.dmg`
 - Linux: `.deb`, `.rpm`, `.AppImage`
-- Windows: `.msi`, portable `.zip`
+- Windows: `.msi`
 
 ## CI/CD
 
@@ -392,7 +392,7 @@ Three parallel jobs:
 - **Builds:**
   - macOS: DMG (via `tauri-action`)
   - Linux: deb + rpm + AppImage (via custom build script)
-  - Windows: MSI + portable zip (via `tauri-action` + custom zip step)
+  - Windows: MSI (via `tauri-action`)
 - **Release:** on tag push, uploads all artifacts to a draft GitHub Release
 
 ## Debugging with Claude Code

@@ -621,7 +621,7 @@ Quality Gate (GitHub Actions — .github/workflows/quality.yml)
 Desktop Build (GitHub Actions — .github/workflows/desktop-build.yml, on tag push)
   ├── bun compile → daemon binary (per-platform)
   ├── prepare-sidecar → copy to Tauri binaries/
-  └── tauri build → DMG / deb+rpm+AppImage / MSI+portable zip
+  └── tauri build → DMG / deb+rpm+AppImage / MSI
 ```
 
 ## Runtime Storage Layout

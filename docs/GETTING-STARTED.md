@@ -34,7 +34,7 @@
    |---|---|
    | macOS | `.dmg` (Apple Silicon or Intel) |
    | Linux | `.deb`, `.rpm`, or `.AppImage` |
-   | Windows | `.msi`, `-setup.exe`, or portable `.zip` |
+   | Windows | `.msi` or `-setup.exe` |
 
 2. Install and open the app. The daemon starts automatically.
 

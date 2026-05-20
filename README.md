@@ -257,7 +257,7 @@ See [docs/PROVIDERS.md](docs/PROVIDERS.md) for the complete provider ID list, CL
 | macOS Intel | `.dmg` | Built by CI for `x86_64-apple-darwin`. |
 | Linux x86_64 | `.deb`, `.rpm`, `.AppImage` | CI builds on Ubuntu 22.04 with WebKitGTK dependencies. |
 | Linux ARM64 | `.deb`, `.rpm`, `.AppImage` | CI builds on Ubuntu 22.04 ARM. |
-| Windows x86_64 | `.msi`, `-setup.exe`, portable `.zip` | Windows WebView2 is required; it ships with modern Windows 10/11 through Windows Update. |
+| Windows x86_64 | `.msi`, `-setup.exe` | Windows WebView2 is required; it ships with modern Windows 10/11 through Windows Update. |
 
 You also need Claude Code installed and able to run from your shell as `claude`.
 
