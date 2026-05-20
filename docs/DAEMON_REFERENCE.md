@@ -314,6 +314,76 @@ export class ModelService {
 
 All modes include model chain entries. Native Claude tiers (Default/Sonnet/Haiku) are intentionally excluded — Claude Code injects its own list.
 
+### `shouldUseNativeClaudePassthrough()`
+
+**File:** `packages/daemon/src/proxy/services/native-claude-routing.ts`
+
+Pure predicate called by `MessageService` before provider dispatch. Returns `true` when the request should be forwarded directly to Anthropic instead of through the active provider.
+
+```ts
+function shouldUseNativeClaudePassthrough(
+  requestedModel: string,
+  config: Config,
+  primaryModel: SessionPrimaryModel,
+): boolean
+```
+
+Returns `true` only when **all three** conditions hold:
+1. `requestedModel` is a hardcoded Claude tier name (matches `isNativeClaudeModel()`).
+2. `primaryModel` is `null` — no explicit provider-prefixed model has been chosen yet in this session.
+3. The active provider is **disabled** in config.
+
+The intent: when no CCPG provider is active, Claude Code's background tier requests (e.g. `claude-haiku-*`) should still reach Anthropic via stored credentials instead of failing silently. Once a session selects a real provider-prefixed model, `primaryModel` is set and passthrough is bypassed for background calls.
+
+### `serializePrompt()`
+
+**File:** `packages/daemon/src/proxy/services/prompt-serializer.ts`
+
+Converts a `MessagesRequest` to a truncated human-readable string for storage in the session request log. Used only for UI inspection — it does not affect the request sent to the provider.
+
+```ts
+function serializePrompt(req: MessagesRequest, first: boolean): string
+```
+
+**Behavior:**
+- For the **first** request in a session (`first = true`): the system prompt is captured in full (no truncation). This preserves the full initial context for history inspection.
+- For **subsequent** requests (`first = false`): the system prompt is truncated to 4,000 characters, preventing the session log from ballooning when the system prompt is repeated on every turn.
+- Non-text content blocks (images, tool results, documents) are omitted — only `type: "text"` blocks are serialized.
+- Output format: `[System]\n<text>\n\n[user]\n<content>\n\n[assistant]\n<content>` sections.
+
+### `streamResult()` / `streamResultWithCapture()`
+
+**File:** `packages/daemon/src/proxy/services/stream-result.ts`
+
+Helpers that package a provider's `ReadableStream<string>` into the `MessageServiceResult` union expected by the route handler.
+
+```ts
+function streamResult(stream: ReadableStream<string> | undefined): MessageServiceResult
+function streamResultWithCapture(
+  stream: ReadableStream<string> | undefined,
+  logEntryId: string | undefined,
+): MessageServiceResult
+```
+
+- **`streamResult`**: wraps the stream with `200 OK` + SSE headers. If `stream` is `undefined` (provider returned nothing), returns an `api_error` error response.
+- **`streamResultWithCapture`**: same as above, but also tees the stream via `teeWithCapture()`. When the stream closes (or is cancelled), it writes the first 4 KB of response text back to the matching session log entry via `updateSessionRequestResponse()`. This does not affect delivery to the client — the tee is transparent.
+
+Use `streamResultWithCapture` in providers that participate in session recording (all built-in and custom providers). Use `streamResult` only for paths where session log capture is not needed.
+
+### OAuth Pages
+
+**File:** `packages/daemon/src/panel/routes/oauth-pages.ts`
+
+Generates self-contained HTML pages served to the user's browser at the end of OAuth callback flows. All three pages share a minimal dark-themed design (dark card, CCPG wordmark, animated icon).
+
+| Function | Used when | Behavior |
+|----------|-----------|----------|
+| `oauthSuccessPage(provider)` | OAuth callback succeeded and tokens were stored | Shows green checkmark + provider badge + "Connected successfully" message. Auto-closes the tab after 4 seconds via `setTimeout(() => window.close(), 4000)`. |
+| `oauthErrorPage(provider, message?)` | OAuth callback failed (token exchange error, revoked access, network failure) | Shows red X + provider badge + error detail. Does **not** auto-close — user must return manually. |
+| `oauthBadRequestPage()` | Callback arrived with missing `state` or `code` parameters | Shows warning icon + "Invalid OAuth state or missing authorization code." message. No provider name (not yet known). Does **not** auto-close. |
+
+These pages are served from `oauth-routes.ts` callback endpoints (e.g. `GET /api/oauth/openai-account/callback`, `GET /api/oauth/cline/callback`). They are never fetched by the panel SPA — they are opened in the user's external browser during the OAuth redirect flow and are designed to be closed after the flow completes.
+
 ### Configuration System (`ConfigManager`)
 
 **Files:** `config/index.ts`, `config/schema.ts`, `config/validation.ts`, `config/secrets/`

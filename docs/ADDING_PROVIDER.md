@@ -260,6 +260,34 @@ Some providers do not expose a reliable `/models` endpoint. In that case:
 Do not hardcode panel-only model routing. The daemon must still own the final
 model list and request routing.
 
+#### `suggestedModels.ts` format
+
+**File:** `packages/panel/src/features/providers/data/suggestedModels.ts`
+
+`SUGGESTED_MODELS` is a `Partial<Record<ProviderId, SuggestedModel[]>>`. Each entry is keyed by the built-in provider ID and contains an ordered array of model suggestions shown in the "Add Model" input when no catalog models are available.
+
+```ts
+interface SuggestedModel {
+  id: string;   // model ID sent to the provider API (exact string, case-sensitive)
+  name: string; // human-readable label shown in the dropdown
+}
+```
+
+Example entry for a new provider `my_provider`:
+
+```ts
+my_provider: [
+  { id: "my-model-v2-pro", name: "My Model V2 Pro" },
+  { id: "my-model-v2-lite", name: "My Model V2 Lite" },
+],
+```
+
+Rules:
+- `id` must match what the provider's API expects — it is sent verbatim in the request. Do not include gateway prefixes (`anthropic/`) here.
+- Keep the list to the 3–8 most useful models. Avoid listing deprecated or region-restricted models unless they are commonly used.
+- Suggestions are displayed regardless of whether catalog discovery succeeds, so keep them in sync with the provider's current model lineup.
+- For providers with regional variants (e.g. `my_provider` vs `my_provider_cn`), maintain separate suggestion arrays — model IDs often differ between regions.
+
 ### Model Chain compatibility
 
 The Model Chain page consumes `GET /api/routing/options`, which is built from
