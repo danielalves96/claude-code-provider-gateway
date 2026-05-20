@@ -34,7 +34,9 @@ export class ModelService {
                   .filter((id) => config.providers[id]?.enabled)
                   .map((id) => {
                     const p = registry.get(id);
-                    return p?.listEnabledModels ? p.listEnabledModels().catch(() => []) : Promise.resolve([]);
+                    return p?.listEnabledModels
+                      ? p.listEnabledModels().catch(() => [])
+                      : Promise.resolve([]);
                   }),
               )
             ).flat(),
