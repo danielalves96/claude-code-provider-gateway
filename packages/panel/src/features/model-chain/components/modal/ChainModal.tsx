@@ -35,8 +35,6 @@ interface ChainModalProps {
   onSave: (draft: DraftChain) => void;
 }
 
-
-
 const ATTEMPTS_HINT: Record<ChainRoutingStrategy, string> = {
   waterfall: "Number of times the primary model is tried before falling through to the next.",
   round_robin:
@@ -165,8 +163,22 @@ export function ChainModal({
                     value={draft.routingStrategy}
                     onChange={(val) => update({ routingStrategy: val as ChainRoutingStrategy })}
                     options={[
-                      { label: <Space><BranchesOutlined /> Waterfall</Space>, value: "waterfall" },
-                      { label: <Space><SyncOutlined /> Round Robin</Space>, value: "round_robin" },
+                      {
+                        label: (
+                          <Space>
+                            <BranchesOutlined /> Waterfall
+                          </Space>
+                        ),
+                        value: "waterfall",
+                      },
+                      {
+                        label: (
+                          <Space>
+                            <SyncOutlined /> Round Robin
+                          </Space>
+                        ),
+                        value: "round_robin",
+                      },
                     ]}
                   />
                   <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 4 }}>

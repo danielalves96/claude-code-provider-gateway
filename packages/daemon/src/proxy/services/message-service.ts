@@ -184,7 +184,9 @@ export class MessageService {
       config,
     );
     const inputTokens = countRequestTokens(providerReq);
-    const result = await safeProviderStream(() => provider.streamResponse(providerReq, inputTokens));
+    const result = await safeProviderStream(() =>
+      provider.streamResponse(providerReq, inputTokens),
+    );
     const latency = Date.now() - started;
 
     if (result.error) {
@@ -688,5 +690,6 @@ async function safeProviderStream<T extends { error?: { status: number; message:
 
 function formatTransportError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-char strip
   return message.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 1000);
 }
