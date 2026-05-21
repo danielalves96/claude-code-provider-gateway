@@ -4,7 +4,9 @@ import { sseContentBlockDelta } from "../../core/sse/writer.js";
 import { probeStreamForUsefulAnthropicContent } from "./stream-result.js";
 
 test("probeStreamForUsefulAnthropicContent flushes unterminated residual data at EOF", async () => {
-  const stream = streamFromChunks([sseContentBlockDelta(0, { type: "text_delta", text: "final" }).trimEnd()]);
+  const stream = streamFromChunks([
+    sseContentBlockDelta(0, { type: "text_delta", text: "final" }).trimEnd(),
+  ]);
 
   const result = await probeStreamForUsefulAnthropicContent(stream, 100);
 
