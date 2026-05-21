@@ -217,10 +217,18 @@ to the next target. The same fallback path also applies when a provider returns
 HTTP 200 but the transformed stream ends, idles, emits an early stream error, or
 contains malformed/non-useful SSE before any Anthropic content is emitted. Once
 useful content has been emitted, CCPG preserves the live stream and does not
-rewind partial answers. The configured order is therefore the user's priority
-order. When a chain is selected as the session primary model, background Claude
-Code tier requests stay on the chain instead of falling back to a provider's
-default model list.
+rewind partial answers. If the upstream stream fails after useful content has
+started, the daemon closes any open content blocks and emits a terminal
+Anthropic-compatible error frame before stopping the message. The configured
+order is therefore the user's priority order. When a chain is selected as the
+session primary model, background Claude Code tier requests stay on the chain
+instead of falling back to a provider's default model list.
+
+Provider-level safeguards still apply inside chains. Each dispatch checks the
+target provider's `maxConcurrency`, `rateLimit`, and `rateWindow` values before
+calling upstream. If a limit is reached, the target returns a controlled
+rate-limit error and the chain can move to the next model when no useful content
+has been emitted.
 
 The Model Chain editor uses `GET /api/routing/options`, so a provider must be
 enabled and its models must be discoverable or manually configured before those
@@ -231,6 +239,11 @@ timeouts are intentionally scoped to the chain because they decide when a target
 should be abandoned and the next fallback target should be tried. Direct
 single-provider usage keeps the provider setup modal focused on authentication,
 base URL, and model availability.
+
+Client disconnects propagate as cancellation. When Claude Code closes the
+request, the proxy passes an `AbortSignal` through the message service, provider
+transport, and shared HTTP client so the upstream request or response body is
+canceled instead of running until timeout.
 
 The editor includes an **Economy/Local** preset that assembles a Haiku ->
 DeepSeek -> Ollama waterfall from enabled/configured providers only. Missing
@@ -244,6 +257,10 @@ The Providers page supports:
 - Search by provider label.
 - Active/inactive filtering.
 - Provider groups by configuration type.
+- Per-provider **Advanced settings** with optional Runtime Limits for
+  `maxConcurrency`, `rateLimit`, and `rateWindow`. The section appears after an
+  OAuth account is connected, an API key is saved, or immediately for local
+  providers. New providers default to `0`, which disables local limits.
 - A **Custom Providers (OpenAI/Anthropic Compatible)** section at the end of
   the All Providers tab; creation buttons are aligned with the tab bar actions.
 - Favorite providers saved in `config.panelSettings.favoriteProviders`.

@@ -147,6 +147,22 @@ export function useProviders() {
     [message],
   );
 
+  const setRuntimeLimits = useCallback(
+    async (
+      id: string,
+      limits: { rateLimit: number; rateWindow: number; maxConcurrency: number },
+    ) => {
+      try {
+        await providersService.setRuntimeLimits(id, limits);
+        message.success("Runtime limits updated");
+        setProviders((prev) => prev.map((p) => (p.id === id ? { ...p, ...limits } : p)));
+      } catch {
+        message.error("Failed to update runtime limits");
+      }
+    },
+    [message],
+  );
+
   const testCustom = useCallback(
     async (draft: CustomProviderDraft) => {
       setTesting("custom-provider");
@@ -215,6 +231,7 @@ export function useProviders() {
     addModel,
     removeModel,
     setDisabledModels,
+    setRuntimeLimits,
     testCustom,
     createCustom,
     deleteCustom,

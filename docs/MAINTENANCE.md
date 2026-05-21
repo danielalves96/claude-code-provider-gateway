@@ -13,7 +13,7 @@
 | Session persistence | Session checkpoints and archive operations use local JSON files and can become expensive as request logs grow. | Add pagination/lazy loading for request logs, atomic archive writes, and clearer retention controls. |
 | Request history privacy | Prompt and response previews are useful for debugging but are stored locally in plain JSON session records. | Add a config toggle for prompt/response capture, retention policy controls, and consider encrypted session archives. |
 | Panel test coverage | The daemon has focused tests; the React panel currently relies mostly on manual validation. | Start with tests for shared hooks/services and critical flows like provider config, Model Chain setup, history, and shell setup. |
-| Streaming edge cases | Provider SSE transforms are stateful and can be fragile with malformed or partial upstream events. | Expand tests for partial chunks, malformed events, stalled streams, cancellation, and mid-stream provider failures. |
+| Streaming edge cases | Provider SSE transforms are stateful and can be fragile with malformed or partial upstream events. Recent tests cover split useful content, cancellation, and mid-stream failures, but new providers can still regress this. | Keep adding transport-specific tests for partial chunks, malformed events, stalled streams, cancellation, and mid-stream provider failures. |
 | Active-stream shutdown | The daemon shutdown path closes connections immediately, which can interrupt in-flight responses. | Track active requests, stop accepting new ones, wait with a timeout, then force close remaining connections. |
 
 ## Fragile Code Paths
@@ -21,6 +21,7 @@
 | Path | Risk | Review guidance |
 |---|---|---|
 | `packages/daemon/src/proxy/services/message-service.ts` | Central orchestration for routing, token savers, Model Chains, native Claude passthrough, session logging, and provider dispatch. | Prefer small, well-tested changes. Add focused tests for every new branch in routing/fallback behavior. |
+| `packages/daemon/src/proxy/services/provider-limiter.ts` | Enforces process-local provider concurrency and rate-window limits before upstream dispatch. | Verify slots release on stream completion, cancellation, and errors. Remember limits reset on daemon restart. |
 | `packages/daemon/src/proxy/providers/transport-openai.ts` | Converts Anthropic Messages into OpenAI Chat Completions and transforms streaming chunks back to Anthropic SSE. | Verify text, tool calls, finish reasons, empty chunks, and provider error mapping. |
 | `packages/daemon/src/proxy/providers/transport-anthropic.ts` | Streams native Anthropic-compatible provider responses. | Test partial lines and invalid upstream events when changing parser behavior. |
 | `packages/daemon/src/proxy/providers/commandcode.ts` | Custom provider with request conversion, catalog handling, and NDJSON/SSE stream transformation. | Split new behavior into helper modules where possible and keep tests close to the stream state machine. |
@@ -40,6 +41,8 @@ or storage:
 - Are provider API keys and OAuth tokens kept out of `config.json`, logs, and docs?
 - Do custom provider deletion paths remove encrypted API keys and uploaded logos?
 - Are provider error messages sanitized before being shown or logged?
+- Do client disconnects still abort upstream provider calls rather than waiting
+  for request or stream timeout?
 - Does any new file containing prompts, responses, tokens, or account data need
   retention controls or encryption?
 - Does any new external URL opening path use the desktop allowlist rules?
@@ -49,7 +52,9 @@ or storage:
 - Avoid adding synchronous filesystem work to per-request proxy paths.
 - Avoid fetching every enabled provider catalog unless the feature genuinely
   needs an aggregated model list.
-- Add timeouts or cancellation paths to long-running provider calls.
+- Add or preserve timeouts and cancellation paths for long-running provider calls.
+- For new transports, pass `ProviderRequestOptions.abortSignal` into
+  `postProviderStream()` or equivalent upstream fetch logic.
 - Keep SSE transforms streaming; do not buffer full model responses before
   writing downstream unless the feature explicitly requires capture.
 - Keep dashboard/history endpoints bounded as session archives grow.

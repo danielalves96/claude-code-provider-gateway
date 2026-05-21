@@ -110,6 +110,7 @@ export function useProvidersPage({ message }: UseProvidersPageOptions) {
       onAddModel: providersApi.addModel,
       onRemoveModel: providersApi.removeModel,
       onDisabledModelsChange: providersApi.setDisabledModels,
+      onRuntimeLimitsChange: providersApi.setRuntimeLimits,
       onOAuthLogin: oauth.start,
       onOAuthLogout: oauth.logout,
       onCancelOAuthFlow: oauth.cancel,

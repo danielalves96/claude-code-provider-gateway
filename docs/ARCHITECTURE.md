@@ -141,6 +141,11 @@ list of `{ providerId, model }` targets; the order is user-defined priority.
 When a chain request fails because of an upstream API error, rate limit,
 quota/credit issue, network failure, or other non-success response, the message
 service retries that target and then advances to the next configured target.
+The same path is used for streams that end, stall, error, or parse without
+useful Anthropic content before the first useful content event. Once useful
+content has started, CCPG preserves the selected stream; late provider failures
+are converted into terminal Anthropic-compatible error/stop events instead of a
+chain rewind.
 When a chain is selected as the session primary model, background Claude tier
 requests are routed through the same chain.
 
@@ -151,9 +156,16 @@ requests are routed through the same chain.
 2. Resolves the target provider via `model-router.ts`
 3. Applies enabled token savers to a cloned request
 4. Counts input tokens after compression (`js-tiktoken`)
-5. Calls `provider.streamResponse()` with the configured request, or walks the
+5. Enforces the target provider's process-local concurrency/rate limits
+6. Calls `provider.streamResponse()` with the configured request and client
+   abort signal, or walks the
    configured Model Chain targets when the resolved source is a chain
-6. Tracks session statistics
+7. Tracks session statistics
+
+Provider dispatch uses `provider-limiter.ts` to enforce `maxConcurrency`,
+`rateLimit`, and `rateWindow` from provider config before an upstream request is
+opened. The limiter holds a concurrency slot until the returned stream ends,
+errors, or is canceled.
 
 **services/model-service.ts** — builds the catalog returned by `GET /v1/models`.
 It merges provider model discovery, manual/disabled model settings, gateway
@@ -165,6 +177,11 @@ and `activeModelFallbackSlug`.
 **services/prompt-serializer.ts** — converts `MessagesRequest` to a truncated human-readable string stored in the session request log. The first request in a session captures up to 80 KB of system prompt; subsequent requests cap at 4 KB.
 
 **services/stream-result.ts** — wraps provider `ReadableStream<string>` into the `MessageServiceResult` union. `streamResultWithCapture()` tees the stream and writes the truncated response text back to the session log entry when the stream completes or is cancelled.
+
+**services/provider-limiter.ts** — process-local guard for provider runtime
+limits. It rejects excess concurrent or rate-window requests with controlled
+rate-limit errors before provider credentials or request bodies are sent
+upstream.
 
 **token-savers/rtk.ts** — compresses large `tool_result` text blocks before provider dispatch. It auto-detects common developer-output shapes such as grep/rg results, find output, git diff/status, ls/tree output, numbered file dumps, and repetitive logs. It skips small payloads, oversized raw blobs, and `tool_result` blocks marked as errors. Compression is best-effort: if a filter fails or makes the payload larger, the original text is preserved.
 
@@ -244,6 +261,8 @@ clear. Simple providers are registered with `createOpenAIProvider()` or
 
 **api-client.ts** — shared HTTP client with:
 - Configurable timeouts via `AbortController`
+- Client abort propagation from `/v1/messages` to upstream `fetch` and response
+  body cancellation
 - Error normalization (HTTP error → `{ status, message }`)
 - Model mapping (provider model → Anthropic `ModelInfo` format)
 
@@ -256,6 +275,8 @@ their own model resolver.
 **AnthropicMessagesTransport**:
 - Sends to `POST {baseUrl}/messages` with `anthropic-version: 2023-06-01`
 - Streams response directly as Anthropic SSE events
+- Closes open content blocks and emits a terminal error/stop sequence when the
+  upstream fails after content has started
 - Used by: OpenRouter, DeepSeek, Ollama, LM Studio, llama.cpp, GLM, Minimax, Minimax China
 
 **OpenAIChatTransport**:
@@ -263,6 +284,8 @@ their own model resolver.
 - Sends to `POST {baseUrl}/chat/completions`
 - Transforms OpenAI streaming chunks (delta-based) → Anthropic SSE events (block-based)
 - Handles: text content, tool calls, finish reasons (`stop` → `end_turn`, `tool_calls` → `tool_use`)
+- Closes any started blocks and emits terminal Anthropic SSE events for
+  mid-stream upstream errors
 - Used by: NVIDIA NIM, Kimi, Google AI (Gemini), Groq, xAI, Mistral, Cerebras, Together, Fireworks, GLM China, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, Volcengine Ark, BytePlus, Alibaba Bailian, OpenCode Go, Xiaomi MiMo, Cohere, Blackbox, HuggingFace, Ollama Cloud, Kilo Code, Cline, and OpenAI-compatible custom providers
 
 **Special hand-written providers** handle their own API and auth:
@@ -520,9 +543,10 @@ Claude Code
 │  1. Count input tokens (js-tiktoken)         │
 │  2. Get provider from ProviderRegistry       │
 │     or load ordered Model Chain targets      │
-│  3. Call provider.streamResponse(req, tokens)│
-│     or retry/fallback across chain targets   │
-│  4. Wrap stream with capture (stream-result) │
+│  3. Enforce provider limits                  │
+│  4. Call provider.streamResponse(req, tokens)│
+│     with AbortSignal, or retry/fallback      │
+│  5. Wrap stream with capture (stream-result) │
 └──────────────────────────────────────────────┘
   │
   ▼
@@ -581,6 +605,7 @@ Claude Code
 │    content_block_start / delta / stop         │
 │    Handle tool call accumulation             │
 │    Map finish_reason → stop_reason           │
+│    Close blocks + stop message on late error │
 └──────────────────────────────────────────────┘
   │
   ▼

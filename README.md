@@ -108,18 +108,19 @@ The next documentation step is a separate official docs site repository. Until t
 - **Desktop app, not a terminal science project** - Tauri app for macOS, Windows, and Linux with provider setup, connection tests, routing, logs, and history in one UI.
 - **Built-in and custom provider cards** - OAuth, API key, cloud, local, and coming-soon providers out of the box, plus user-created OpenAI-compatible and Anthropic-compatible providers with custom slugs and logos.
 - **Anthropic-compatible local proxy** - Claude Code sends Anthropic Messages API requests to `127.0.0.1`; CCPG translates and routes them.
-- **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
+- **Full streaming** - provider responses stream back as Anthropic-style SSE events, with upstream cancellation when the client disconnects.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
 - **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, idles before emitting useful content, or returns an empty/malformed stream.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
-- **Provider management UI** - search providers, filter active/inactive cards, add custom OpenAI/Anthropic-compatible providers, favorite and reorder frequently used providers, edit manual model lists, and hide noisy discovered models.
+- **Provider management UI** - search providers, filter active/inactive cards, add custom OpenAI/Anthropic-compatible providers, favorite and reorder frequently used providers, edit runtime limits/manual model lists, and hide noisy discovered models.
 - **Model Chain timeout controls** - tune request, first-token, and total stream limits per chain from Advanced Settings. Defaults are 30s to first useful token and 60s total stream.
 - **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
 - **Request history** - see model, provider, human-readable prompt, sanitized provider request preview, response preview, warnings, input tokens, latency, errors, and session totals.
 - **Parallel terminal sessions** - launch multiple `ccpg --<provider>` terminals at once; each session keeps its own provider/model mode, primary model memory, heartbeat, and live request log.
+- **Provider safeguards** - per-provider concurrency/rate limits are enforced by the daemon before dispatch, and canceled Claude Code requests abort in-flight upstream calls.
 - **Encrypted secrets** - API keys, OAuth tokens, and gateway auth token are split out of config and stored with AES-256-GCM.
 - **No telemetry** - no cloud service, no database server, no analytics, no account.
 
@@ -198,7 +199,9 @@ returns an API error, rate limit, credit/quota failure, network failure, or a
 Anthropic content before any answer content is emitted, CCPG retries that
 target and then moves to the next target in the chain. Once useful content has
 been emitted, CCPG keeps the stream attached to that provider and does not
-rewind partial answers. The session stays attached to the chain, so Claude Code
+rewind partial answers. If the upstream stream fails after content has started,
+CCPG closes open content blocks and emits a terminal Anthropic-compatible error
+frame before stopping the message. The session stays attached to the chain, so Claude Code
 background tier calls continue through the same chain instead of leaking back
 to the first provider.
 

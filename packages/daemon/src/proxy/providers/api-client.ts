@@ -4,6 +4,7 @@ interface ProviderFetchOptions {
   url: string;
   headers: Record<string, string>;
   timeoutMs?: number;
+  abortSignal?: AbortSignal;
 }
 
 interface ProviderStreamOptions extends ProviderFetchOptions {
@@ -25,7 +26,7 @@ export type ProviderStreamResponse =
 export async function postProviderStream(
   options: ProviderStreamOptions,
 ): Promise<ProviderStreamResponse> {
-  const timeout = createFetchTimeout(options.timeoutMs);
+  const timeout = createFetchTimeout(options.timeoutMs, options.abortSignal);
   let response: Response;
   try {
     response = await fetch(options.url, {
@@ -36,6 +37,7 @@ export async function postProviderStream(
     });
   } catch (err) {
     if (timeout.didAbort()) return { error: timeoutError() };
+    if (timeout.didExternalAbort()) return { error: abortedError() };
     return { error: networkError(err) };
   } finally {
     timeout.clear();
@@ -49,18 +51,23 @@ export async function postProviderStream(
     body: withStreamTimeouts(response.body, {
       idleTimeoutMs: options.streamIdleTimeoutMs,
       totalTimeoutMs: options.streamTotalTimeoutMs,
+      abortSignal: options.abortSignal,
     }),
   };
 }
 
 export async function fetchProviderJson<T>(options: ProviderFetchOptions): Promise<T> {
-  const timeout = createFetchTimeout(options.timeoutMs);
+  const timeout = createFetchTimeout(options.timeoutMs, options.abortSignal);
   let response: Response;
   try {
     response = await fetch(options.url, { headers: options.headers, signal: timeout.signal });
   } catch (err) {
     if (timeout.didAbort()) {
       const error = timeoutError();
+      throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message}`);
+    }
+    if (timeout.didExternalAbort()) {
+      const error = abortedError();
       throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message}`);
     }
     const error = networkError(err);
@@ -93,24 +100,54 @@ async function readProviderError(response: Response): Promise<{ status: number; 
   return { status: response.status, message: sanitizeProviderMessage(message) };
 }
 
-function createFetchTimeout(timeoutMs: number | undefined): {
+function createFetchTimeout(
+  timeoutMs: number | undefined,
+  upstreamAbortSignal?: AbortSignal,
+): {
   signal?: AbortSignal;
   clear: () => void;
   didAbort: () => boolean;
+  didExternalAbort: () => boolean;
 } {
-  if (!timeoutMs) return { clear: () => {}, didAbort: () => false };
+  if (!timeoutMs) {
+    return {
+      signal: upstreamAbortSignal,
+      clear: () => {},
+      didAbort: () => false,
+      didExternalAbort: () => upstreamAbortSignal?.aborted ?? false,
+    };
+  }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  let externalAborted = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const abortFromExternal = () => {
+    externalAborted = true;
+    controller.abort();
+  };
+  if (upstreamAbortSignal?.aborted) abortFromExternal();
+  else upstreamAbortSignal?.addEventListener("abort", abortFromExternal, { once: true });
   return {
     signal: controller.signal,
-    clear: () => clearTimeout(timer),
-    didAbort: () => controller.signal.aborted,
+    clear: () => {
+      clearTimeout(timer);
+      upstreamAbortSignal?.removeEventListener("abort", abortFromExternal);
+    },
+    didAbort: () => timedOut,
+    didExternalAbort: () => externalAborted,
   };
 }
 
 function timeoutError(): { status: number; message: string } {
   return { status: 504, message: "Provider request timed out" };
+}
+
+function abortedError(): { status: number; message: string } {
+  return { status: 499, message: "Provider request aborted by client" };
 }
 
 function networkError(err: unknown): { status: number; message: string } {
@@ -129,15 +166,16 @@ function sanitizeProviderMessage(message: string): string {
 
 function withStreamTimeouts(
   body: ReadableStream<Uint8Array>,
-  options: { idleTimeoutMs?: number; totalTimeoutMs?: number },
+  options: { idleTimeoutMs?: number; totalTimeoutMs?: number; abortSignal?: AbortSignal },
 ): ReadableStream<Uint8Array> {
-  const { idleTimeoutMs, totalTimeoutMs } = options;
-  if (!idleTimeoutMs && !totalTimeoutMs) return body;
+  const { idleTimeoutMs, totalTimeoutMs, abortSignal } = options;
+  if (!idleTimeoutMs && !totalTimeoutMs && !abortSignal) return body;
 
   const reader = body.getReader();
   let idleTimer: NodeJS.Timeout | null = null;
   let totalTimer: NodeJS.Timeout | null = null;
   let closed = false;
+  let abortFromClient: (() => void) | null = null;
 
   return new ReadableStream<Uint8Array>({
     start(controller) {
@@ -145,8 +183,13 @@ function withStreamTimeouts(
         if (closed) return;
         closed = true;
         clearTimers();
+        if (abortFromClient) abortSignal?.removeEventListener("abort", abortFromClient);
         reader.cancel().catch(() => {});
         controller.error(new Error(message));
+      };
+
+      abortFromClient = () => {
+        fail("Provider stream aborted by client");
       };
 
       const resetIdleTimer = () => {
@@ -174,6 +217,12 @@ function withStreamTimeouts(
         }, totalTimeoutMs);
       }
 
+      if (abortSignal?.aborted) {
+        fail("Provider stream aborted by client");
+        return;
+      }
+      abortSignal?.addEventListener("abort", abortFromClient, { once: true });
+
       const pump = async () => {
         resetIdleTimer();
         try {
@@ -184,6 +233,7 @@ function withStreamTimeouts(
             if (done) {
               closed = true;
               clearTimers();
+              if (abortFromClient) abortSignal?.removeEventListener("abort", abortFromClient);
               controller.close();
               return;
             }
@@ -193,6 +243,7 @@ function withStreamTimeouts(
           if (closed) return;
           closed = true;
           clearTimers();
+          if (abortFromClient) abortSignal?.removeEventListener("abort", abortFromClient);
           controller.error(err);
         }
       };
@@ -201,6 +252,7 @@ function withStreamTimeouts(
         if (closed) return;
         closed = true;
         clearTimers();
+        if (abortFromClient) abortSignal?.removeEventListener("abort", abortFromClient);
         controller.error(err);
       });
     },
@@ -208,6 +260,7 @@ function withStreamTimeouts(
       closed = true;
       if (idleTimer) clearTimeout(idleTimer);
       if (totalTimer) clearTimeout(totalTimer);
+      if (abortFromClient) abortSignal?.removeEventListener("abort", abortFromClient);
       return reader.cancel(reason);
     },
   });

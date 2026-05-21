@@ -32,9 +32,17 @@ export function registerAnthropicRoutes(app: Hono, runtime: ProxyRuntime): void 
 
   app.post("/v1/messages", async (c) => {
     const req = await c.req.json<MessagesRequest>();
-    const result = await messages.createMessage(req, getProxySessionId(c));
+    const result = await messages.createMessage(req, getProxySessionId(c), c.req.raw.signal);
 
-    if (result.kind === "error") return c.json(result.body, result.status);
+    if (result.kind === "error") {
+      if (result.status === 499) {
+        return new Response(JSON.stringify(result.body), {
+          status: result.status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return c.json(result.body, result.status);
+    }
 
     return new Response(result.stream as unknown as BodyInit, {
       status: result.status,

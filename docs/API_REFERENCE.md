@@ -44,8 +44,15 @@ CC_GATEWAY_SESSION_ID=<session-id>
 3. Resolve model by chain slug, provider prefix, tier routing, active chain, or active provider.
 4. Apply RTK compression and Caveman prompt injection when enabled.
 5. Count input tokens.
-6. Stream through the chosen provider transport or Model Chain executor.
-7. Capture a truncated prompt/response preview into local session history.
+6. Enforce provider `maxConcurrency` / `rateLimit` limits before dispatch.
+7. Stream through the chosen provider transport or Model Chain executor.
+8. Capture a truncated prompt/response preview into local session history.
+
+If the client disconnects, the request abort signal is propagated to the
+provider transport and shared HTTP client. Upstream requests that are still
+opening return a controlled `499` JSON error, and in-flight response bodies are
+canceled. Provider rate/concurrency limit failures return Anthropic-style
+`rate_limit_error` responses.
 
 ## Panel API
 
@@ -76,7 +83,7 @@ keeps secret values in `secrets.enc.json` rather than plaintext `config.json`.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/api/providers` | Origin/token policy | Provider cards: enabled state, label, base URL, key preview, OAuth status, manual/disabled models. |
+| `GET` | `/api/providers` | Origin/token policy | Provider cards: enabled state, label, base URL, key preview, OAuth status, manual/disabled models, and runtime limits. |
 | `POST` | `/api/providers/:id/test` | Origin/token policy | Runs provider `testConnection()`. |
 | `GET` | `/api/models/:providerId` | Origin/token policy | Lists discovered/manual models for one enabled provider. |
 | `GET` | `/api/routing/options` | Origin/token policy | Lists enabled providers and selectable models for Routing and Model Chain editors. |

@@ -70,6 +70,7 @@ packages/daemon/src/
 │   │   ├── message-service.ts   # MessageService — full message lifecycle + fallback retry
 │   │   ├── model-service.ts     # ModelService — model listing (mode-aware)
 │   │   ├── native-claude-routing.ts # Native Claude passthrough detection
+│   │   ├── provider-limiter.ts      # Process-local provider concurrency/rate limiting
 │   │   ├── prompt-serializer.ts     # Request audit trail serialization
 │   │   └── stream-result.ts     # SSE stream response helpers with response capture
 │   ├── providers/           # Built-in provider implementations and shared transports
@@ -132,7 +133,7 @@ Bound by `createProxyApp()` in `proxy/app.ts`. Implements the Anthropic Messages
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/v1/messages` | Main inference endpoint — receives Anthropic Messages requests, routes to target provider |
+| `POST` | `/v1/messages` | Main inference endpoint — receives Anthropic Messages requests, routes to target provider, and propagates client cancellation to upstream calls |
 | `POST` | `/v1/messages/count_tokens` | Token counting for the given messages+system+tool input |
 | `GET` | `/v1/models` | Model listing (mode-aware: single/all/chains) |
 | `HEAD`/`OPTIONS` | `/v1/messages` | CORS preflight for health checks |
@@ -231,6 +232,11 @@ interface StreamResult {
 }
 ```
 
+`ProviderRequestOptions` can include request/stream timeout overrides and an
+`abortSignal`. The proxy passes the `/v1/messages` client signal through this
+option so providers can cancel upstream `fetch` calls and response bodies when
+Claude Code disconnects.
+
 ### `ProviderRegistry`
 
 **File:** `packages/daemon/src/proxy/providers/registry.ts`
@@ -265,7 +271,11 @@ The central orchestrator for every incoming `/v1/messages` request. Owns the ful
 export class MessageService {
   constructor(private readonly runtime: ProxyRuntime) {}
 
-  async createMessage(req: MessagesRequest): Promise<MessageServiceResult>;
+  async createMessage(
+    req: MessagesRequest,
+    sessionId?: string | null,
+    abortSignal?: AbortSignal,
+  ): Promise<MessageServiceResult>;
   countTokens(req: MessagesRequest): number;
 }
 ```
@@ -280,13 +290,26 @@ export class MessageService {
 
 4. **Native Claude passthrough** — If the active provider is disabled and the requested model is a native Claude model, the request is forwarded directly to Anthropic using stored claude.ai credentials.
 
-5. **Provider execution** — Calls `provider.streamResponse()` with the translated request.
+5. **Provider limit check** — Uses `provider-limiter.ts` to enforce
+   `maxConcurrency`, `rateLimit`, and `rateWindow` before opening an upstream
+   request. Limit failures return controlled rate-limit errors.
 
-6. **Fallback retry** — For model chains, iterates through the chain entries, retrying each up to 2 times on 429/500 errors with exponential backoff (250ms × attempt).
+6. **Provider execution** — Calls `provider.streamResponse()` with the
+   translated request and client `AbortSignal`.
 
-7. **Token saving** — Applies RTK (conversation compression) and Caveman (system prompt simplification) before sending to the provider.
+7. **Fallback retry** — For model chains, iterates through the chain entries,
+   retrying the primary target on transient failures and moving to the next
+   target when a provider fails before useful content is emitted.
 
-8. **Session recording** — Every request is logged to the session record with provider, model, token count, latency, and status.
+8. **Token saving** — Applies RTK (conversation compression) and Caveman
+   (system prompt simplification) before sending to the provider.
+
+9. **Session recording** — Every request is logged to the session record with
+   provider, model, token count, latency, and status.
+
+Once useful stream content has been emitted, Model Chains do not rewind to the
+next provider. Late upstream errors are transformed into terminal
+Anthropic-compatible error/stop events after open blocks are closed.
 
 **Result type:**
 
@@ -549,6 +572,9 @@ The daemon ships with a built-in provider catalog and also supports user-created
 - `postProviderStream()` — POST request returning a `ReadableStream<Uint8Array>`, used for streaming inference
 - `fetchProviderJson()` — GET request returning parsed JSON, used for model listing
 - Both support request and stream timeouts via `AbortController`
+- `postProviderStream()` composes provider timeouts with the client abort
+  signal and cancels active response bodies when the client disconnects.
+  Pre-response client aborts are represented as HTTP-style status `499`.
 
 ## Session System
 

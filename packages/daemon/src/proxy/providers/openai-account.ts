@@ -48,6 +48,7 @@ export class OpenAIAccountProvider extends BaseProvider {
       timeoutMs: this.requestTimeoutMs(options),
       streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
       streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+      abortSignal: options?.abortSignal,
     });
 
     if ("error" in result) {

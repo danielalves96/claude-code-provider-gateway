@@ -142,6 +142,7 @@ export class CommandCodeProvider extends BaseProvider {
       timeoutMs: this.requestTimeoutMs(options),
       streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
       streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+      abortSignal: options?.abortSignal,
     });
 
     if ("error" in result) return { error: result.error };
@@ -298,6 +299,8 @@ export function commandCodeStreamToAnthropic(
         finishAnthropicMessage(state, enq);
       } catch (err) {
         enq(sseError("api_error", err instanceof Error ? err.message : String(err)));
+        state.finishReason = "end_turn";
+        finishAnthropicMessage(state, enq);
       } finally {
         controller.close();
       }

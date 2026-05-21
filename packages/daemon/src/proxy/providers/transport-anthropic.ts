@@ -61,6 +61,7 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
       timeoutMs: this.requestTimeoutMs(options),
       streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
       streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+      abortSignal: options?.abortSignal,
     });
 
     // Some models on OpenRouter (and similar providers) don't support tool_choice.
@@ -84,6 +85,7 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
         timeoutMs: this.requestTimeoutMs(options),
         streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
         streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+        abortSignal: options?.abortSignal,
       });
       body = retryBody;
     }
@@ -116,6 +118,7 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     let outputTokens = 0;
     let started = false;
     let stopped = false;
+    const openBlocks = new Set<number>();
 
     const decoder = new TextDecoder();
 
@@ -157,11 +160,15 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
               }
 
               if (type === "content_block_start") {
-                enq(sseContentBlockStart(evt.index as number, evt.content_block));
+                const index = evt.index as number;
+                openBlocks.add(index);
+                enq(sseContentBlockStart(index, evt.content_block));
               } else if (type === "content_block_delta") {
                 enq(sseContentBlockDelta(evt.index as number, evt.delta));
               } else if (type === "content_block_stop") {
-                enq(sseContentBlockStop(evt.index as number));
+                const index = evt.index as number;
+                openBlocks.delete(index);
+                enq(sseContentBlockStop(index));
               } else if (type === "message_delta") {
                 const delta = evt.delta as Record<string, unknown>;
                 const usage = evt.usage as Record<string, unknown> | undefined;
@@ -178,10 +185,26 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
             enq(sseMessageStart(messageId, model, inputTokens));
           }
           if (!stopped) {
+            for (const index of Array.from(openBlocks).sort((a, b) => a - b)) {
+              enq(sseContentBlockStop(index));
+            }
             enq(sseMessageStop());
           }
         } catch (err) {
+          if (!started) {
+            enq(ssePing());
+            enq(sseMessageStart(messageId, model, inputTokens));
+            started = true;
+          }
+          for (const index of Array.from(openBlocks).sort((a, b) => a - b)) {
+            enq(sseContentBlockStop(index));
+          }
           enq(sseError("api_error", String(err)));
+          if (!stopped) {
+            enq(sseMessageDelta("end_turn", outputTokens));
+            enq(sseMessageStop());
+            stopped = true;
+          }
         } finally {
           controller.close();
         }

@@ -9,6 +9,7 @@ import { BaseUrlSection } from "./BaseUrlSection.js";
 import { ModelPickerSection } from "./ModelPickerSection.js";
 import { ModelSelector } from "./ModelSelector.js";
 import { OAuthProviderSettings } from "./OAuthProviderSettings.js";
+import { RuntimeLimitsSection } from "./RuntimeLimitsSection.js";
 
 export interface ProviderConfigHandlers {
   onSaveKey: (id: string, key: string) => void;
@@ -18,6 +19,10 @@ export interface ProviderConfigHandlers {
   onAddModel: (p: ProviderInfo, model: string) => void;
   onRemoveModel: (p: ProviderInfo, model: string) => void;
   onDisabledModelsChange: (id: string, disabledModels: string[]) => void;
+  onRuntimeLimitsChange: (
+    id: string,
+    limits: { rateLimit: number; rateWindow: number; maxConcurrency: number },
+  ) => void;
   onOAuthLogin: (id: string) => void;
   onOAuthLogout: (id: string) => void;
   onCancelOAuthFlow: () => void;
@@ -85,6 +90,14 @@ export function ProviderConfigContent({
       onRequestChange={(url) => handlers.onRequestChangeUrl(provider.id, url)}
     />
   );
+  const runtimeLimitsSection = ready && (
+    <RuntimeLimitsSection
+      rateLimit={provider.rateLimit}
+      rateWindow={provider.rateWindow}
+      maxConcurrency={provider.maxConcurrency}
+      onSave={(limits) => handlers.onRuntimeLimitsChange(provider.id, limits)}
+    />
+  );
 
   return (
     <Flex vertical gap="large" style={{ marginTop: 24 }}>
@@ -103,12 +116,14 @@ export function ProviderConfigContent({
           {baseUrlSection}
           {apiKeySection}
           {modelPickerSection}
+          {runtimeLimitsSection}
         </>
       ) : (
         <>
           {apiKeySection}
           {modelPickerSection}
           {baseUrlSection}
+          {runtimeLimitsSection}
         </>
       )}
 

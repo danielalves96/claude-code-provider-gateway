@@ -189,6 +189,7 @@ function normalizeProviders(
     (out, id) => {
       const provider = providers[id];
       const fallback = defaults[id] ?? defaultCustomProviderConfig(provider, id);
+      const runtimeLimits = normalizeProviderRuntimeLimits(provider, fallback, id);
       out[id] = {
         enabled: booleanOrDefault(provider.enabled, fallback.enabled),
         apiKey: optionalString(provider.apiKey),
@@ -197,9 +198,9 @@ function normalizeProviders(
         models: normalizeStringList(provider.models, fallback.models),
         disabledModels: normalizeStringList(provider.disabledModels, fallback.disabledModels),
         baseUrl: optionalString(provider.baseUrl) ?? fallback.baseUrl,
-        rateLimit: numberOrDefault(provider.rateLimit, fallback.rateLimit),
-        rateWindow: numberOrDefault(provider.rateWindow, fallback.rateWindow),
-        maxConcurrency: numberOrDefault(provider.maxConcurrency, fallback.maxConcurrency),
+        rateLimit: runtimeLimits.rateLimit,
+        rateWindow: runtimeLimits.rateWindow,
+        maxConcurrency: runtimeLimits.maxConcurrency,
         requestTimeoutMs: optionalPositiveNumber(provider.requestTimeoutMs),
         streamIdleTimeoutMs: optionalPositiveNumber(provider.streamIdleTimeoutMs),
         streamTotalTimeoutMs: optionalPositiveNumber(provider.streamTotalTimeoutMs),
@@ -209,6 +210,20 @@ function normalizeProviders(
     },
     {} as Record<string, ProviderConfig>,
   );
+}
+
+function normalizeProviderRuntimeLimits(
+  provider: ProviderConfig,
+  fallback: ProviderConfig,
+  id: string,
+): Pick<ProviderConfig, "rateLimit" | "rateWindow" | "maxConcurrency"> {
+  const rateLimit = numberOrDefault(provider.rateLimit, fallback.rateLimit);
+  const rateWindow = numberOrDefault(provider.rateWindow, fallback.rateWindow);
+  const maxConcurrency = numberOrDefault(provider.maxConcurrency, fallback.maxConcurrency);
+  if (PROVIDER_ID_SET.has(id) && rateLimit === 40 && rateWindow === 60 && maxConcurrency === 5) {
+    return { rateLimit: 0, rateWindow: 0, maxConcurrency: 0 };
+  }
+  return { rateLimit, rateWindow, maxConcurrency };
 }
 
 function mergeProviderIds(
@@ -241,9 +256,9 @@ function defaultCustomProviderConfig(
     models: [],
     disabledModels: [],
     baseUrl: "",
-    rateLimit: 40,
-    rateWindow: 60,
-    maxConcurrency: 5,
+    rateLimit: 0,
+    rateWindow: 0,
+    maxConcurrency: 0,
     custom: {
       label: provider?.custom?.label || id,
       slug: id,

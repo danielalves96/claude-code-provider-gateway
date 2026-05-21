@@ -26,10 +26,12 @@ import {
   getAnthropicCredentialsStatus,
   streamAnthropicNative,
 } from "../providers/anthropic-passthrough.js";
+import type { StreamResult } from "../providers/base.js";
 import type { ProxyRuntime } from "../runtime.js";
 import { injectCaveman } from "../token-savers/caveman.js";
 import { cloneMessagesRequest, compressMessages, formatRtkLog } from "../token-savers/rtk.js";
 import { serializePrompt } from "./prompt-serializer.js";
+import { acquireProviderLimit } from "./provider-limiter.js";
 import {
   probeStreamForUsefulAnthropicContent,
   streamResult,
@@ -61,6 +63,7 @@ export class MessageService {
   async createMessage(
     req: MessagesRequest,
     sessionId?: string | null,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     const started = Date.now();
     const config = getSessionConfig(sessionId) ?? this.runtime.currentConfig();
@@ -94,7 +97,7 @@ export class MessageService {
     const resolved = resolveModel(req.model, config);
     if (resolved.source === "fallback") {
       setSessionPrimaryModel(sessionId, "fallback", resolved.fallback.slug);
-      return await this.streamFallback(req, resolved.fallback, started, sessionId);
+      return await this.streamFallback(req, resolved.fallback, started, sessionId, abortSignal);
     }
 
     let { providerId, providerModel } = resolved;
@@ -119,7 +122,9 @@ export class MessageService {
               candidate.slug === primary.providerModel &&
               candidate.models.length > 0,
           );
-          if (fallback) return await this.streamFallback(req, fallback, started, sessionId);
+          if (fallback) {
+            return await this.streamFallback(req, fallback, started, sessionId, abortSignal);
+          }
           const message = `Model chain "${primary.providerModel}" is not enabled or configured.`;
           logger.error("proxy", `✗ ${req.model} → fallback/${primary.providerModel} unavailable`);
           recordRequest("fallback", Date.now() - started, message);
@@ -151,7 +156,7 @@ export class MessageService {
       shouldUseNativeClaudePassthrough(req.model, config, primaryModel) &&
       getAnthropicCredentialsStatus().available
     ) {
-      return await this.streamNativeClaude(req, started, sessionId, config);
+      return await this.streamNativeClaude(req, started, sessionId, config, abortSignal);
     }
 
     const provider = registry.get(providerId);
@@ -184,8 +189,14 @@ export class MessageService {
       config,
     );
     const inputTokens = countRequestTokens(providerReq);
-    const result = await safeProviderStream(() =>
-      provider.streamResponse(providerReq, inputTokens),
+    const result = await limitedProviderStream(
+      providerId,
+      config.providers[providerId],
+      abortSignal,
+      () =>
+        provider.streamResponse(providerReq, inputTokens, {
+          abortSignal,
+        }),
     );
     const latency = Date.now() - started;
 
@@ -251,6 +262,7 @@ export class MessageService {
     started: number,
     sessionId: string | null | undefined,
     config: Config,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     const { req: nativeReq, stats: tokenSaverStats } = this.applyTokenSavers(
       cloneMessagesRequest(req),
@@ -267,6 +279,7 @@ export class MessageService {
         defaultStreamTotalTimeoutMs(providerId),
         defaultStreamIdleTimeoutMs(providerId),
         defaultStreamTotalTimeoutMs(providerId),
+        abortSignal,
       ),
     );
     const latency = Date.now() - started;
@@ -332,11 +345,12 @@ export class MessageService {
     fallback: ModelFallbackConfig,
     started: number,
     sessionId: string | null | undefined,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     if (fallback.routingStrategy === "round_robin") {
-      return this.streamFallbackRoundRobin(req, fallback, started, sessionId);
+      return this.streamFallbackRoundRobin(req, fallback, started, sessionId, abortSignal);
     }
-    return this.streamFallbackWaterfall(req, fallback, started, sessionId);
+    return this.streamFallbackWaterfall(req, fallback, started, sessionId, abortSignal);
   }
 
   private async streamFallbackWaterfall(
@@ -344,6 +358,7 @@ export class MessageService {
     fallback: ModelFallbackConfig,
     started: number,
     sessionId: string | null | undefined,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     let lastError: {
       status: ErrorStatus;
@@ -365,6 +380,7 @@ export class MessageService {
           attempt,
           started,
           sessionId,
+          abortSignal,
         );
         if (result.kind === "stream") return result;
         lastError = {
@@ -393,6 +409,7 @@ export class MessageService {
     fallback: ModelFallbackConfig,
     started: number,
     sessionId: string | null | undefined,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     const primaryAttempts = fallback.primaryAttempts ?? DEFAULT_PRIMARY_ATTEMPTS;
     // Fisher-Yates shuffle so every pick — primary and fallbacks — is random
@@ -421,6 +438,7 @@ export class MessageService {
           attempt,
           started,
           sessionId,
+          abortSignal,
         );
         if (result.kind === "stream") return result;
         lastError = {
@@ -452,6 +470,7 @@ export class MessageService {
     attempt: number,
     started: number,
     sessionId: string | null | undefined,
+    abortSignal?: AbortSignal,
   ): Promise<MessageServiceResult> {
     const providerId = target.providerId;
     const providerModel = normalizeFallbackModel(target);
@@ -486,12 +505,18 @@ export class MessageService {
       getSessionConfig(sessionId) ?? this.runtime.currentConfig(),
     );
     const inputTokens = countRequestTokens(providerReq);
-    const result = await safeProviderStream(() =>
-      provider.streamResponse(providerReq, inputTokens, {
-        requestTimeoutMs: fallback.requestTimeoutMs ?? defaultRequestTimeoutMs(providerId),
-        streamTotalTimeoutMs:
-          fallback.streamTotalTimeoutMs ?? defaultStreamTotalTimeoutMs(providerId),
-      }),
+    const currentConfig = getSessionConfig(sessionId) ?? this.runtime.currentConfig();
+    const result = await limitedProviderStream(
+      providerId,
+      currentConfig.providers[providerId],
+      abortSignal,
+      () =>
+        provider.streamResponse(providerReq, inputTokens, {
+          requestTimeoutMs: fallback.requestTimeoutMs ?? defaultRequestTimeoutMs(providerId),
+          streamTotalTimeoutMs:
+            fallback.streamTotalTimeoutMs ?? defaultStreamTotalTimeoutMs(providerId),
+          abortSignal,
+        }),
     );
     const latency = Date.now() - started;
 
@@ -686,6 +711,58 @@ async function safeProviderStream<T extends { error?: { status: number; message:
       },
     } as T;
   }
+}
+
+async function limitedProviderStream(
+  providerId: string,
+  config: Config["providers"][string] | undefined,
+  abortSignal: AbortSignal | undefined,
+  call: () => Promise<StreamResult>,
+): Promise<StreamResult> {
+  const limit = acquireProviderLimit(providerId, config, abortSignal);
+  if (!limit.ok) return { error: { status: limit.status, message: limit.message } };
+
+  const result = await safeProviderStream(call);
+  if (result.stream) {
+    return { ...result, stream: releaseWhenStreamSettles(result.stream, limit.release) };
+  }
+
+  limit.release();
+  return result;
+}
+
+function releaseWhenStreamSettles(
+  stream: ReadableStream<string>,
+  release: () => void,
+): ReadableStream<string> {
+  const reader = stream.getReader();
+  let released = false;
+  const releaseOnce = () => {
+    if (released) return;
+    released = true;
+    release();
+  };
+
+  return new ReadableStream<string>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          releaseOnce();
+          controller.close();
+          return;
+        }
+        controller.enqueue(value);
+      } catch (err) {
+        releaseOnce();
+        controller.error(err);
+      }
+    },
+    cancel(reason) {
+      releaseOnce();
+      return reader.cancel(reason);
+    },
+  });
 }
 
 function formatTransportError(err: unknown): string {
