@@ -1,6 +1,6 @@
 import { loadConfig } from "../config/index.js";
 import type { Config } from "../config/schema.js";
-import { ProviderRegistry } from "./providers/registry.js";
+import { ProviderRegistry } from "./providers/index.js";
 
 export type ConfigLoader = () => Config;
 

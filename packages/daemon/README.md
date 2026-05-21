@@ -139,13 +139,13 @@ Key test suites:
 | Test file | Covers |
 |-----------|--------|
 | `src/proxy/routes/anthropic-routes.test.ts` | Anthropic proxy endpoint behavior |
-| `src/proxy/services/message-service.test.ts` | Message routing and translation |
-| `src/proxy/services/model-service.test.ts` | Model listing and aggregation |
+| `src/proxy/services/messages/message-service.test.ts` | Message routing and translation |
+| `src/proxy/services/models/model-service.test.ts` | Model listing and aggregation |
 | `src/proxy/providers/*.test.ts` | Individual provider transports and auth flows |
 | `src/config/validation.test.ts` | Configuration validation |
 | `src/config/secrets/*.test.ts` | Encrypted secrets storage and master key management |
 | `src/panel/app.test.ts` | Panel API routes |
-| `src/panel/launch-prepare.test.ts` | Shell setup and launch preparation |
+| `src/panel/services/launch-prepare.test.ts` | Shell setup and launch preparation |
 
 ## License
 

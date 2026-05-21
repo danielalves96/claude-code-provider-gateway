@@ -1,6 +1,6 @@
 import type { Context, Next } from "hono";
-import { resolveSessionIdFromAuthToken } from "../../runtime/sessions.js";
-import { anthropicError } from "../errors.js";
+import { resolveSessionIdFromAuthToken } from "../../runtime/sessions/index.js";
+import { anthropicError } from "../core/index.js";
 import type { ProxyRuntime } from "../runtime.js";
 
 export const PROXY_SESSION_ID_KEY = "ccpgSessionId";

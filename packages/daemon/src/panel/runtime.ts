@@ -1,7 +1,7 @@
 import { createServer, type RequestListener, type Server } from "node:http";
 import { saveConfig } from "../config/index.js";
 import type { Config } from "../config/schema.js";
-import { ProviderRegistry } from "../proxy/providers/registry.js";
+import { ProviderRegistry } from "../proxy/providers/index.js";
 
 export type OAuthFlow = {
   provider?: "cline" | "openai_account";

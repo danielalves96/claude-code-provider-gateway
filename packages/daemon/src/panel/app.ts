@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Config } from "../config/schema.js";
 import { requirePanelAccess } from "./middleware/auth.js";
 import { registerConfigRoutes } from "./routes/config-routes.js";
-import { registerOAuthRoutes } from "./routes/oauth-routes.js";
+import { registerOAuthRoutes } from "./routes/oauth/index.js";
 import { registerProviderRoutes } from "./routes/provider-routes.js";
 import { registerSessionRoutes } from "./routes/session-routes.js";
 import { registerShellRoutes } from "./routes/shell-routes.js";

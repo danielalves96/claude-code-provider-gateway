@@ -8,8 +8,8 @@ import {
   heartbeatSession,
   listArchivedSessions,
   listCurrentSessions,
-} from "../../runtime/sessions.js";
-import type { SessionsResponse } from "../contracts.js";
+} from "../../runtime/sessions/index.js";
+import type { SessionsResponse } from "../types.js";
 
 export function registerSessionRoutes(app: Hono): void {
   app.get("/api/sessions", (c) => {

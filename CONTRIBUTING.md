@@ -101,7 +101,7 @@ Start in:
 
 - `packages/daemon/src/proxy/model-router.ts`
 - `packages/daemon/src/proxy/routes/anthropic-routes.ts`
-- `packages/daemon/src/proxy/services/message-service.ts`
+- `packages/daemon/src/proxy/services/messages/message-service.ts`
 - `packages/daemon/src/core/sse/writer.ts`
 
 Routing and streaming changes need focused daemon tests. Preserve

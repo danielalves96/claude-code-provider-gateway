@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type {
   GatewayProviderStat,
   SessionRecord,
-} from "../../../../../daemon/src/panel/contracts.js";
+} from "../../../../../daemon/src/panel/types.js";
 import { useGatewayStatus } from "./useGatewayStatus.js";
 import { useLaunchCommands } from "./useLaunchCommands.js";
 import { useShellSetup } from "./useShellSetup.js";

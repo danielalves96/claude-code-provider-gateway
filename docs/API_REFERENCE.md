@@ -57,7 +57,7 @@ canceled. Provider rate/concurrency limit failures return Anthropic-style
 ## Panel API
 
 The panel API is intentionally local and product-facing. Route contracts live in
-`packages/daemon/src/panel/contracts.ts`.
+`packages/daemon/src/panel/types.ts`.
 
 ### Status And Logs
 

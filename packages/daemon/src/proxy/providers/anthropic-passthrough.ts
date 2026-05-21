@@ -9,8 +9,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { MessagesRequest, ModelInfo } from "../../core/anthropic/types.js";
-import { postProviderStream } from "./api-client.js";
-import { redactHeaders, type StreamResult } from "./base.js";
+import { postProviderStream } from "./shared/api-client.js";
+import { redactHeaders, type StreamResult } from "./shared/base.js";
 
 interface ClaudeCredentials {
   claudeAiOauth?: {

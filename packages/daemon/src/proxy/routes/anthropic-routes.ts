@@ -1,10 +1,9 @@
 import type { Hono } from "hono";
-import type { CountTokensRequest, MessagesRequest } from "../../core/anthropic/types.js";
-import { getSessionConfig } from "../../runtime/sessions.js";
+import type { CountTokensRequest, MessagesRequest } from "../../core/anthropic/index.js";
+import { getSessionConfig } from "../../runtime/sessions/index.js";
 import { getProxySessionId, requireAnthropicAuth } from "../middleware/auth.js";
 import type { ProxyRuntime } from "../runtime.js";
-import { MessageService } from "../services/message-service.js";
-import { ModelService } from "../services/model-service.js";
+import { MessageService, ModelService } from "../services/index.js";
 
 export function registerAnthropicRoutes(app: Hono, runtime: ProxyRuntime): void {
   const messages = new MessageService(runtime);

@@ -32,7 +32,7 @@ custom catalog handling, or a non-standard stream format.
 If the provider supports **multiple protocols depending on the model** (e.g.,
 native Anthropic for first-party models, OpenAI Chat for everything else),
 extend `BaseProvider` and dispatch inside `streamResponse()` — see
-`copilot.ts` + `copilot-native-anthropic.ts` + `copilot-chat-stream.ts` as a
+`copilot/index.ts` + `copilot/native-anthropic.ts` + `copilot/chat-stream.ts` as a
 reference.
 
 ## Implementation Checklist
@@ -41,11 +41,12 @@ reference.
 2. Add provider defaults in `PROVIDER_DEFAULTS`.
 3. Add the display label in `PROVIDER_LABELS`.
 4. Add a CLI flag in `CLI_FLAGS` when the provider should be launchable with `ccpg --ProviderName`.
-5. Register the provider constructor in `packages/daemon/src/proxy/providers/registry.ts`.
+5. Register the provider constructor.
    - For a plain OpenAI-compatible provider, use `createOpenAIProvider("<id>")`.
    - For a plain Anthropic-compatible provider, use `createAnthropicProvider("<id>")`.
    - For static variations, pass factory options such as `requiresApiKey: false`, `authHeaderStyle: "x-api-key"`, or `extraHeaders`.
-   - Add a dedicated `packages/daemon/src/proxy/providers/<provider>.ts` only when factory options are not enough.
+   - Put factory-only providers in `packages/daemon/src/proxy/providers/declarative.ts`.
+   - Add a dedicated provider folder only when factory options are not enough.
 6. Add the provider to `OAUTH_PROVIDER_IDS` when it is OAuth-backed.
 7. Add or update panel provider metadata only when the daemon API cannot derive it:
    - `packages/panel/public/providers/<id>.webp` for the card icon.
@@ -60,13 +61,13 @@ change is part of a migration batch, update `PROVIDERS_MIGRATION.md` too.
 
 ## Declarative Provider Pattern
 
-Most OpenAI-compatible providers should not get their own file. Put them in the
-registry:
+Most OpenAI-compatible providers should not get their own file. Put them in
+`providers/declarative.ts`:
 
 ```ts
 import { createOpenAIProvider } from "./provider-factory.js";
 
-const PROVIDER_MAP = {
+export const DECLARATIVE_PROVIDER_MAP = {
   example: createOpenAIProvider("example"),
 };
 ```
@@ -76,7 +77,7 @@ For a plain Anthropic Messages provider:
 ```ts
 import { createAnthropicProvider } from "./provider-factory.js";
 
-const PROVIDER_MAP = {
+export const DECLARATIVE_PROVIDER_MAP = {
   example: createAnthropicProvider("example"),
 };
 ```
@@ -84,7 +85,7 @@ const PROVIDER_MAP = {
 Use factory options for small static differences:
 
 ```ts
-const PROVIDER_MAP = {
+export const DECLARATIVE_PROVIDER_MAP = {
   local_example: createAnthropicProvider("local_example", { requiresApiKey: false }),
   x_key_example: createAnthropicProvider("x_key_example", { authHeaderStyle: "x-api-key" }),
   header_example: createOpenAIProvider("header_example", {
@@ -93,7 +94,7 @@ const PROVIDER_MAP = {
 };
 ```
 
-Create a dedicated provider file only when the behavior cannot be expressed
+Create a dedicated provider module only when the behavior cannot be expressed
 declaratively. Good reasons include:
 
 - OAuth token refresh or non-API-key credentials.
@@ -108,7 +109,7 @@ declaratively. Good reasons include:
 When a provider does need code, keep it focused:
 
 ```ts
-import { OpenAIChatTransport } from "./transport-openai.js";
+import { OpenAIChatTransport } from "./transports/index.js";
 
 export class ExampleProvider extends OpenAIChatTransport {
   get id() {
@@ -140,9 +141,9 @@ At minimum, add daemon tests for:
 
 Use existing tests as patterns:
 
-- `packages/daemon/src/proxy/providers/api-client.test.ts`
-- `packages/daemon/src/proxy/services/model-service.test.ts`
-- `packages/daemon/src/proxy/services/message-service.test.ts`
+- `packages/daemon/src/proxy/providers/shared/api-client.test.ts`
+- `packages/daemon/src/proxy/services/models/model-service.test.ts`
+- `packages/daemon/src/proxy/services/messages/message-service.test.ts`
 - `packages/daemon/src/proxy/routes/anthropic-routes.test.ts`
 
 For custom OAuth/device flows, add focused tests around pure parsing, expiry,
@@ -176,11 +177,11 @@ protected resolveModel(requestedModel: string): string {
 
 ### Wrapping the response stream
 
-Use the helpers in `proxy/services/stream-result.ts` to package your stream
+Use the helpers in `proxy/services/streaming/stream-result.ts` to package your stream
 into the `MessageServiceResult` type expected by the message service:
 
 ```ts
-import { streamResult, streamResultWithCapture } from '../services/stream-result.js'
+import { streamResult, streamResultWithCapture } from '../services/streaming/stream-result.js'
 
 // Without response capture (simple case):
 return streamResult(myReadableStream)

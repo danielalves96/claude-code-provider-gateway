@@ -6,7 +6,7 @@ import type {
   OpenAIAccountOAuthStartResponse,
   ProviderInfo,
   ProviderTestResult,
-} from "../../../../../daemon/src/panel/contracts.js";
+} from "../../../../../daemon/src/panel/types.js";
 
 export type { ModelInfo, OAuthInfo, OAuthStatusResponse, ProviderInfo };
 

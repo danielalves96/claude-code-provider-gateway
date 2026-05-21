@@ -59,57 +59,69 @@ packages/daemon/src/
 │   ├── app.ts              # createProxyApp() — Hono app factory
 │   ├── runtime.ts          # ProxyRuntime — holds Config + ProviderRegistry for the proxy
 │   ├── model-router.ts     # resolveModel() — decodes model name → provider target
-│   ├── errors.ts           # Anthropic error types + provider status code mapping
-│   ├── optimizations.ts    # Local optimizations for known housekeeping requests
+│   ├── core/               # Proxy-local primitives
+│   │   ├── errors.ts       # Anthropic error types + provider status code mapping
+│   │   └── optimizations.ts # Local optimizations for known housekeeping requests
 │   ├── middleware/
 │   │   └── auth.ts         # requireAnthropicAuth — Bearer/x-api-key validation
 │   ├── routes/
 │   │   ├── anthropic-routes.ts  # POST /v1/messages, /v1/messages/count_tokens, GET /v1/models
 │   │   └── status-routes.ts     # GET /v1/status (service health)
-│   ├── services/
-│   │   ├── message-service.ts       # MessageService — routing orchestration entry point
-│   │   ├── model-service.ts         # ModelService — model listing (mode-aware)
-│   │   ├── native-claude-routing.ts # shouldUseNativeClaudePassthrough() predicate
-│   │   ├── native-stream.ts         # Native Anthropic passthrough streaming path
-│   │   ├── fallback-stream.ts       # Model chain strategies (waterfall / round-robin)
-│   │   ├── fallback-target.ts       # Single chain attempt: token savers → stream → probe → record
-│   │   ├── provider-stream.ts       # Stream infrastructure: limits, error wrapping, lifecycle
-│   │   ├── stream-result.ts         # Stream result builders (plain + response capture tee)
-│   │   ├── stream-probe.ts          # SSE probing for useful content + all parsing helpers
-│   │   ├── token-saver-pipeline.ts  # RTK + Caveman composition pipeline
-│   │   ├── provider-limiter.ts      # Process-local provider concurrency/rate limiting
-│   │   ├── prompt-serializer.ts     # Request audit trail serialization
-│   │   └── types.ts                 # MessageServiceResult shared type
+│   ├── services/            # Public facade + grouped proxy services
+│   │   ├── index.ts             # Public MessageService/ModelService API
+│   │   ├── messages/            # MessageService routing orchestration
+│   │   ├── models/              # ModelService model listing
+│   │   ├── fallback/            # Model Chain strategies and single-target attempts
+│   │   ├── native/              # Native Claude passthrough decisions and stream path
+│   │   ├── streaming/           # Provider limits, stream probing, stream result builders
+│   │   └── shared/              # Prompt serialization, token-saver pipeline, result types
 │   ├── providers/           # Built-in provider implementations and shared transports
-│   │   ├── base.ts              # BaseProvider abstract class
+│   │   ├── index.ts             # Public provider module API
 │   │   ├── registry.ts          # ProviderRegistry — ID → constructor mapping + caching
+│   │   ├── declarative.ts       # Factory-only built-in providers
 │   │   ├── provider-factory.ts  # createOpenAIProvider() / createAnthropicProvider() factories
-│   │   ├── transport-anthropic.ts # AnthropicMessagesTransport (native Anthropic API)
-│   │   ├── transport-openai.ts    # OpenAIChatTransport (OpenAI Chat Completions API)
-│   │   ├── api-client.ts         # postProviderStream(), fetchProviderJson() HTTP wrappers
-│   │   ├── model-prefix.ts       # Gateway model ID prefix stripping
 │   │   ├── anthropic-passthrough.ts # Native Anthropic (claude.ai) credential passthrough
-│   │   ├── copilot.ts / copilot-auth.ts / copilot-catalog.ts / copilot-chat-stream.ts
-│   │   ├── openai-account.ts / openai-account-auth.ts / openai-account-stream.ts
-│   │   ├── cline.ts / cline-auth.ts
-│   │   ├── kilocode.ts / kilocode-auth.ts
-│   │   ├── kiro.ts / iflow.ts
-│   │   ├── commandcode.ts           # CommandCodeProvider class (delegates to sub-modules)
-│   │   ├── commandcode-models.ts    # Model catalog, docs fetch, prefix stripping
-│   │   ├── commandcode-conversion.ts # Anthropic → CommandCode request conversion
-│   │   ├── commandcode-stream.ts    # CommandCode SSE → Anthropic SSE transformation
-│   │   ├── deepseek.ts / google.ts / ollama.ts / ollama-cloud.ts
-│   │   └── oauth-stub.ts        # Placeholder for unimplemented OAuth flows
+│   │   ├── shared/              # BaseProvider, HTTP client, model prefix helpers, OAuth stub
+│   │   ├── transports/          # Reusable transport base classes
+│   │   │   ├── anthropic.ts     # AnthropicMessagesTransport (native Anthropic API)
+│   │   │   └── openai.ts        # OpenAIChatTransport (OpenAI Chat Completions API)
+│   │   ├── copilot/             # GitHub Copilot provider
+│   │   │   ├── index.ts         # CopilotProvider class (dual-transport: OpenAI Chat + Anthropic native)
+│   │   │   ├── auth.ts          # copilotEditorHeaders(), exchangeForCopilotToken(), device flow
+│   │   │   ├── catalog.ts       # listCopilotModels()
+│   │   │   ├── chat-stream.ts   # OpenAI Chat SSE → Anthropic SSE transformer
+│   │   │   └── native-anthropic.ts  # streamCopilotNativeAnthropic() for claude-* models
+│   │   ├── cline/               # Cline provider
+│   │   │   ├── index.ts         # ClineProvider class
+│   │   │   └── auth.ts          # buildClineHeaders(), browser OAuth redirect helpers
+│   │   ├── openai-account/      # OpenAI Account provider
+│   │   │   ├── index.ts         # OpenAIAccountProvider class
+│   │   │   ├── auth.ts          # PKCE flow, refreshAccessToken(), isOAuthReady()
+│   │   │   ├── catalog.ts       # listOpenAIAccountModels() + local cache
+│   │   │   ├── responses.ts     # buildOpenAIAccountResponsesRequest()
+│   │   │   └── stream.ts        # Responses API SSE → Anthropic SSE transformer
+│   │   ├── commandcode/         # CommandCode provider
+│   │   │   ├── index.ts         # CommandCodeProvider class
+│   │   │   ├── conversion.ts    # anthropicToCommandCode() — request format conversion
+│   │   │   ├── models.ts        # COMMANDCODE_MODELS catalog, prefix stripping
+│   │   │   └── stream.ts        # commandCodeStreamToAnthropic() SSE transformer
+│   │   ├── kilocode/            # KiloCode provider
+│   │   │   ├── index.ts         # KiloCodeProvider class
+│   │   │   └── auth.ts          # Device flow helpers
+│   │   └── ...                  # Multi-file providers grouped by provider name
 │   └── token-savers/        # Token optimization modules
-│       ├── rtk.ts               # RTK core: compressMessages, formatRtkLog, auto-detect dispatch
-│       ├── rtk-filters.ts       # All 10 compression filters (git-diff, grep, find, ls, tree, …)
+│       ├── index.ts             # Public token-saver module API
+│       ├── rtk/
+│       │   ├── index.ts         # RTK core: compressMessages, formatRtkLog, auto-detect dispatch
+│       │   └── filters.ts       # All 10 compression filters (git-diff, grep, find, ls, tree, …)
 │       └── caveman.ts           # Caveman — simplifies system prompts
 ├── panel/                  # Panel web API server
 │   ├── app.ts              # createPanelApp() — Hono app factory with auth middleware + static files
 │   ├── runtime.ts          # PanelRuntime — holds Config + ProviderRegistry + OAuth flows
-│   ├── contracts.ts        # TypeScript types for all panel API responses
-│   ├── launch-prepare.ts   # prepareLaunch() — handles --Provider flags, env setup, session lifecycle
-│   ├── shell-setup.ts      # Shell RC snippet generation + installation (zsh/bash/fish/powershell)
+│   ├── types.ts            # TypeScript types for all panel API responses
+│   ├── services/           # Launch preparation and shell setup services
+│   │   ├── launch-prepare.ts   # Handles --Provider flags, env setup, session lifecycle
+│   │   └── shell-setup.ts      # Shell RC snippet generation + installation
 │   ├── middleware/
 │   │   └── auth.ts         # requirePanelAccess — CORS + token auth for Tauri origins
 │   ├── routes/
@@ -117,25 +129,27 @@ packages/daemon/src/
 │   │   ├── provider-routes.ts  # Provider list/test/models, custom providers, logo serving, routing options
 │   │   ├── session-routes.ts   # GET/DELETE /api/sessions, /api/launch/*
 │   │   ├── shell-routes.ts     # Shell setup, launch commands, launch-prepare
-│   │   ├── oauth-routes.ts     # Route registration only — delegates to per-provider modules
-│   │   ├── oauth-shared.ts     # Shared OAuth helpers: listenOnLocalhost, cleanupOAuthFlows, timeout
-│   │   ├── oauth-openai-account.ts  # OpenAI Account PKCE + callback server flow
-│   │   ├── oauth-copilot.ts    # GitHub Copilot device flow + polling
-│   │   ├── oauth-kilocode.ts   # KiloCode device flow + polling
-│   │   ├── oauth-cline.ts      # Cline browser authorization + callback server flow
-│   │   ├── oauth-pages.ts      # HTML pages for OAuth callback (success/error/bad request)
 │   │   ├── status-routes.ts    # GET /api/status, /api/stats, /api/logs (SSE stream)
-│   │   └── static-routes.ts    # Serves the panel React SPA from dist/
+│   │   ├── static-routes.ts    # Serves the panel React SPA from dist/
+│   │   └── oauth/              # OAuth flows (one file per provider)
+│   │       ├── index.ts        # Route registration — delegates to per-provider modules
+│   │       ├── shared.ts       # Shared helpers: listenOnLocalhost, cleanupOAuthFlows, timeout
+│   │       ├── openai-account.ts  # OpenAI Account PKCE + callback server flow
+│   │       ├── copilot.ts      # GitHub Copilot device flow + polling
+│   │       ├── kilocode.ts     # KiloCode device flow + polling
+│   │       ├── cline.ts        # Cline browser authorization + callback server flow
+│   │       └── pages.ts        # HTML pages for OAuth callbacks (success/error/bad-request)
 │   └── static/             # Placeholder for built panel SPA
 ├── runtime/                # Process lifecycle, sessions, and runtime stats
 │   ├── daemon.ts           # startDaemon() — creates + binds proxy and panel servers
 │   ├── process.ts          # PID file management (write/read/remove/isRunning/getDaemonStatus)
 │   ├── network.ts          # configureOutboundNetwork() — undici proxy + global fetch override
-│   ├── sessions.ts         # Session lifecycle: start, record request, heartbeat, end, archive
-│   ├── session-types.ts    # SessionRecord, SessionRequestLogEntry, TokenSaverStats types
-│   ├── session-store.ts    # JSONL archive + current-session checkpoint persistence
-│   ├── session-stats.ts    # Per-model and per-provider stat aggregation
-│   └── stats.ts            # In-memory per-provider runtime stats
+│   ├── provider-stats.ts   # In-memory per-provider runtime stats
+│   └── sessions/           # Session tracking and disk persistence
+│       ├── index.ts        # Session lifecycle: start, record request, heartbeat, end, archive
+│       ├── types.ts        # SessionRecord, SessionRequestLogEntry, TokenSaverStats types
+│       ├── store.ts        # JSONL archive + current-session checkpoint persistence
+│       └── stats.ts        # Per-model and per-provider stat aggregation
 └── observability/          # Logging
     └── log.ts              # Structured logger + SSE log emitter for live panel feed
 ```
@@ -205,7 +219,7 @@ sequenceDiagram
 
 ### `BaseProvider`
 
-**File:** `packages/daemon/src/proxy/providers/base.ts`
+**File:** `packages/daemon/src/proxy/providers/shared/base.ts`
 
 Abstract base class for all LLM provider implementations. Defines the contract every provider must fulfill:
 
@@ -275,12 +289,12 @@ export class ProviderRegistry {
 
 - **Lazy instantiation**: Provider instances are created on first access (`get()`) and cached in a `Map`. Disabled providers return `null`.
 - **Hot-reload**: `updateConfig()` replaces the stored config and clears the cache so next access uses fresh configuration.
-- **Provider map**: The `PROVIDER_MAP` constant maps the built-in provider IDs to constructors. Most built-ins use factory-generated classes (`createOpenAIProvider()` / `createAnthropicProvider()`); special providers (Copilot, OpenAI Account, Cline, KiloCode, Kiro, iFlow, DeepSeek, Google, Ollama, Ollama Cloud, CommandCode) have dedicated hand-written classes.
+- **Provider map**: The `PROVIDER_MAP` constant maps the built-in provider IDs to constructors. Factory-only built-ins live in `declarative.ts` and use `createOpenAIProvider()`, `createAnthropicProvider()`, or `createOAuthStubProvider()`; only providers with real custom behavior (Copilot, OpenAI Account, Cline, KiloCode, CommandCode) have dedicated hand-written classes.
 - **Dynamic custom providers**: IDs not present in `PROVIDER_MAP` can still be instantiated when `config.providers.<id>.custom` exists. `custom.compatibility: "openai"` creates an `OpenAIChatTransport` subclass; `"anthropic"` creates an `AnthropicMessagesTransport` subclass. Custom providers are cached and hot-reloaded like built-ins.
 
 ### `MessageService`
 
-**File:** `packages/daemon/src/proxy/services/message-service.ts`
+**File:** `packages/daemon/src/proxy/services/messages/message-service.ts`
 
 The routing orchestrator for every incoming `/v1/messages` request. Resolves the model, selects the execution path (native passthrough, single provider, or model chain), and delegates to specialised modules for each concern.
 
@@ -352,7 +366,7 @@ type MessageServiceResult =
 
 ### `ModelService`
 
-**File:** `packages/daemon/src/proxy/services/model-service.ts`
+**File:** `packages/daemon/src/proxy/services/models/model-service.ts`
 
 Handles `/v1/models` endpoint, returning the model list based on the configured `modelMode`.
 
@@ -376,7 +390,7 @@ All modes include model chain entries. Native Claude tiers (Default/Sonnet/Haiku
 
 ### `shouldUseNativeClaudePassthrough()`
 
-**File:** `packages/daemon/src/proxy/services/native-claude-routing.ts`
+**File:** `packages/daemon/src/proxy/services/native/native-claude-routing.ts`
 
 Pure predicate called by `MessageService` before provider dispatch. Returns `true` when the request should be forwarded directly to Anthropic instead of through the active provider.
 
@@ -397,7 +411,7 @@ The intent: when no CCPG provider is active, Claude Code's background tier reque
 
 ### `serializePrompt()`
 
-**File:** `packages/daemon/src/proxy/services/prompt-serializer.ts`
+**File:** `packages/daemon/src/proxy/services/shared/prompt-serializer.ts`
 
 Converts a `MessagesRequest` to a truncated human-readable string for storage in the session request log. Used only for UI inspection — it does not affect the request sent to the provider.
 
@@ -413,7 +427,7 @@ function serializePrompt(req: MessagesRequest, first: boolean): string
 
 ### `streamResult()` / `streamResultWithCapture()`
 
-**File:** `packages/daemon/src/proxy/services/stream-result.ts`
+**File:** `packages/daemon/src/proxy/services/streaming/stream-result.ts`
 
 Helpers that package a provider's `ReadableStream<string>` into the `MessageServiceResult` union expected by the route handler.
 
@@ -434,7 +448,7 @@ SSE content probing (detecting whether a stream contains useful model output bef
 
 ### OAuth Pages
 
-**File:** `packages/daemon/src/panel/routes/oauth-pages.ts`
+**File:** `packages/daemon/src/panel/routes/oauth/pages.ts`
 
 Generates self-contained HTML pages served to the user's browser at the end of OAuth callback flows. All three pages share a minimal dark-themed design (dark card, CCPG wordmark, animated icon).
 
@@ -444,7 +458,7 @@ Generates self-contained HTML pages served to the user's browser at the end of O
 | `oauthErrorPage(provider, message?)` | OAuth callback failed (token exchange error, revoked access, network failure) | Shows red X + provider badge + error detail. Does **not** auto-close — user must return manually. |
 | `oauthBadRequestPage()` | Callback arrived with missing `state` or `code` parameters | Shows warning icon + "Invalid OAuth state or missing authorization code." message. No provider name (not yet known). Does **not** auto-close. |
 
-These pages are served from `oauth-routes.ts` callback endpoints (e.g. `GET /api/oauth/openai-account/callback`, `GET /api/oauth/cline/callback`). They are never fetched by the panel SPA — they are opened in the user's external browser during the OAuth redirect flow and are designed to be closed after the flow completes.
+These pages are served from `routes/oauth/` callback endpoints (e.g. `GET /api/oauth/openai-account/callback`, `GET /api/oauth/cline/callback`). They are never fetched by the panel SPA — they are opened in the user's external browser during the OAuth redirect flow and are designed to be closed after the flow completes.
 
 ### Configuration System (`ConfigManager`)
 
@@ -550,7 +564,7 @@ Fallback chains iterate through a configurable list of `{providerId, model}` pai
 
 ## Provider System
 
-The daemon ships with a built-in provider catalog and also supports user-created custom providers. Built-ins are registered in `PROVIDER_MAP` inside `ProviderRegistry`; custom providers are stored in config under their slug and instantiated dynamically.
+The daemon ships with a built-in provider catalog and also supports user-created custom providers. Factory-only built-ins are listed in `providers/declarative.ts`, while provider-specific adapters live in named folders. `ProviderRegistry` composes those constructor maps; custom providers are stored in config under their slug and instantiated dynamically.
 
 ### Provider Categories
 
@@ -562,7 +576,7 @@ The daemon ships with a built-in provider catalog and also supports user-created
 **OpenAI-compatible providers** (speak the OpenAI Chat Completions API, converted from Anthropic):
 - Generated via `createOpenAIProvider()`: NVIDIA NIM, Kimi, Groq, xAI, Mistral, Cerebras, Together, Fireworks, SiliconFlow, Hyperbolic, Chutes, Perplexity, Nebius, GLM CN, Volcengine Ark, BytePlus, Alibaba Bailian (both), OpenCode Go, Xiaomi MiMo (both), Cohere, Blackbox, HuggingFace
 - Auth: `Authorization: Bearer <key>`
-- Request/response conversion handled by `transport-openai.ts`
+- Request/response conversion handled by `providers/transports/openai.ts`
 
 **User-created custom providers**:
 - Created from the Providers page as OpenAI-compatible or Anthropic-compatible.
@@ -575,33 +589,33 @@ The daemon ships with a built-in provider catalog and also supports user-created
 
 | Provider | File(s) | Auth | Key Features |
 |----------|---------|------|-------------|
-| OpenAI Account | `openai-account.ts` + auth/stream/catalog | OAuth (PKCE + callback server) | Uses ChatGPT account credentials, supports `responses` model endpoint |
-| GitHub Copilot | `copilot.ts` + auth/catalog/chat-stream/native-anthropic | OAuth (device flow) | Device-code flow → GitHub OAuth → Copilot token exchange, native Anthropic endpoint support |
-| DeepSeek | `deepseek.ts` | API key (`x-api-key`) | Anthropic-native API with custom auth header |
-| Google | `google.ts` | API key | Uses Gemini's OpenAI-compatible endpoint, models fetched from Google's `/models` API |
-| Ollama / Ollama Cloud | `ollama.ts`, `ollama-cloud.ts` | None / API key | Local Ollama instance or Ollama Cloud |
-| Cline | `cline.ts` + auth | OAuth (browser callback) | OAuth flow with PKCE-like state parameter, callback server on `127.0.0.1:1456` |
-| KiloCode | `kilocode.ts` + auth | OAuth (device flow) | Device flow with org-id resolution |
-| Kiro | `kiro.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
-| iFlow | `iflow.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
-| CommandCode | `commandcode.ts` + `commandcode-models.ts` / `commandcode-conversion.ts` / `commandcode-stream.ts` | API key | Custom API integration with separate model catalog, request conversion, and stream transformation modules |
+| OpenAI Account | `openai-account/` | OAuth (PKCE + callback server) | Uses ChatGPT account credentials, supports `responses` model endpoint |
+| GitHub Copilot | `copilot/` | OAuth (device flow) | Device-code flow -> GitHub OAuth -> Copilot token exchange, native Anthropic endpoint support |
+| DeepSeek | `declarative.ts` | API key | Anthropic-compatible API with model catalog fetched from the OpenAI-compatible root endpoint |
+| Google | `declarative.ts` | API key | Uses Gemini's OpenAI-compatible endpoint |
+| Ollama / Ollama Cloud | `declarative.ts` | None / API key | Uses Ollama's OpenAI-compatible `/v1` API |
+| Cline | `cline/` | OAuth (browser callback) | OAuth flow with PKCE-like state parameter, callback server on `127.0.0.1:1456` |
+| KiloCode | `kilocode/` | OAuth (device flow) | Device flow with org-id resolution |
+| Kiro | `declarative.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
+| iFlow | `declarative.ts` | OAuth (coming soon) | OAuth stub — returns 501 until implemented |
+| CommandCode | `commandcode/` | API key | Custom API integration with separate model catalog, request conversion, and stream transformation modules |
 
 ### Transport Layer
 
-**`AnthropicMessagesTransport`** (`transport-anthropic.ts`):
+**`AnthropicMessagesTransport`** (`providers/transports/anthropic.ts`):
 - Extends `BaseProvider`
 - Sends requests to `{baseUrl}/messages` with `anthropic-version: 2023-06-01`
 - Transforms upstream SSE events into a clean Anthropic-formatted SSE stream
 - Handles `tool_choice` incompatibility on OpenRouter with automatic retry without `tool_choice`
 - Model listing: fetches `{baseUrl}/models`, maps IDs, merges user-configured `models` list
 
-**`OpenAIChatTransport`** (`transport-openai.ts`):
+**`OpenAIChatTransport`** (`providers/transports/openai.ts`):
 - Extends `BaseProvider`
 - Converts Anthropic `MessagesRequest` to OpenAI `ChatCompletionCreateParams` via `anthropicToOpenAI()`
 - Converts OpenAI SSE chunks back to Anthropic SSE format
 - Handles tool calls (tool_use → function/tool_use), system messages, and content types
 
-**`api-client.ts`**:
+**`providers/shared/api-client.ts`**:
 - `postProviderStream()` — POST request returning a `ReadableStream<Uint8Array>`, used for streaming inference
 - `fetchProviderJson()` — GET request returning parsed JSON, used for model listing
 - Both support request and stream timeouts via `AbortController`
@@ -611,7 +625,7 @@ The daemon ships with a built-in provider catalog and also supports user-created
 
 ## Session System
 
-**Files:** `runtime/sessions.ts`, `runtime/session-types.ts`, `runtime/session-store.ts`, `runtime/session-stats.ts`
+**Files:** `runtime/sessions/index.ts`, `runtime/sessions/types.ts`, `runtime/sessions/store.ts`, `runtime/sessions/stats.ts`
 
 ### Session Lifecycle
 
@@ -684,7 +698,7 @@ The panel's `GET /api/logs` endpoint streams new log entries as `text/event-stre
 
 ## Runtime Stats
 
-**File:** `runtime/stats.ts`
+**File:** `runtime/provider-stats.ts`
 
 In-memory `Map<string, ProviderStats>` tracking per-provider request counts, errors, and latency. Reset on daemon restart. Stats accept any string key, including synthetic identifiers like `"anthropic_native"` (native Claude passthrough). Exposed via `GET /api/stats` in the panel.
 

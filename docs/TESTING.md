@@ -68,8 +68,9 @@ packages/daemon/src/
 │       └── master-key.test.ts
 ├── proxy/
 │   ├── providers/
-│   │   ├── api-client.ts
-│   │   └── api-client.test.ts
+│   │   └── shared/
+│   │       ├── api-client.ts
+│   │       └── api-client.test.ts
 │   └── routes/
 │       ├── anthropic-routes.ts
 │       └── anthropic-routes.test.ts

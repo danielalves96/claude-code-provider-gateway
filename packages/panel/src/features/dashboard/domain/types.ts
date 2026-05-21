@@ -9,7 +9,7 @@ import type {
   ShellInfo,
   ShellName,
   ShellSetupResponse,
-} from "../../../../../daemon/src/panel/contracts.js";
+} from "../../../../../daemon/src/panel/types.js";
 
 export type GatewayStatus = GatewayStatusResponse;
 export type ProviderStat = GatewayProviderStat;

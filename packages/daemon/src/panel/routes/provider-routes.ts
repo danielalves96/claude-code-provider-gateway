@@ -7,9 +7,8 @@ import type { ProviderConfig, ProviderId } from "../../config/schema.js";
 import { PROVIDER_LABELS } from "../../config/schema.js";
 import { SECRET_KEYS } from "../../config/secrets/store.js";
 import type { ModelInfo } from "../../core/anthropic/types.js";
-import { AnthropicMessagesTransport } from "../../proxy/providers/transport-anthropic.js";
-import { OpenAIChatTransport } from "../../proxy/providers/transport-openai.js";
-import type { ProviderInfo, RoutingOption } from "../contracts.js";
+import { AnthropicMessagesTransport, OpenAIChatTransport } from "../../proxy/providers/index.js";
+import type { ProviderInfo, RoutingOption } from "../types.js";
 import type { PanelRuntime } from "../runtime.js";
 
 export function registerProviderRoutes(app: Hono, runtime: PanelRuntime): void {

@@ -563,7 +563,7 @@ Most features use `usePolling` at 5-second intervals for real-time updates:
 
 ## Data Contracts
 
-All types shared between panel and daemon are defined in `packages/daemon/src/panel/contracts.ts`. The panel feature domain files re-export and alias these types. Key contracts:
+All types shared between panel and daemon are defined in `packages/daemon/src/panel/types.ts`. The panel feature domain files re-export and alias these types. Key contracts:
 
 | Contract | Used By |
 |---|---|

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { MessagesRequest } from "../../core/anthropic/types.js";
 import { injectCaveman } from "./caveman.js";
-import { compressMessages } from "./rtk.js";
+import { compressMessages } from "./rtk/index.js";
 
 test("RTK compresses large tool_result grep output", () => {
   const lines = Array.from(

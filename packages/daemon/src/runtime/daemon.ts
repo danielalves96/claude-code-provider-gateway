@@ -5,7 +5,7 @@ import { logger } from "../observability/log.js";
 import { createPanelApp } from "../panel/app.js";
 import { createProxyApp } from "../proxy/app.js";
 import { removePid, writePid } from "./process.js";
-import { endAllSessions } from "./sessions.js";
+import { endAllSessions } from "./sessions/index.js";
 
 type ManagedServer = ReturnType<typeof serve> & {
   closeAllConnections: () => void;

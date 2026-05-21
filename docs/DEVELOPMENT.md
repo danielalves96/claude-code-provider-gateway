@@ -190,8 +190,8 @@ Tests use Node.js built-in test runner (`node --test`). Test files are co-locate
 ```
 src/config/validation.test.ts
 src/config/secrets/config-splitter.test.ts
-src/proxy/providers/api-client.test.ts
-src/proxy/services/message-service.test.ts
+src/proxy/providers/shared/api-client.test.ts
+src/proxy/services/messages/message-service.test.ts
 ...
 ```
 
@@ -203,8 +203,8 @@ Token savers live in `packages/daemon/src/proxy/token-savers/` and are applied b
 
 | Module | Responsibility |
 |---|---|
-| `rtk.ts` | Compress large `tool_result` text blocks — orchestrates auto-detection and filter dispatch. |
-| `rtk-filters.ts` | The 10 compression filters (git-diff, git-status, grep, find, ls, tree, dedup, truncate, etc.) and `autoDetectFilter`. |
+| `rtk/index.ts` | Compress large `tool_result` text blocks — orchestrates auto-detection and filter dispatch. |
+| `rtk/filters.ts` | The 10 compression filters (git-diff, git-status, grep, find, ls, tree, dedup, truncate, etc.) and `autoDetectFilter`. |
 | `caveman.ts` | Inject terse-response guidance into the Anthropic `system` prompt. |
 
 RTK should only mutate safe tool-result payloads. Preserve errored tool results, skip tiny payloads, and keep the original text whenever compression fails or expands the content. Caveman should remain a config-driven system prompt injection; it should not touch message content.
@@ -235,17 +235,17 @@ message fallback, session labels, and the panel editor. The main files are:
 | Area | Files |
 |---|---|
 | Config schema and normalization | `packages/daemon/src/config/schema.ts`, `packages/daemon/src/config/validation.ts` |
-| Launch modes and shell commands | `packages/daemon/src/panel/launch-prepare.ts`, `packages/daemon/src/panel/routes/shell-routes.ts` |
-| Model catalog and routing | `packages/daemon/src/proxy/services/model-service.ts`, `packages/daemon/src/proxy/model-router.ts` |
-| Runtime fallback execution | `packages/daemon/src/proxy/services/fallback-stream.ts`, `packages/daemon/src/proxy/services/fallback-target.ts` |
-| Session history labels | `packages/daemon/src/runtime/sessions.ts`, `packages/daemon/src/runtime/session-types.ts` |
+| Launch modes and shell commands | `packages/daemon/src/panel/services/launch-prepare.ts`, `packages/daemon/src/panel/routes/shell-routes.ts` |
+| Model catalog and routing | `packages/daemon/src/proxy/services/models/model-service.ts`, `packages/daemon/src/proxy/model-router.ts` |
+| Runtime fallback execution | `packages/daemon/src/proxy/services/fallback/fallback-stream.ts`, `packages/daemon/src/proxy/services/fallback/fallback-target.ts` |
+| Session history labels | `packages/daemon/src/runtime/sessions/index.ts`, `packages/daemon/src/runtime/sessions/types.ts` |
 | Panel UI | `packages/panel/src/features/model-chain/`, dashboard quick-launch components |
 
 Useful focused checks:
 
 ```bash
 cd packages/daemon
-node --import tsx --test src/proxy/services/model-service.test.ts src/proxy/services/message-service.test.ts src/panel/launch-prepare.test.ts
+node --import tsx --test src/proxy/services/models/model-service.test.ts src/proxy/services/messages/message-service.test.ts src/panel/services/launch-prepare.test.ts
 npm run typecheck
 ```
 
@@ -426,7 +426,7 @@ version:
 
 ### Adding a panel API endpoint
 
-1. Add the response type to `packages/daemon/src/panel/contracts.ts`.
+1. Add the response type to `packages/daemon/src/panel/types.ts`.
 2. Add the route handler to the appropriate file in `packages/daemon/src/panel/routes/` (or create a new one and register it in `app.ts`).
 3. Add the corresponding API client call in `packages/panel/src/shared/api/`.
 4. Connect to the React component.

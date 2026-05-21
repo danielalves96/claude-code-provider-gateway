@@ -5,7 +5,7 @@ import type {
   SessionRecord,
   SessionRequestLogEntry,
   SessionsResponse,
-} from "../../../../../daemon/src/panel/contracts.js";
+} from "../../../../../daemon/src/panel/types.js";
 
 export type ModelStat = SessionModelStat;
 export type RequestLogEntry = SessionRequestLogEntry;

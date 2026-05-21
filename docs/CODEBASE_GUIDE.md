@@ -40,7 +40,7 @@ source for development, but end users should normally install a desktop build.
 | `observability/` | Central logger and in-memory/SSE log broadcasting. |
 | `panel/` | Hono app and routes for the management API consumed by the React panel. |
 | `proxy/` | Hono app and routes for the Anthropic-compatible proxy consumed by Claude Code. |
-| `runtime/` | Daemon lifecycle, session tracking, session persistence, process markers, stats, and outbound proxy setup. |
+| `runtime/` | Daemon lifecycle, process markers, outbound proxy setup, stats, and session tracking. Session files are grouped under `runtime/sessions/`. |
 
 The proxy request path is:
 
@@ -134,7 +134,7 @@ The usual files are:
 |---|---|
 | Provider ID, defaults, labels, CLI flags | `packages/daemon/src/config/schema.ts` |
 | Provider implementation or factory registration | `packages/daemon/src/proxy/providers/` |
-| Model routing and catalog compatibility | `packages/daemon/src/proxy/model-router.ts`, `packages/daemon/src/proxy/services/model-service.ts` |
+| Model routing and catalog compatibility | `packages/daemon/src/proxy/model-router.ts`, `packages/daemon/src/proxy/services/models/model-service.ts` |
 | Panel metadata and UX | `packages/panel/src/features/providers/domain/`, `packages/panel/public/providers/` |
 | Tests | Co-located provider, model-service, or route tests under `packages/daemon/src/` |
 
@@ -153,7 +153,7 @@ wire it into:
 | Route | `packages/panel/src/app/routes.tsx` |
 | Sidebar item | `packages/panel/src/features/shell/components/navItems.tsx` |
 | Panel API service | `packages/panel/src/features/<feature>/services/` |
-| Shared contract, if needed | `packages/daemon/src/panel/contracts.ts` |
+| Shared contract, if needed | `packages/daemon/src/panel/types.ts` |
 
 ### Add a panel API endpoint
 
@@ -168,14 +168,14 @@ Proxy-facing behavior usually belongs in one of these places:
 | Need | Likely module |
 |---|---|
 | Model resolution | `packages/daemon/src/proxy/model-router.ts` |
-| Request routing orchestration | `packages/daemon/src/proxy/services/message-service.ts` |
-| Fallback chain loops (waterfall / round-robin) | `packages/daemon/src/proxy/services/fallback-stream.ts` |
-| Single target attempt (probe → stream → record) | `packages/daemon/src/proxy/services/fallback-target.ts` |
-| Token savers (RTK + Caveman) | `packages/daemon/src/proxy/services/token-saver-pipeline.ts` |
-| Native Anthropic passthrough path | `packages/daemon/src/proxy/services/native-stream.ts` |
-| Stream infrastructure + runtime limits | `packages/daemon/src/proxy/services/provider-stream.ts` |
-| SSE probing + content parsing | `packages/daemon/src/proxy/services/stream-probe.ts` |
-| Model catalog output | `packages/daemon/src/proxy/services/model-service.ts` |
+| Request routing orchestration | `packages/daemon/src/proxy/services/messages/message-service.ts` |
+| Fallback chain loops (waterfall / round-robin) | `packages/daemon/src/proxy/services/fallback/fallback-stream.ts` |
+| Single target attempt (probe → stream → record) | `packages/daemon/src/proxy/services/fallback/fallback-target.ts` |
+| Token savers (RTK + Caveman) | `packages/daemon/src/proxy/services/shared/token-saver-pipeline.ts` |
+| Native Anthropic passthrough path | `packages/daemon/src/proxy/services/native/native-stream.ts` |
+| Stream infrastructure + runtime limits | `packages/daemon/src/proxy/services/streaming/provider-stream.ts` |
+| SSE probing + content parsing | `packages/daemon/src/proxy/services/streaming/stream-probe.ts` |
+| Model catalog output | `packages/daemon/src/proxy/services/models/model-service.ts` |
 | Anthropic SSE formatting | `packages/daemon/src/core/sse/writer.ts` or provider transport modules |
 | Provider-specific request/stream conversion | `packages/daemon/src/proxy/providers/` |
 
