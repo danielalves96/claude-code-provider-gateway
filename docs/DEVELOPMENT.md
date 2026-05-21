@@ -203,7 +203,8 @@ Token savers live in `packages/daemon/src/proxy/token-savers/` and are applied b
 
 | Module | Responsibility |
 |---|---|
-| `rtk.ts` | Compress large `tool_result` text blocks with auto-detected filters. |
+| `rtk.ts` | Compress large `tool_result` text blocks — orchestrates auto-detection and filter dispatch. |
+| `rtk-filters.ts` | The 10 compression filters (git-diff, git-status, grep, find, ls, tree, dedup, truncate, etc.) and `autoDetectFilter`. |
 | `caveman.ts` | Inject terse-response guidance into the Anthropic `system` prompt. |
 
 RTK should only mutate safe tool-result payloads. Preserve errored tool results, skip tiny payloads, and keep the original text whenever compression fails or expands the content. Caveman should remain a config-driven system prompt injection; it should not touch message content.
@@ -236,7 +237,7 @@ message fallback, session labels, and the panel editor. The main files are:
 | Config schema and normalization | `packages/daemon/src/config/schema.ts`, `packages/daemon/src/config/validation.ts` |
 | Launch modes and shell commands | `packages/daemon/src/panel/launch-prepare.ts`, `packages/daemon/src/panel/routes/shell-routes.ts` |
 | Model catalog and routing | `packages/daemon/src/proxy/services/model-service.ts`, `packages/daemon/src/proxy/model-router.ts` |
-| Runtime fallback execution | `packages/daemon/src/proxy/services/message-service.ts` |
+| Runtime fallback execution | `packages/daemon/src/proxy/services/fallback-stream.ts`, `packages/daemon/src/proxy/services/fallback-target.ts` |
 | Session history labels | `packages/daemon/src/runtime/sessions.ts`, `packages/daemon/src/runtime/session-types.ts` |
 | Panel UI | `packages/panel/src/features/model-chain/`, dashboard quick-launch components |
 

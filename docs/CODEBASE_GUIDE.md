@@ -168,7 +168,13 @@ Proxy-facing behavior usually belongs in one of these places:
 | Need | Likely module |
 |---|---|
 | Model resolution | `packages/daemon/src/proxy/model-router.ts` |
-| Request orchestration, fallback, stats, token savers | `packages/daemon/src/proxy/services/message-service.ts` |
+| Request routing orchestration | `packages/daemon/src/proxy/services/message-service.ts` |
+| Fallback chain loops (waterfall / round-robin) | `packages/daemon/src/proxy/services/fallback-stream.ts` |
+| Single target attempt (probe → stream → record) | `packages/daemon/src/proxy/services/fallback-target.ts` |
+| Token savers (RTK + Caveman) | `packages/daemon/src/proxy/services/token-saver-pipeline.ts` |
+| Native Anthropic passthrough path | `packages/daemon/src/proxy/services/native-stream.ts` |
+| Stream infrastructure + runtime limits | `packages/daemon/src/proxy/services/provider-stream.ts` |
+| SSE probing + content parsing | `packages/daemon/src/proxy/services/stream-probe.ts` |
 | Model catalog output | `packages/daemon/src/proxy/services/model-service.ts` |
 | Anthropic SSE formatting | `packages/daemon/src/core/sse/writer.ts` or provider transport modules |
 | Provider-specific request/stream conversion | `packages/daemon/src/proxy/providers/` |
