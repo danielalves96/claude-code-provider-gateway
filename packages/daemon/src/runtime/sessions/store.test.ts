@@ -98,7 +98,7 @@ test("readCurrentSessions handles single session JSON (backward compat)", async 
 
 test("archiveSession writes to sessions.jsonl", async () => {
   const { archiveSession, listArchivedSessions } = await import("./store.js");
-  const session = makeSession({ id: "archived_1", status: "ended", endedAt: Date.now() });
+  const session = makeSession({ id: "archived_1", status: "completed", endedAt: Date.now() });
   archiveSession(session);
   const list = listArchivedSessions();
   assert.ok(list.some((s) => s.id === "archived_1"));

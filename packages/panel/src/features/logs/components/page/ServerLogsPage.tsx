@@ -74,7 +74,15 @@ export default function ServerLogsPage() {
       />
 
       <Card
-        styles={{ body: { padding: 0 } }}
+        styles={{
+          body: {
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            overflow: "hidden",
+          },
+        }}
         style={{
           flex: 1,
           display: "flex",

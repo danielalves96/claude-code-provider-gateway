@@ -34,7 +34,7 @@ test("PROVIDER_IDS has no duplicate entries", () => {
 });
 
 test("OAUTH_PROVIDER_IDS is a subset of PROVIDER_IDS", () => {
-  const all = new Set(PROVIDER_IDS as string[]);
+  const all = new Set(PROVIDER_IDS as readonly string[]);
   for (const id of OAUTH_PROVIDER_IDS) {
     assert.ok(all.has(id), `OAuth provider ${id} not in PROVIDER_IDS`);
   }
@@ -76,7 +76,7 @@ test("PROVIDER_LABELS has entry for each PROVIDER_ID", () => {
 });
 
 test("CLI_FLAGS maps to valid provider IDs", () => {
-  const ids = new Set(PROVIDER_IDS as string[]);
+  const ids = new Set(PROVIDER_IDS as readonly string[]);
   for (const [flag, id] of Object.entries(CLI_FLAGS)) {
     assert.ok(ids.has(id), `CLI flag ${flag} maps to unknown provider ${id}`);
   }

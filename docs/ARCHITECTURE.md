@@ -222,9 +222,11 @@ limits. It rejects excess concurrent or rate-window requests with controlled
 rate-limit errors before provider credentials or request bodies are sent
 upstream.
 
-**token-savers/rtk/index.ts** — compresses large `tool_result` text blocks before provider dispatch. Orchestrates auto-detection and filter dispatch; the 10 compression filters (git-diff, git-status, grep, find, ls, tree, etc.) live in `rtk/filters.ts`. Skips small payloads, oversized raw blobs, and `tool_result` blocks marked as errors. Compression is best-effort: if a filter fails or makes the payload larger, the original text is preserved.
+**token-savers/rtk/index.ts** — compresses large `tool_result` text blocks before provider dispatch. Orchestrates auto-detection and filter dispatch; the 10 compression filters (git-diff, git-status, grep, find, tree, ls, search-list, read-numbered, dedup-log, smart-truncate) live in `rtk/filters.ts`. Detection inspects the first 1024 chars and applies the first matching filter in priority order. Skips text under 500 bytes or over 10 MB, and `tool_result` blocks marked as errors. Compression is best-effort: if a filter fails or makes the payload larger, the original text is preserved. `compressMessages()` mutates in-place; callers must clone via `cloneMessagesRequest()` if they need the original.
 
-**token-savers/caveman.ts** — injects terse-response guidance into the Anthropic `system` field when enabled. The levels are `lite`, `full`, and `ultra`. Caveman targets output verbosity; it does not reduce input tokens.
+**token-savers/caveman.ts** — injects terse-response guidance into the Anthropic `system` field when enabled. Levels: `lite` (terse but grammatical), `full` (caveman fragments, no articles), `ultra` (telegraphic, abbreviated, arrows for causality). All levels preserve verbatim code blocks, file paths, commands, errors, and security warnings. Inserted before the last `cache_control` block when system is an array to preserve prompt caching. Caveman targets output verbosity; it does not reduce input tokens.
+
+**token-saver-pipeline.ts** — composes both savers via `applyTokenSavers()`: RTK compression first (shrinks input), then Caveman injection (influences output style). Both are independently gated by config. Full filter behavior and pipeline invariants are documented in [DAEMON_REFERENCE.md — Token Savers](DAEMON_REFERENCE.md#token-savers).
 
 ### 3. Provider Layer (`packages/daemon/src/proxy/providers/`)
 

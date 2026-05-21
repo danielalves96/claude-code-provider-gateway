@@ -109,12 +109,12 @@ packages/daemon/src/
 │   │   │   ├── index.ts         # KiloCodeProvider class
 │   │   │   └── auth.ts          # Device flow helpers
 │   │   └── ...                  # Multi-file providers grouped by provider name
-│   └── token-savers/        # Token optimization modules
+│   └── token-savers/        # Token optimization modules (see Token Savers section below)
 │       ├── index.ts             # Public token-saver module API
 │       ├── rtk/
-│       │   ├── index.ts         # RTK core: compressMessages, formatRtkLog, auto-detect dispatch
-│       │   └── filters.ts       # All 10 compression filters (git-diff, grep, find, ls, tree, …)
-│       └── caveman.ts           # Caveman — simplifies system prompts
+│       │   ├── index.ts         # RTK core: compressMessages, formatRtkLog, clone helper
+│       │   └── filters.ts       # 10 compression filters + autoDetectFilter dispatch (1024-char window)
+│       └── caveman.ts           # Caveman — injects terse-response system prompt (lite/full/ultra)
 ├── panel/                  # Panel web API server
 │   ├── app.ts              # createPanelApp() — Hono app factory with auth middleware + static files
 │   ├── runtime.ts          # PanelRuntime — holds Config + ProviderRegistry + OAuth flows
@@ -445,6 +445,65 @@ function streamResultWithCapture(
 Use `streamResultWithCapture` in providers that participate in session recording (all built-in and custom providers). Use `streamResult` only for paths where session log capture is not needed.
 
 SSE content probing (detecting whether a stream contains useful model output before committing to it) lives in `stream-probe.ts`, not here. `stream-result.ts` re-exports `probeStreamForUsefulAnthropicContent` and `UsefulStreamProbeResult` from `stream-probe.ts` for backwards-compatible imports.
+
+### Token Savers
+
+Token savers run on every `/v1/messages` request before provider dispatch. They are composed by `applyTokenSavers()` in `token-saver-pipeline.ts`: **RTK compression runs first** (shrinks input tokens in `tool_result` blocks), then **Caveman injects a system prompt** (influences output verbosity). Both are independently gated by config flags (`tokenSavers.rtkEnabled`, `tokenSavers.cavemanEnabled`).
+
+#### RTK (Return Token Knowledge)
+
+**Files:** `token-savers/rtk/index.ts`, `token-savers/rtk/filters.ts`
+
+`compressMessages(req, enabled)` iterates every `tool_result` content block in the request and applies compression in-place. Important behaviors:
+
+- **Thresholds:** text under 500 bytes is skipped (too small to matter); text over 10 MB is skipped (likely a raw binary/base64 payload).
+- **Mutation:** `compressMessages` mutates the request object directly. Callers outside the pipeline should use the exported `cloneMessagesRequest()` before compressing.
+- **Best-effort:** if a filter fails or produces output larger than the input, the original text is preserved silently. Compression failures never break the request.
+- **Error blocks:** `tool_result` blocks with `is_error: true` are never compressed — error messages must reach the model intact.
+
+`autoDetectFilter(text)` inspects the first 1024 characters and tries each detection heuristic in priority order:
+
+| Order | Filter | Detection pattern | What it produces |
+|-------|--------|-------------------|-----------------|
+| 1 | `git-diff` | `diff --git` or `@@` hunk headers | Per-file summaries with `+N -N` counts, capped at 100 lines/hunk, 500 lines total |
+| 2 | `git-status` | `On branch`, `Changes`, `Untracked`, or 60%+ porcelain-format lines | Grouped by staged / modified / untracked, capped at 10 staged + 10 untracked max |
+| 3 | `grep` | Lines matching `file:line_number:text` | Matches grouped by file with line numbers, 10 matches per file |
+| 4 | `find` | 3+ lines that all look like file paths | Files grouped by directory, 10 files/dir, 20 dirs max |
+| 5 | `tree` | Unicode box-drawing chars (`├└│`) | Trimmed to 200 lines, metadata footer removed |
+| 6 | `ls` | `total N` summary or 3+ lines with permission bits | Files summarized with extension counts, noise dirs filtered (node_modules, .git, dist, etc.), human-readable sizes |
+| 7 | `search-list` | Header `Result of search in '...' (total N files)` | Paths grouped by directory, 10/dir, 20 dirs max |
+| 8 | `read-numbered` | 70%+ of first 100 lines match `  NN|` pattern | Head 120 lines + tail 60 lines, min 250 lines to trigger |
+| 9 | `dedup-log` | Consecutive duplicate lines (logged errors, stack traces) | Collapses runs into `... (N duplicate lines)`, max 2000 output lines |
+| 10 | `smart-truncate` | Fallback for any text >= 250 lines | Head 120 + tail 60, generic `+N lines truncated` marker |
+
+If no filter matches, the text is passed through unchanged.
+
+`formatRtkLog(stats)` produces the one-line log summary: `saved XB / YB (Z%) via [filter-list] hits=N`.
+
+#### Caveman
+
+**File:** `token-savers/caveman.ts`
+
+`injectCaveman(req, enabled, level)` appends or inserts a terse-response system prompt. The three levels:
+
+| Level | Style | Prompt text |
+|-------|-------|------------|
+| `lite` | Terse but grammatical | "Respond tersely. Keep grammar and full sentences but drop filler, hedging and pleasantries." |
+| `full` | Caveman fragments | "Respond like terse caveman. All technical substance stay exact, only fluff die. Drop articles, filler, pleasantries, hedging. Fragments OK." |
+| `ultra` | Telegraphic | "Respond ultra-terse. Maximum compression. Telegraphic. Abbreviate DB/auth/config/req/res/fn/impl, strip conjunctions, use arrows for causality." |
+
+All three levels share the same boundary clause: code blocks, file paths, commands, errors, URLs, security warnings, irreversible actions, and multi-step sequences must stay verbatim. The prompt is active for every response until the user asks for normal mode.
+
+**Insertion logic:**
+- **String `system`:** appended with `\n\n` separator (or set directly if empty).
+- **Array `system`:** inserted before the last `cache_control`-tagged block to preserve prompt caching semantics. If no cache-control block exists, appended at the end.
+- **No `system`:** set directly as the system prompt.
+
+#### Pipeline invariants
+
+1. RTK compression always runs before Caveman injection — shrinking input first makes the Caveman prompt proportionally more effective.
+2. Both savers are independently skippable via config. Either can be disabled without affecting the other.
+3. The pipeline does not clone; it assumes `fallback-target.ts` has already cloned the request before calling `applyTokenSavers()`. This is deliberate so session recording sees the same mutated request that was sent to the provider.
 
 ### OAuth Pages
 
