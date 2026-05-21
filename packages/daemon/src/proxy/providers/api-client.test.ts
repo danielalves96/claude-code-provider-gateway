@@ -109,3 +109,63 @@ test("postProviderStream converts network failures into controlled provider erro
     globalThis.fetch = originalFetch;
   }
 });
+
+test("postProviderStream converts client abort before response into controlled error", async () => {
+  const originalFetch = globalThis.fetch;
+  const abort = new AbortController();
+  globalThis.fetch = async (_url, init) => {
+    if (init?.signal?.aborted) throw new DOMException("aborted", "AbortError");
+    return new Response(null, { status: 200 });
+  };
+
+  try {
+    abort.abort();
+    const result = await postProviderStream({
+      url: "https://example.test/messages",
+      headers: {},
+      body: {},
+      abortSignal: abort.signal,
+    });
+
+    assert.ok("error" in result);
+    assert.equal(result.error.status, 499);
+    assert.match(result.error.message, /aborted by client/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("postProviderStream abort signal cancels an active response body", async () => {
+  let canceled = false;
+  const originalFetch = globalThis.fetch;
+  const abort = new AbortController();
+  globalThis.fetch = async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("data: {}\n\n"));
+        },
+        cancel() {
+          canceled = true;
+        },
+      }),
+      { status: 200 },
+    );
+
+  try {
+    const result = await postProviderStream({
+      url: "https://example.test/messages",
+      headers: {},
+      body: {},
+      abortSignal: abort.signal,
+    });
+    assert.ok("body" in result);
+    const reader = result.body.getReader();
+    await reader.read();
+    abort.abort();
+    await assert.rejects(reader.read(), /aborted by client/);
+    assert.equal(canceled, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

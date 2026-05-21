@@ -47,13 +47,17 @@ export function ApiKeySection({
   return (
     <div
       style={{
-        padding: 16,
-        backgroundColor: token.colorFillAlter,
-        borderRadius: token.borderRadiusLG,
+        padding: 8,
       }}
     >
       <Flex vertical gap={12}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Text strong>
             <Space>
               <KeyOutlined style={{ color: token.colorPrimary }} />
@@ -100,15 +104,13 @@ export function ApiKeySection({
         {!showInput ? (
           <Input
             disabled
-            size="large"
             value={keyPreview ?? "••••••••••••••••"}
             style={{ fontFamily: "monospace" }}
           />
         ) : (
-          <Flex gap={8}>
+          <Space.Compact style={{ width: "100%" }}>
             <Input.Password
               autoFocus={editing}
-              size="large"
               placeholder="Paste your provider API key here"
               value={draft}
               style={{ fontFamily: "monospace" }}
@@ -119,7 +121,6 @@ export function ApiKeySection({
               }}
             />
             <Button
-              size="large"
               type="primary"
               icon={<SaveOutlined />}
               disabled={!draft.trim()}
@@ -127,7 +128,7 @@ export function ApiKeySection({
             >
               Save Key
             </Button>
-          </Flex>
+          </Space.Compact>
         )}
       </Flex>
     </div>

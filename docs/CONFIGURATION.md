@@ -39,9 +39,9 @@ It is a JSON file with the following top-level shape:
       "models": ["anthropic/claude-sonnet-4.5"],
       "disabledModels": [],
       "baseUrl": "https://openrouter.ai/api/v1",
-      "rateLimit": 40,
-      "rateWindow": 60,
-      "maxConcurrency": 5
+      "rateLimit": 0,
+      "rateWindow": 0,
+      "maxConcurrency": 0
     },
     "acme_ai": {
       "enabled": true,
@@ -50,9 +50,9 @@ It is a JSON file with the following top-level shape:
       "models": ["acme-large"],
       "disabledModels": [],
       "baseUrl": "https://api.acme.example/v1",
-      "rateLimit": 40,
-      "rateWindow": 60,
-      "maxConcurrency": 5,
+      "rateLimit": 0,
+      "rateWindow": 0,
+      "maxConcurrency": 0,
       "custom": {
         "label": "Acme AI",
         "slug": "acme_ai",
@@ -145,9 +145,9 @@ Each entry under `providers` uses the following schema:
 | `models` | string[] | per-provider | User-curated list of model IDs to expose. Empty means auto-discover all available models. |
 | `disabledModels` | string[] | `[]` | Model IDs to hide from the model catalog. |
 | `baseUrl` | string | per-provider | Provider API base URL. Each provider has a hardcoded default (see [Provider Defaults](#provider-default-base-urls)). |
-| `rateLimit` | number | `40` | Maximum requests per rate window. |
-| `rateWindow` | number | `60` | Rate window duration in seconds. |
-| `maxConcurrency` | number | `5` | Maximum concurrent in-flight requests to this provider. |
+| `rateLimit` | number | `0` | Maximum requests per rate window. `0` disables request rate limiting. |
+| `rateWindow` | number | `0` | Rate window duration in seconds. `0` disables request rate limiting. |
+| `maxConcurrency` | number | `0` | Maximum concurrent in-flight requests to this provider. `0` disables concurrency limiting. |
 | `custom` | object | (none) | Present only for user-created custom providers. Contains `label`, immutable `slug`, optional `logoFile`, and `compatibility` (`"openai"` or `"anthropic"`). |
 
 Custom providers are created from the **Providers** page with either **Add OpenAI Compatible** or **Add Anthropic Compatible**. Their `baseUrl` remains editable in the details modal, API keys are stored in the encrypted secret store like built-in providers, and user-supplied logos are stored outside `config.json` in `provider-logos/`.
@@ -209,9 +209,9 @@ All other settings revert to their defaults if absent from the config file. The 
 | `server.authToken` | `sk_` + 16 random hex bytes | Auto-generated on first run |
 | `providers.<id>.enabled` | `false` | All providers start disabled |
 | `providers.<id>.authType` | `"oauth"` for OAuth providers, `"api_key"` otherwise | Per-provider at build time; custom providers always use `"api_key"` |
-| `providers.<id>.rateLimit` | `40` | `packages/daemon/src/config/index.ts` |
-| `providers.<id>.rateWindow` | `60` | `packages/daemon/src/config/index.ts` |
-| `providers.<id>.maxConcurrency` | `5` | `packages/daemon/src/config/index.ts` |
+| `providers.<id>.rateLimit` | `0` | Disabled by default in `packages/daemon/src/config/index.ts` |
+| `providers.<id>.rateWindow` | `0` | Disabled by default in `packages/daemon/src/config/index.ts` |
+| `providers.<id>.maxConcurrency` | `0` | Disabled by default in `packages/daemon/src/config/index.ts` |
 | `modelFallbacks[].requestTimeoutMs` | `60000` | `packages/daemon/src/config/schema.ts` |
 | `modelFallbacks[].streamIdleTimeoutMs` | `30000` | `packages/daemon/src/config/schema.ts` |
 | `modelFallbacks[].streamTotalTimeoutMs` | `60000` | `packages/daemon/src/config/schema.ts` |
@@ -230,6 +230,24 @@ All other settings revert to their defaults if absent from the config file. The 
 | `modelFallbacks` | `[]` | `packages/daemon/src/config/index.ts` |
 | `panelSettings.favoriteProviders` | `[]` | `packages/daemon/src/config/index.ts` |
 | `panelSettings.favoritesTipDismissed` | `false` | `packages/daemon/src/config/index.ts` |
+
+### Provider Runtime Limits
+
+Provider `rateLimit`, `rateWindow`, and `maxConcurrency` default to `0`, so new
+providers have no local request limits. They can be edited from **Advanced
+settings** in the provider details modal on the **Providers** page after the
+provider is usable: OAuth providers must be connected, API-key providers must
+have a saved key, and local providers always show the controls. Limits are
+enforced by the daemon before an upstream request is dispatched:
+
+- `maxConcurrency` caps simultaneous in-flight streams for that provider.
+- `rateLimit` caps request starts within `rateWindow` seconds.
+- `0` or an omitted/invalid value disables that specific limit.
+
+When a limit is reached, the proxy returns a controlled rate-limit error. In a
+Model Chain, that error is treated like other pre-content provider failures, so
+the chain can advance to the next target. Limits are process-local and reset
+when the daemon restarts.
 
 ### Provider Default Base URLs
 

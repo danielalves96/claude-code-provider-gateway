@@ -338,6 +338,24 @@ test("commandCodeStreamToAnthropic renders CommandCode 200 error objects as text
   assert.ok(events.some((event) => event.event === "message_stop"));
 });
 
+test("commandCodeStreamToAnthropic closes the message when upstream errors after content", async () => {
+  const stream = commandCodeStreamToAnthropic(
+    errorAfterLines([{ type: "text-delta", text: "hi" }]),
+    {
+      messageId: "msg_test",
+      model: "commandcode/model",
+      inputTokens: 1,
+    },
+  );
+
+  const events = parseSse(await readAll(stream));
+
+  assert.ok(events.some((event) => event.event === "error"));
+  assert.ok(events.some((event) => event.event === "content_block_stop"));
+  assert.ok(events.some((event) => event.event === "message_delta"));
+  assert.ok(events.some((event) => event.event === "message_stop"));
+});
+
 test("CommandCodeProvider lists CommandCode models from the official docs and requires an API key", async () => {
   await assert.rejects(
     new CommandCodeProvider({
@@ -431,6 +449,20 @@ function streamFromLines(events: Array<Record<string, unknown>>): ReadableStream
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       }
       controller.close();
+    },
+  });
+}
+
+function errorAfterLines(events: Array<Record<string, unknown>>): ReadableStream<Uint8Array> {
+  const queue = events.map((e) => encoder.encode(`${JSON.stringify(e)}\n`));
+  let index = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (index < queue.length) {
+        controller.enqueue(queue[index++]);
+      } else {
+        controller.error(new Error("upstream broke"));
+      }
     },
   });
 }

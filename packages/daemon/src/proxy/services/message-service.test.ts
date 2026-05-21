@@ -16,9 +16,11 @@ import { endAllSessions, listCurrentSessions, startSession } from "../../runtime
 import type { ProviderRequestOptions, StreamResult } from "../providers/base.js";
 import { ProxyRuntime } from "../runtime.js";
 import { MessageService, shouldUseNativeClaudePassthrough } from "./message-service.js";
+import { resetProviderLimitsForTest } from "./provider-limiter.js";
 
 afterEach(() => {
   endAllSessions();
+  resetProviderLimitsForTest();
 });
 
 test("MessageService returns Anthropic not_found_error when routed provider is disabled", async () => {
@@ -181,6 +183,115 @@ test("model chain passes chain timeout policy to provider attempt", async () => 
   assert.equal(primary.lastOptions?.streamIdleTimeoutMs, undefined);
   assert.equal(primary.lastOptions?.streamTotalTimeoutMs, 3_456);
   if (result.kind === "stream") await readAll(result.stream);
+});
+
+test("MessageService passes client abort signal to provider attempts", async () => {
+  const config = chainConfig();
+  const provider = new FakeProvider([{ stream: usefulTextStream("abort signal") }]);
+  const service = fakeService(config, { nvidia_nim: provider });
+  const abort = new AbortController();
+
+  const result = await service.createMessage(
+    {
+      model: "nvidia_nim/model-a",
+      max_tokens: 16,
+      messages: [{ role: "user", content: "hello" }],
+    },
+    null,
+    abort.signal,
+  );
+
+  assert.equal(result.kind, "stream");
+  assert.equal(provider.lastOptions?.abortSignal, abort.signal);
+  if (result.kind === "stream") await readAll(result.stream);
+});
+
+test("MessageService stops before provider call when request is already aborted", async () => {
+  const config = chainConfig();
+  const provider = new FakeProvider([{ stream: usefulTextStream("should not start") }]);
+  const service = fakeService(config, { nvidia_nim: provider });
+  const abort = new AbortController();
+  abort.abort();
+
+  const result = await service.createMessage(
+    {
+      model: "nvidia_nim/model-a",
+      max_tokens: 16,
+      messages: [{ role: "user", content: "hello" }],
+    },
+    null,
+    abort.signal,
+  );
+
+  assert.equal(result.kind, "error");
+  assert.equal(provider.calls, 0);
+  if (result.kind === "error") {
+    assert.equal(result.status, 499);
+    assert.match(result.body.error.message, /aborted/);
+  }
+});
+
+test("MessageService enforces provider maxConcurrency", async () => {
+  const config = chainConfig();
+  config.providers.nvidia_nim.maxConcurrency = 1;
+  config.providers.nvidia_nim.rateLimit = 0;
+  const provider = new FakeProvider([
+    { stream: stalledStream() },
+    { stream: usefulTextStream("should be blocked") },
+  ]);
+  const service = fakeService(config, { nvidia_nim: provider });
+
+  const first = await service.createMessage({
+    model: "nvidia_nim/model-a",
+    max_tokens: 16,
+    messages: [{ role: "user", content: "hello" }],
+  });
+  const second = await service.createMessage({
+    model: "nvidia_nim/model-a",
+    max_tokens: 16,
+    messages: [{ role: "user", content: "hello again" }],
+  });
+
+  assert.equal(first.kind, "stream");
+  assert.equal(second.kind, "error");
+  assert.equal(provider.calls, 1);
+  if (second.kind === "error") {
+    assert.equal(second.status, 429);
+    assert.match(second.body.error.message, /concurrency limit/);
+  }
+  if (first.kind === "stream") await first.stream.cancel();
+});
+
+test("MessageService enforces provider rateLimit window", async () => {
+  const config = chainConfig();
+  config.providers.nvidia_nim.maxConcurrency = 0;
+  config.providers.nvidia_nim.rateLimit = 1;
+  config.providers.nvidia_nim.rateWindow = 60;
+  const provider = new FakeProvider([
+    { stream: usefulTextStream("first") },
+    { stream: usefulTextStream("should be blocked") },
+  ]);
+  const service = fakeService(config, { nvidia_nim: provider });
+
+  const first = await service.createMessage({
+    model: "nvidia_nim/model-a",
+    max_tokens: 16,
+    messages: [{ role: "user", content: "hello" }],
+  });
+  if (first.kind === "stream") await readAll(first.stream);
+
+  const second = await service.createMessage({
+    model: "nvidia_nim/model-a",
+    max_tokens: 16,
+    messages: [{ role: "user", content: "hello again" }],
+  });
+
+  assert.equal(second.kind, "error");
+  assert.equal(provider.calls, 1);
+  if (second.kind === "error") {
+    assert.equal(second.status, 429);
+    assert.match(second.body.error.message, /rate limit/);
+  }
 });
 
 test("session history records request preview and conversion warnings", async () => {

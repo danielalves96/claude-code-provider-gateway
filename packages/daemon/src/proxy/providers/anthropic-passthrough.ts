@@ -93,6 +93,7 @@ export async function streamAnthropicNative(
   timeoutMs: number | undefined,
   streamIdleTimeoutMs?: number,
   streamTotalTimeoutMs?: number,
+  abortSignal?: AbortSignal,
 ): Promise<StreamResult> {
   const oauth = readCredentials()?.claudeAiOauth;
   const token = oauth?.accessToken;
@@ -148,6 +149,7 @@ export async function streamAnthropicNative(
     timeoutMs,
     streamIdleTimeoutMs,
     streamTotalTimeoutMs,
+    abortSignal,
   });
 
   if ("error" in result) {

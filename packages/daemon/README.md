@@ -65,7 +65,7 @@ Compiled binaries are written to `dist-bin/`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/v1/messages` | Create a message (chat completion). Routes to the configured provider, translates protocols, and streams the response back as Anthropic SSE. |
+| `POST` | `/v1/messages` | Create a message (chat completion). Routes to the configured provider, enforces provider limits, translates protocols, and streams the response back as Anthropic SSE. Client disconnects abort upstream calls. |
 | `GET` | `/v1/models` | List available models aggregated from the active provider or all enabled providers. |
 | `POST` | `/v1/messages/count_tokens` | Count input tokens for a Messages request using `js-tiktoken`. |
 | `GET` | `/health` | Health check — returns `{ "status": "ok" }`. |
@@ -107,6 +107,11 @@ export type { Config, ProviderConfig, ProviderId, RoutingRule } from "./config/s
 ### Provider system
 
 The daemon ships with a built-in provider catalog (cloud API key, OAuth, and local) and can add user-created OpenAI-compatible or Anthropic-compatible providers at runtime. Each provider implements a transport adapter — either Anthropic-native passthrough or OpenAI-format translation. Built-in provider implementations live in `src/proxy/providers/`; custom providers are stored in config under their slug and instantiated dynamically from their compatibility mode.
+
+Provider dispatch is guarded by process-local `maxConcurrency`, `rateLimit`, and
+`rateWindow` settings. The shared HTTP client also propagates `/v1/messages`
+request cancellation into upstream `fetch` calls and active response streams, so
+abandoned Claude Code requests do not run until timeout.
 
 OAuth providers (`openai_account`, `copilot`, `kiro`, `iflow`, `kilocode`, `cline`) include built-in token refresh logic.
 

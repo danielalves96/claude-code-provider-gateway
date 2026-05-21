@@ -4,7 +4,7 @@ export type AnthropicErrorType =
   | "rate_limit_error"
   | "api_error";
 
-export type ErrorStatus = 400 | 401 | 403 | 404 | 429 | 500;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 429 | 499 | 500;
 
 export interface AnthropicErrorResponse {
   type: "error";
@@ -26,7 +26,14 @@ export function providerErrorType(status: number): AnthropicErrorType {
 }
 
 export function providerErrorStatus(status: number): ErrorStatus {
-  if (status === 400 || status === 401 || status === 403 || status === 404 || status === 429) {
+  if (
+    status === 400 ||
+    status === 401 ||
+    status === 403 ||
+    status === 404 ||
+    status === 429 ||
+    status === 499
+  ) {
     return status;
   }
   return 500;

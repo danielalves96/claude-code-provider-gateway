@@ -52,6 +52,38 @@ test("AnthropicMessagesTransport sends anthropic-beta only when opted in", async
   assert.equal(headers.get("anthropic-beta"), "test-beta");
 });
 
+test("AnthropicMessagesTransport closes open blocks when upstream errors mid-stream", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n',
+            ),
+          );
+        },
+        pull(controller) {
+          controller.error(new Error("stream exploded"));
+        },
+      }),
+    );
+
+  try {
+    const result = await new TestAnthropicTransport(config).streamResponse(request, 0);
+    assert.equal(result.error, undefined);
+    assert.ok(result.stream);
+    const output = await readAll(result.stream!);
+    assert.match(output, /event: content_block_stop/);
+    assert.match(output, /event: error/);
+    assert.match(output, /event: message_delta/);
+    assert.match(output, /event: message_stop/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 async function captureStreamHeaders(provider: AnthropicMessagesTransport): Promise<Headers> {
   let captured: Headers | null = null;
   const originalFetch = globalThis.fetch;
@@ -71,4 +103,14 @@ async function captureStreamHeaders(provider: AnthropicMessagesTransport): Promi
 
   assert.ok(captured);
   return captured;
+}
+
+async function readAll(stream: ReadableStream<string>): Promise<string> {
+  const reader = stream.getReader();
+  let out = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) return out;
+    out += value;
+  }
 }

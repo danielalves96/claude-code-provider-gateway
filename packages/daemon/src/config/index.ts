@@ -40,9 +40,9 @@ function buildDefaultProviderConfig(id: BuiltInProviderId): ProviderConfig {
     authType: isOAuth ? "oauth" : "api_key",
     oauth: isOAuth ? {} : undefined,
     baseUrl: PROVIDER_DEFAULTS[id]?.baseUrl,
-    rateLimit: 40,
-    rateWindow: 60,
-    maxConcurrency: 5,
+    rateLimit: 0,
+    rateWindow: 0,
+    maxConcurrency: 0,
   };
 }
 

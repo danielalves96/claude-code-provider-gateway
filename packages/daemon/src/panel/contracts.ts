@@ -98,6 +98,9 @@ export type ProviderInfo = {
   baseUrl?: string;
   models?: string[];
   disabledModels?: string[];
+  rateLimit: number;
+  rateWindow: number;
+  maxConcurrency: number;
   authType?: "api_key" | "oauth";
   oauth?: OAuthInfo;
   custom?: boolean;

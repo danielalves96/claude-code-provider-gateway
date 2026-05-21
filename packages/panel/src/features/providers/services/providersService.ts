@@ -14,6 +14,9 @@ interface ProviderPatch {
   baseUrl?: string;
   models?: string[];
   disabledModels?: string[];
+  rateLimit?: number;
+  rateWindow?: number;
+  maxConcurrency?: number;
 }
 
 export interface CustomProviderDraft {
@@ -53,6 +56,10 @@ export const providersService = {
   setBaseUrl: (id: string, baseUrl: string) => patchConfig(id, { baseUrl }),
   setModels: (id: string, models: string[]) => patchConfig(id, { models }),
   setDisabledModels: (id: string, disabledModels: string[]) => patchConfig(id, { disabledModels }),
+  setRuntimeLimits: (
+    id: string,
+    limits: Pick<ProviderPatch, "rateLimit" | "rateWindow" | "maxConcurrency">,
+  ) => patchConfig(id, limits),
 
   oauthStart: (id: string) => http.post<OAuthStartResponse>(`/providers/${id}/oauth/start`),
   oauthStartDeviceFlow: (id: string) => http.post<CopilotFlow>(`/providers/${id}/oauth/start`),

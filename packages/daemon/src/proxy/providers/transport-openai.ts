@@ -49,6 +49,7 @@ export abstract class OpenAIChatTransport extends BaseProvider {
       timeoutMs: this.requestTimeoutMs(options),
       streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
       streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+      abortSignal: options?.abortSignal,
     });
 
     if ("error" in result) {
@@ -197,7 +198,16 @@ export abstract class OpenAIChatTransport extends BaseProvider {
             enq(sseMessageStop());
           }
         } catch (err) {
-          enq(sseError("api_error", String(err)));
+          if (!finished) {
+            finished = true;
+            if (blockStarted) enq(sseContentBlockStop(textBlockIndex));
+            for (const [idx] of toolCallBuffers) {
+              enq(sseContentBlockStop(textBlockIndex + 1 + idx));
+            }
+            enq(sseError("api_error", String(err)));
+            enq(sseMessageDelta("end_turn", outputTokens));
+            enq(sseMessageStop());
+          }
         } finally {
           controller.close();
         }

@@ -10,6 +10,7 @@ interface NativeAnthropicStreamOptions {
   timeoutMs?: number;
   streamIdleTimeoutMs?: number;
   streamTotalTimeoutMs?: number;
+  abortSignal?: AbortSignal;
 }
 
 export async function streamCopilotNativeAnthropic({
@@ -20,6 +21,7 @@ export async function streamCopilotNativeAnthropic({
   timeoutMs,
   streamIdleTimeoutMs,
   streamTotalTimeoutMs,
+  abortSignal,
 }: NativeAnthropicStreamOptions): Promise<StreamResult> {
   const result = await postProviderStream({
     url: `${endpoint}/v1/messages`,
@@ -31,6 +33,7 @@ export async function streamCopilotNativeAnthropic({
     timeoutMs,
     streamIdleTimeoutMs,
     streamTotalTimeoutMs,
+    abortSignal,
   });
 
   if ("error" in result) return { error: result.error };

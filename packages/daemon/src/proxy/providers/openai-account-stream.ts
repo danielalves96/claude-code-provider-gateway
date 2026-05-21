@@ -121,6 +121,9 @@ export function transformOpenAIAccountResponsesStream(
       } catch (err) {
         closeOpenBlocks();
         enq(sseError("api_error", String(err)));
+        enq(sseMessageDelta("end_turn", outputTokens));
+        enq(sseMessageStop());
+        finished = true;
       } finally {
         if (!finished && textBlockIndex === -1 && toolBlocks.size === 0) {
           enq(sseError("api_error", "OpenAI Account stream ended without a completed response"));

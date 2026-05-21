@@ -13,6 +13,7 @@ export interface ProviderRequestOptions {
   requestTimeoutMs?: number;
   streamIdleTimeoutMs?: number;
   streamTotalTimeoutMs?: number;
+  abortSignal?: AbortSignal;
 }
 
 export abstract class BaseProvider {

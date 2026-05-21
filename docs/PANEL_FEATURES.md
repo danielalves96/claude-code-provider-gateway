@@ -385,7 +385,7 @@ type RoutingOption = {
 
 ## Feature: Providers (`features/providers/`)
 
-The most feature-rich module. Manages built-in and user-created LLM providers: API key configuration, OAuth login, custom OpenAI/Anthropic-compatible provider creation, model selection, connection testing, and favorites.
+The most feature-rich module. Manages built-in and user-created LLM providers: API key configuration, OAuth login, custom OpenAI/Anthropic-compatible provider creation, runtime limits, model selection, connection testing, and favorites.
 
 ### Components
 
@@ -400,12 +400,13 @@ The most feature-rich module. Manages built-in and user-created LLM providers: A
 | `ProviderCardSkeleton` | Loading skeleton for a provider card. |
 | `ProviderLogo` | Provider logo image. Built-ins load from `packages/panel/public/providers/`; custom providers can use daemon-served `logoUrl` files uploaded by the user. |
 | `AddCustomProviderModal` | Creates OpenAI-compatible or Anthropic-compatible custom providers from name, immutable slug, base URL, API key, optional PNG/WebP logo, and a connection test that can return discovered models. |
-| `ProviderConfigModal` | Full-featured configuration modal. Contains sections for API key, OAuth, base URL, model picker, manual/extra models, and custom-provider deletion. |
+| `ProviderConfigModal` | Full-featured configuration modal. Contains sections for API key, OAuth, base URL, runtime limits, model picker, manual/extra models, and custom-provider deletion. |
 | `ProviderConfigContent` | Modal content orchestrator — renders the appropriate sections based on provider type. Custom providers show Custom Base URL, API Key Authentication, then Manual models before the shared sections. |
 | `ApiKeySection` | API key input with preview, reveal/hide, and remove. |
 | `OAuthSection` | OAuth login/logout buttons with status display. |
 | `OAuthProviderSettings` | OAuth-specific UI for device flow providers (GitHub Copilot, Kilo Code) showing user code and verification URI. |
 | `BaseUrlSection` | Custom base URL override input. |
+| `RuntimeLimitsSection` | Collapsible Advanced settings section for per-provider `maxConcurrency`, `rateLimit`, and `rateWindow`. Shows only when the provider is usable and explains that `0` disables a limit. |
 | `ModelPickerSection` | Enabled/disabled model toggle list with search. Uses `useModelSelector`. |
 | `ExtraModelsSection` | Add/remove additional model IDs not in the auto-discovered list. Custom providers label this surface as **Manual models**. |
 | `ModelSelector` | Dual-list model picker: search, toggle individual models, toggle all, expand/collapse. |
@@ -416,7 +417,7 @@ The most feature-rich module. Manages built-in and user-created LLM providers: A
 
 | Hook | Purpose |
 |---|---|
-| `useProviders` | Core hook: fetches `GET /api/providers`, manages `test()`, `toggleEnabled()`, `saveKey()`, `removeKey()`, `saveBaseUrl()`, `addModel()`, `removeModel()`, `setDisabledModels()`, `testCustom()`, `createCustom()`, and `deleteCustom()`. |
+| `useProviders` | Core hook: fetches `GET /api/providers`, manages `test()`, `toggleEnabled()`, `saveKey()`, `removeKey()`, `saveBaseUrl()`, `addModel()`, `removeModel()`, `setDisabledModels()`, `setRuntimeLimits()`, `testCustom()`, `createCustom()`, and `deleteCustom()`. |
 | `useProvidersPage` | Page orchestrator: composes `useProviders`, `useOAuth`, `useFavorites`. Manages search, status filter, selected provider for modal, custom-provider compatibility modal, and confirm action state. |
 | `useOAuth` | Manages OAuth flows: `startBrowserFlow(id)` and `startDeviceFlow(id)`. Polls `GET /api/providers/:id/oauth/status/:key` until login completes or times out. Handles `logout()`. Device flow opens verification URI in external browser. |
 | `useFavorites` | Persists favorite provider order to backend via `GET /api/config` and `PUT /api/config` (panel settings). Handles `toggleFavorite()`, `reorderFavorites()`, `dismissTip()`. |
@@ -568,7 +569,7 @@ All types shared between panel and daemon are defined in `packages/daemon/src/pa
 |---|---|
 | `GatewayStatusResponse` | Shell (TopBar), Dashboard (StatusOverview) |
 | `GatewayProviderStat` | Dashboard, History |
-| `ProviderInfo` | Providers |
+| `ProviderInfo` | Providers, including runtime limit fields (`maxConcurrency`, `rateLimit`, `rateWindow`) surfaced in provider configuration |
 | `ModelInfo` | Providers (model selector) |
 | `ProviderTestResult` | Providers (connection testing) |
 | `OAuthInfo`, `OAuthStatusResponse` | Providers (OAuth flow) |
