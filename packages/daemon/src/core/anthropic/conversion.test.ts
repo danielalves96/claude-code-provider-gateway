@@ -36,7 +36,7 @@ test("anthropicToOpenAIWithWarnings reports dropped and translated Anthropic-onl
   assert.equal(request.model, "gpt-test");
   assert.equal(request.tool_choice, "required");
   assert.equal(
-    request.messages.some((message) => String(message.content).includes("hidden")),
+    request.messages.some((message) => JSON.stringify(message.content).includes("hidden")),
     false,
   );
   assert.ok(codes.includes("top_k_dropped"));

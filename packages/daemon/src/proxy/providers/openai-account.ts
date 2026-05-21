@@ -37,20 +37,27 @@ export class OpenAIAccountProvider extends BaseProvider {
     }
 
     const model = this.resolveModel(req.model);
+    const url = `${this.baseUrl()}/codex/responses`;
+    const headers = this.codexHeaders();
+    const body = await buildOpenAIAccountResponsesRequest(req, model);
+    const requestPreview = this.requestPreview("openai_chat", url, headers, body);
     const result = await postProviderStream({
-      url: `${this.baseUrl()}/codex/responses`,
-      headers: this.codexHeaders(),
-      body: await buildOpenAIAccountResponsesRequest(req, model),
+      url,
+      headers,
+      body,
       timeoutMs: this.requestTimeoutMs(options),
       streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
       streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
-    if ("error" in result) return { error: result.error };
+    if ("error" in result) {
+      return { error: result.error, requestPreview };
+    }
 
     const messageId = `msg_${randomUUID().replace(/-/g, "")}`;
     return {
       stream: transformOpenAIAccountResponsesStream(result.body, messageId, req.model, inputTokens),
+      requestPreview,
     };
   }
 

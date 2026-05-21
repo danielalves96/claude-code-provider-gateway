@@ -264,7 +264,7 @@ export class MessageService {
       streamAnthropicNative(
         nativeReq,
         nativeReq.model,
-        undefined,
+        defaultStreamTotalTimeoutMs(providerId),
         defaultStreamIdleTimeoutMs(providerId),
         defaultStreamTotalTimeoutMs(providerId),
       ),

@@ -53,7 +53,7 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     const resolvedModel = this.resolveModel(req.model);
     const url = `${this.baseUrl()}/messages`;
     let body = { ...req, model: resolvedModel, stream: true };
-    const warnings = anthropicCompatibilityWarnings(req, this.id);
+    const warnings = anthropicCompatibilityWarnings(req, this.id) ?? [];
     let result = await postProviderStream({
       url,
       headers,
@@ -73,6 +73,10 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     ) {
       const { tool_choice: _dropped, ...reqWithoutToolChoice } = req;
       const retryBody = { ...reqWithoutToolChoice, model: resolvedModel, stream: true };
+      warnings.push({
+        code: "tool_choice_dropped_on_retry",
+        message: "tool_choice dropped on retry after provider rejected it.",
+      });
       result = await postProviderStream({
         url,
         headers,

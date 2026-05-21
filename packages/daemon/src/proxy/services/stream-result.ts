@@ -64,6 +64,7 @@ export async function probeStreamForUsefulAnthropicContent(
 ): Promise<UsefulStreamProbeResult> {
   const reader = stream.getReader();
   const buffered: string[] = [];
+  let residual = "";
 
   try {
     while (true) {
@@ -87,10 +88,14 @@ export async function probeStreamForUsefulAnthropicContent(
       }
 
       buffered.push(value);
-      const earlyError = findAnthropicStreamError(value);
-      if (earlyError) return { ok: false, reason: earlyError, timedOut: false };
-      if (hasUsefulAnthropicContent(value)) {
-        return { ok: true, stream: replayBufferedStream(buffered, reader) };
+      const drained = drainCompleteAnthropicPayloads(residual + value);
+      residual = drained.residual;
+      for (const payload of drained.payloads) {
+        const earlyError = findAnthropicStreamError(payload);
+        if (earlyError) return { ok: false, reason: earlyError, timedOut: false };
+        if (hasUsefulAnthropicContent(payload)) {
+          return { ok: true, stream: replayBufferedStream(buffered, reader) };
+        }
       }
     }
   } catch (err) {
@@ -184,11 +189,70 @@ function findAnthropicStreamError(chunk: string): string | null {
   return null;
 }
 
+function drainCompleteAnthropicPayloads(buffer: string): { payloads: string[]; residual: string } {
+  const payloads: string[] = [];
+  let searchFrom = 0;
+  let eventStart = 0;
+  let lastEventEnd = 0;
+
+  while (true) {
+    const separatorIndex = findSseEventSeparator(buffer, searchFrom);
+    if (separatorIndex === -1) break;
+
+    const event = buffer.slice(eventStart, separatorIndex);
+    payloads.push(...parseSseEventData(event));
+
+    lastEventEnd = separatorIndex + sseSeparatorLength(buffer, separatorIndex);
+    eventStart = lastEventEnd;
+    searchFrom = lastEventEnd;
+  }
+
+  if (lastEventEnd > 0) {
+    return { payloads, residual: buffer.slice(lastEventEnd) };
+  }
+
+  const trimmed = buffer.trim();
+  if (!trimmed.startsWith("{")) return { payloads, residual: buffer };
+  if (!parseJsonObject(trimmed)) return { payloads, residual: buffer };
+  payloads.push(trimmed);
+  return { payloads, residual: "" };
+}
+
+function findSseEventSeparator(buffer: string, fromIndex: number): number {
+  const lf = buffer.indexOf("\n\n", fromIndex);
+  const crlf = buffer.indexOf("\r\n\r\n", fromIndex);
+  if (lf === -1) return crlf;
+  if (crlf === -1) return lf;
+  return Math.min(lf, crlf);
+}
+
+function sseSeparatorLength(buffer: string, separatorIndex: number): number {
+  return buffer.startsWith("\r\n\r\n", separatorIndex) ? 4 : 2;
+}
+
+function parseSseEventData(event: string): string[] {
+  const dataLines: string[] = [];
+  for (const rawLine of event.split(/\r?\n/)) {
+    if (!rawLine.startsWith("data:")) continue;
+    let value = rawLine.slice(5);
+    if (value.startsWith(" ")) value = value.slice(1);
+    dataLines.push(value);
+  }
+
+  const value = dataLines.join("\n").trim();
+  return value && value !== "[DONE]" ? [value] : [];
+}
+
 function parseSseDataLines(chunk: string): string[] {
+  const trimmed = chunk.trim();
+  if (trimmed.startsWith("{") && parseJsonObject(trimmed)) return [trimmed];
+
   const data: string[] = [];
   for (const line of chunk.split("\n")) {
-    if (!line.startsWith("data: ")) continue;
-    const value = line.slice(6).trim();
+    if (!line.startsWith("data:")) continue;
+    let value = line.slice(5);
+    if (value.startsWith(" ")) value = value.slice(1);
+    value = value.trim();
     if (value && value !== "[DONE]") data.push(value);
   }
   return data;

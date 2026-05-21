@@ -111,7 +111,7 @@ The next documentation step is a separate official docs site repository. Until t
 - **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
-- **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, stalls before content, or returns an empty/malformed stream.
+- **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, idles before emitting useful content, or returns an empty/malformed stream.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
 - **Provider management UI** - search providers, filter active/inactive cards, add custom OpenAI/Anthropic-compatible providers, favorite and reorder frequently used providers, edit manual model lists, and hide noisy discovered models.
 - **Model Chain timeout controls** - tune request, first-token, and total stream limits per chain from Advanced Settings. Defaults are 30s to first useful token and 60s total stream.

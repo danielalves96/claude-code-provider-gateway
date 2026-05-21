@@ -99,6 +99,37 @@ test("model chain falls back when HTTP 200 stream has no useful content", async 
     assert.equal(result.kind, "stream", item.name);
     assert.equal(primary.calls, 1, item.name);
     assert.equal(secondary.calls, 1, item.name);
+    if (result.kind === "stream") {
+      assert.match(await readAll(result.stream), new RegExp(`${item.name} fallback`), item.name);
+    }
+  }
+});
+
+test("model chain accepts useful content split across stream chunks", async () => {
+  const config = chainConfig();
+  const usefulEvent = sseContentBlockDelta(0, { type: "text_delta", text: "split ok" });
+  const primary = new FakeProvider([
+    {
+      stream: streamFromChunks([
+        sseMessageStart("msg_test", "test-model", 1),
+        sseContentBlockStart(0, { type: "text", text: "" }),
+        usefulEvent.slice(0, 12),
+        usefulEvent.slice(12),
+        sseMessageDelta("end_turn", 1),
+        sseMessageStop(),
+      ]),
+    },
+  ]);
+  const secondary = new FakeProvider([{ stream: usefulTextStream("should not fallback") }]);
+  const service = fakeService(config, { nvidia_nim: primary, deepseek: secondary });
+
+  const result = await service.createMessage(chainRequest());
+
+  assert.equal(result.kind, "stream");
+  assert.equal(primary.calls, 1);
+  assert.equal(secondary.calls, 0);
+  if (result.kind === "stream") {
+    assert.match(await readAll(result.stream), /split ok/);
   }
 });
 
@@ -188,7 +219,8 @@ test("session history records request preview and conversion warnings", async ()
 
     assert.equal(result.kind, "stream");
     if (result.kind === "stream") await readAll(result.stream);
-    const entry = listCurrentSessions()[0]?.requestLog[0];
+    const entry = listCurrentSessions().find((candidate) => candidate.id === session.id)
+      ?.requestLog[0];
     assert.equal(entry?.requestPreview?.transport, "openai_chat");
     assert.equal(entry?.requestPreview?.headers.Authorization, "••••••••");
     assert.equal(entry?.warnings?.[0]?.code, "top_k_dropped");
