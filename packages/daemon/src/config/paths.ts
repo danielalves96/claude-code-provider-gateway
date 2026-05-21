@@ -2,6 +2,7 @@ import { homedir, platform } from "node:os";
 import { join } from "node:path";
 
 export function getConfigDir(): string {
+  if (process.env.CCPG_CONFIG_DIR) return process.env.CCPG_CONFIG_DIR;
   if (platform() === "win32") {
     return join(process.env.APPDATA ?? homedir(), "claude-code-provider-gateway");
   }

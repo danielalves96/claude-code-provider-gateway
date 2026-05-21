@@ -83,6 +83,7 @@ export function isFirstSessionRequest(sessionId?: string | null): boolean {
 export function startSession(config: Config, authToken = createLaunchAuthToken()): SessionRecord {
   ensureSessionDir();
   recoverCrashedSessionsIfNeeded();
+  recoveredCrashedSessions = true;
 
   const session = createSessionRecord(config);
   activeSessions.set(session.id, session);
@@ -179,6 +180,7 @@ export function endSession(sessionId?: string): boolean {
   archiveSession(finalized);
   removeActiveSession(sessionId);
   persistActiveSessions("end checkpoint failed");
+  if (activeSessions.size === 0) stopCheckpointTimer();
   logger.info(
     "sessions",
     `ended session ${finalized.id} (${finalized.totalRequests} reqs, ${finalized.totalErrors} errors)`,

@@ -80,12 +80,31 @@ export interface ProviderConfig {
   rateWindow: number;
   maxConcurrency: number;
   requestTimeoutMs?: number;
+  streamIdleTimeoutMs?: number;
+  streamTotalTimeoutMs?: number;
   custom?: {
     label: string;
     slug: string;
     logoFile?: string;
     compatibility: "openai" | "anthropic";
   };
+}
+
+export const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+export const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 30_000;
+export const DEFAULT_STREAM_TOTAL_TIMEOUT_MS = 60_000;
+export const LOCAL_PROVIDER_IDS = new Set<string>(["ollama", "lmstudio", "llamacpp"]);
+
+export function defaultRequestTimeoutMs(_providerId: string): number {
+  return DEFAULT_REQUEST_TIMEOUT_MS;
+}
+
+export function defaultStreamIdleTimeoutMs(_providerId: string): number {
+  return DEFAULT_STREAM_IDLE_TIMEOUT_MS;
+}
+
+export function defaultStreamTotalTimeoutMs(_providerId: string): number {
+  return DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
 }
 
 export type ModelMode = "single" | "all" | "chains";
@@ -114,6 +133,9 @@ export interface ModelFallbackConfig {
   enabled: boolean;
   routingStrategy?: ChainRoutingStrategy;
   primaryAttempts?: number;
+  requestTimeoutMs?: number;
+  streamIdleTimeoutMs?: number;
+  streamTotalTimeoutMs?: number;
 }
 
 export interface Config {

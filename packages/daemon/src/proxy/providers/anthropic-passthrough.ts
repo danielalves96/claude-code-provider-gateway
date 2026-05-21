@@ -10,7 +10,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { MessagesRequest, ModelInfo } from "../../core/anthropic/types.js";
 import { postProviderStream } from "./api-client.js";
-import type { StreamResult } from "./base.js";
+import { redactHeaders, type StreamResult } from "./base.js";
 
 interface ClaudeCredentials {
   claudeAiOauth?: {
@@ -91,6 +91,8 @@ export async function streamAnthropicNative(
   req: MessagesRequest,
   providerModel: string,
   timeoutMs: number | undefined,
+  streamIdleTimeoutMs?: number,
+  streamTotalTimeoutMs?: number,
 ): Promise<StreamResult> {
   const oauth = readCredentials()?.claudeAiOauth;
   const token = oauth?.accessToken;
@@ -131,20 +133,35 @@ export async function streamAnthropicNative(
   if (req.metadata !== undefined) body.metadata = req.metadata;
   if (req.stop_sequences !== undefined) body.stop_sequences = req.stop_sequences;
 
+  const url = `${ANTHROPIC_API_URL}/v1/messages`;
+  const headers = {
+    "Content-Type": "application/json",
+    Accept: "text/event-stream",
+    Authorization: `Bearer ${token}`,
+    "anthropic-version": ANTHROPIC_VERSION,
+    "anthropic-beta": ANTHROPIC_OAUTH_BETA,
+  };
   const result = await postProviderStream({
-    url: `${ANTHROPIC_API_URL}/v1/messages`,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream",
-      Authorization: `Bearer ${token}`,
-      "anthropic-version": ANTHROPIC_VERSION,
-      "anthropic-beta": ANTHROPIC_OAUTH_BETA,
-    },
+    url,
+    headers,
     body,
     timeoutMs,
+    streamIdleTimeoutMs,
+    streamTotalTimeoutMs,
   });
 
-  if ("error" in result) return { error: result.error };
+  if ("error" in result) {
+    return {
+      error: result.error,
+      requestPreview: {
+        transport: "anthropic_native",
+        method: "POST",
+        url,
+        headers: redactHeaders(headers),
+        body,
+      },
+    };
+  }
 
   // Anthropic's SSE format is already what Claude Code expects — pipe through.
   const decoder = new TextDecoder();
@@ -163,5 +180,14 @@ export async function streamAnthropicNative(
     },
   });
 
-  return { stream };
+  return {
+    stream,
+    requestPreview: {
+      transport: "anthropic_native",
+      method: "POST",
+      url,
+      headers: redactHeaders(headers),
+      body,
+    },
+  };
 }

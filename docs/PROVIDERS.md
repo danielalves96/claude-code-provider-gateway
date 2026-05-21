@@ -186,6 +186,9 @@ Each chain contains:
 | `name` | Human-readable name shown in the panel and Claude Code model picker. |
 | `slug` | CLI/model slug. `ccpg --<slug>` launches only that chain. |
 | `enabled` | Controls whether the chain is exposed to Claude Code. |
+| `requestTimeoutMs` | Optional chain-level response-header timeout. Defaults to 60s. |
+| `streamIdleTimeoutMs` | Optional chain-level first-token timeout. Defaults to 30s. |
+| `streamTotalTimeoutMs` | Optional chain-level total stream timeout. Defaults to 60s. |
 | `models[]` | Ordered fallback targets, each with `providerId` and `model`. |
 
 The chain model name shown to Claude Code is:
@@ -210,7 +213,11 @@ Launch behavior:
 At request time, the message service calls the first target in the chain. If
 that target returns a non-successful response such as an API error, rate limit,
 quota/credit failure, or network error, CCPG retries that target and then moves
-to the next target. The configured order is therefore the user's priority
+to the next target. The same fallback path also applies when a provider returns
+HTTP 200 but the transformed stream ends, idles, emits an early stream error, or
+contains malformed/non-useful SSE before any Anthropic content is emitted. Once
+useful content has been emitted, CCPG preserves the live stream and does not
+rewind partial answers. The configured order is therefore the user's priority
 order. When a chain is selected as the session primary model, background Claude
 Code tier requests stay on the chain instead of falling back to a provider's
 default model list.
@@ -218,6 +225,17 @@ default model list.
 The Model Chain editor uses `GET /api/routing/options`, so a provider must be
 enabled and its models must be discoverable or manually configured before those
 models are selectable in a chain.
+
+The create/edit modal includes **Advanced Settings** for chain timing. These
+timeouts are intentionally scoped to the chain because they decide when a target
+should be abandoned and the next fallback target should be tried. Direct
+single-provider usage keeps the provider setup modal focused on authentication,
+base URL, and model availability.
+
+The editor includes an **Economy/Local** preset that assembles a Haiku ->
+DeepSeek -> Ollama waterfall from enabled/configured providers only. Missing
+providers are skipped, so users without Anthropic-native Claude or a Haiku model
+can still use the preset when at least two fallback targets are available.
 
 ## Panel Provider UX
 
@@ -231,6 +249,7 @@ The Providers page supports:
 - Favorite providers saved in `config.panelSettings.favoriteProviders`.
 - Drag-and-drop ordering for favorites.
 - Confirmation before replacing/removing API keys or changing local base URLs.
+- Model Chain advanced timeout controls for request, first-token, and total stream limits.
 - Custom provider deletion requires confirmation and removes its config,
   encrypted API key, uploaded logo, routing references, Model Chain targets,
   and favorite entry.

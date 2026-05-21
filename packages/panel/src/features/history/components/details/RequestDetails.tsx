@@ -1,4 +1,4 @@
-import { Descriptions, Flex, Tag, Typography, theme } from "antd";
+import { Descriptions, Flex, Space, Tag, Typography, theme } from "antd";
 import type { RequestLogEntry } from "../../domain/types.js";
 import { SectionLabel } from "../tables/SectionLabel.js";
 
@@ -39,7 +39,25 @@ export function RequestDetails({ entry: r }: RequestDetailsProps) {
         )}
       </Descriptions>
 
+      {r.warnings && r.warnings.length > 0 && (
+        <Flex vertical gap={4}>
+          <SectionLabel>Warnings</SectionLabel>
+          <Space size={4} wrap>
+            {r.warnings.map((warning) => (
+              <Tag key={`${warning.code}-${warning.path ?? ""}`} color="warning">
+                {warning.code}
+              </Tag>
+            ))}
+          </Space>
+        </Flex>
+      )}
       {r.prompt && <CodeBlock label="Prompt" content={r.prompt} />}
+      {r.requestPreview && (
+        <CodeBlock
+          label="Provider Request Preview"
+          content={JSON.stringify(r.requestPreview, null, 2)}
+        />
+      )}
       {r.response && <CodeBlock label="Response" content={r.response} />}
     </Flex>
   );

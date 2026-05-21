@@ -2,7 +2,7 @@
 // (NVIDIA NIM, Kimi)
 
 import { randomUUID } from "node:crypto";
-import { anthropicToOpenAI } from "../../core/anthropic/conversion.js";
+import { anthropicToOpenAIWithWarnings } from "../../core/anthropic/conversion.js";
 import type { MessagesRequest, ModelInfo } from "../../core/anthropic/types.js";
 import {
   sseContentBlockDelta,
@@ -15,7 +15,7 @@ import {
   ssePing,
 } from "../../core/sse/writer.js";
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
-import type { StreamResult } from "./base.js";
+import type { ProviderRequestOptions, StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
 import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
@@ -24,30 +24,48 @@ export abstract class OpenAIChatTransport extends BaseProvider {
     return stripGatewayProviderPrefix(requestedModel, this.id);
   }
 
-  async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
+  async streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       return { error: { status: 401, message: this.missingApiKeyMessage() } };
     }
 
     const providerModel = this.resolveModel(req.model);
-    const openaiReq = anthropicToOpenAI(req, providerModel);
+    const { request: openaiReq, warnings } = anthropicToOpenAIWithWarnings(req, providerModel);
+    const url = `${this.baseUrl()}/chat/completions`;
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: this.authHeader(),
+      ...this.extraHeaders(),
+    };
 
     const result = await postProviderStream({
-      url: `${this.baseUrl()}/chat/completions`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: this.authHeader(),
-        ...this.extraHeaders(),
-      },
+      url,
+      headers,
       body: openaiReq,
-      timeoutMs: this.requestTimeoutMs(),
+      timeoutMs: this.requestTimeoutMs(options),
+      streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+      streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
-    if ("error" in result) return { error: result.error };
+    if ("error" in result) {
+      return {
+        error: result.error,
+        requestPreview: this.requestPreview("openai_chat", url, headers, openaiReq),
+        warnings,
+      };
+    }
 
     const messageId = `msg_${randomUUID().replace(/-/g, "")}`;
     const stream = this.transformOpenAIStream(result.body, messageId, req.model, inputTokens);
-    return { stream };
+    return {
+      stream,
+      requestPreview: this.requestPreview("openai_chat", url, headers, openaiReq),
+      warnings,
+    };
   }
 
   private transformOpenAIStream(

@@ -16,6 +16,8 @@ test("normalizeConfig preserves valid config values", () => {
         ...defaults.providers.ollama,
         enabled: true,
         requestTimeoutMs: 1200,
+        streamIdleTimeoutMs: 90000,
+        streamTotalTimeoutMs: 180000,
       },
       acme_anthropic: {
         enabled: true,
@@ -42,6 +44,8 @@ test("normalizeConfig preserves valid config values", () => {
   assert.equal(normalized.activeProvider, "ollama");
   assert.equal(normalized.modelMode, "all");
   assert.equal(normalized.providers.ollama.requestTimeoutMs, 1200);
+  assert.equal(normalized.providers.ollama.streamIdleTimeoutMs, 90000);
+  assert.equal(normalized.providers.ollama.streamTotalTimeoutMs, 180000);
 });
 
 test("normalizeConfig uses proxy defaults when proxy field is absent (legacy config)", () => {
@@ -95,6 +99,8 @@ test("normalizeConfig falls back for invalid runtime values", () => {
         ...defaults.providers.nvidia_nim,
         enabled: "yes" as unknown as boolean,
         requestTimeoutMs: -1,
+        streamIdleTimeoutMs: 0,
+        streamTotalTimeoutMs: Number.NaN,
       },
     },
   };
@@ -106,6 +112,8 @@ test("normalizeConfig falls back for invalid runtime values", () => {
   assert.equal(normalized.modelMode, defaults.modelMode);
   assert.equal(normalized.providers.nvidia_nim.enabled, defaults.providers.nvidia_nim.enabled);
   assert.equal(normalized.providers.nvidia_nim.requestTimeoutMs, undefined);
+  assert.equal(normalized.providers.nvidia_nim.streamIdleTimeoutMs, undefined);
+  assert.equal(normalized.providers.nvidia_nim.streamTotalTimeoutMs, undefined);
 });
 
 test("normalizeConfig preserves valid token saver settings", () => {
@@ -163,6 +171,9 @@ test("normalizeConfig preserves active model fallback when the chain is enabled"
           { providerId: "nvidia_nim" as const, model: "meta/llama" },
           { providerId: "openrouter" as const, model: "anthropic/claude-sonnet" },
         ],
+        requestTimeoutMs: 12_000,
+        streamIdleTimeoutMs: 30_000,
+        streamTotalTimeoutMs: 60_000,
       },
     ],
   };
@@ -170,6 +181,9 @@ test("normalizeConfig preserves active model fallback when the chain is enabled"
   const normalized = normalizeConfig(config, defaults);
 
   assert.equal(normalized.activeModelFallbackSlug, "rescue-chain");
+  assert.equal(normalized.modelFallbacks[0]?.requestTimeoutMs, 12_000);
+  assert.equal(normalized.modelFallbacks[0]?.streamIdleTimeoutMs, 30_000);
+  assert.equal(normalized.modelFallbacks[0]?.streamTotalTimeoutMs, 60_000);
 });
 
 test("normalizeConfig preserves OAuth provider metadata", () => {

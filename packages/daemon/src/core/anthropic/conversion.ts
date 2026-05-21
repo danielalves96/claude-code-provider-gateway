@@ -39,11 +39,30 @@ export interface OpenAIChatRequest {
   stop?: string[];
 }
 
-function contentBlocksToOpenAI(content: string | ContentBlock[]): string | OpenAIContentPart[] {
+export interface ConversionWarning {
+  code: string;
+  message: string;
+  path?: string;
+}
+
+interface ConversionContext {
+  warnings: ConversionWarning[];
+}
+
+function warn(ctx: ConversionContext, code: string, message: string, path?: string): void {
+  ctx.warnings.push({ code, message, path });
+}
+
+function contentBlocksToOpenAI(
+  content: string | ContentBlock[],
+  ctx: ConversionContext,
+  path: string,
+): string | OpenAIContentPart[] {
   if (typeof content === "string") return content;
 
   const parts: OpenAIContentPart[] = [];
-  for (const block of content) {
+  for (const [index, block] of content.entries()) {
+    warnForBlockMetadata(block, ctx, `${path}[${index}]`);
     if (block.type === "text") {
       parts.push({ type: "text", text: block.text });
     } else if (block.type === "image") {
@@ -57,13 +76,26 @@ function contentBlocksToOpenAI(content: string | ContentBlock[]): string | OpenA
         parts.push({ type: "image_url", image_url: { url: src.url } });
       }
     } else if (block.type === "thinking") {
-      // Thinking blocks are not forwarded to OpenAI-compat providers
+      warn(
+        ctx,
+        "thinking_block_dropped",
+        "Anthropic thinking content blocks are not forwarded to OpenAI-compatible providers.",
+        `${path}[${index}]`,
+      );
+      // Thinking blocks are not forwarded to OpenAI-compat providers.
+    } else if (block.type === "document") {
+      warn(
+        ctx,
+        "document_block_dropped",
+        "Anthropic document content blocks are not supported by OpenAI Chat Completions conversion.",
+        `${path}[${index}]`,
+      );
     }
   }
   return parts.length === 1 && parts[0]?.type === "text" ? (parts[0].text ?? "") : parts;
 }
 
-function messageToOpenAI(msg: Message): OpenAIMessage[] {
+function messageToOpenAI(msg: Message, ctx: ConversionContext, index: number): OpenAIMessage[] {
   const content = msg.content;
 
   if (typeof content === "string") {
@@ -75,7 +107,8 @@ function messageToOpenAI(msg: Message): OpenAIMessage[] {
     const toolCalls: OpenAIToolCall[] = [];
     const textParts: string[] = [];
 
-    for (const block of content) {
+    for (const [blockIndex, block] of content.entries()) {
+      warnForBlockMetadata(block, ctx, `messages[${index}].content[${blockIndex}]`);
       if (block.type === "tool_use") {
         toolCalls.push({
           id: block.id,
@@ -84,6 +117,13 @@ function messageToOpenAI(msg: Message): OpenAIMessage[] {
         });
       } else if (block.type === "text") {
         textParts.push(block.text);
+      } else if (block.type === "thinking") {
+        warn(
+          ctx,
+          "thinking_block_dropped",
+          "Anthropic thinking content blocks are not forwarded to OpenAI-compatible providers.",
+          `messages[${index}].content[${blockIndex}]`,
+        );
       }
     }
 
@@ -99,7 +139,8 @@ function messageToOpenAI(msg: Message): OpenAIMessage[] {
   const toolResultMessages: OpenAIMessage[] = [];
   const otherBlocks: ContentBlock[] = [];
 
-  for (const block of content) {
+  for (const [blockIndex, block] of content.entries()) {
+    warnForBlockMetadata(block, ctx, `messages[${index}].content[${blockIndex}]`);
     if (block.type === "tool_result") {
       const resultContent =
         typeof block.content === "string"
@@ -120,23 +161,41 @@ function messageToOpenAI(msg: Message): OpenAIMessage[] {
 
   const result: OpenAIMessage[] = [];
   if (otherBlocks.length > 0) {
-    result.push({ role: "user", content: contentBlocksToOpenAI(otherBlocks) });
+    result.push({
+      role: "user",
+      content: contentBlocksToOpenAI(otherBlocks, ctx, `messages[${index}].content`),
+    });
   }
   result.push(...toolResultMessages);
   return result;
 }
 
 export function anthropicToOpenAI(req: MessagesRequest, model: string): OpenAIChatRequest {
+  return anthropicToOpenAIWithWarnings(req, model).request;
+}
+
+export function anthropicToOpenAIWithWarnings(
+  req: MessagesRequest,
+  model: string,
+): { request: OpenAIChatRequest; warnings: ConversionWarning[] } {
   const messages: OpenAIMessage[] = [];
+  const ctx: ConversionContext = { warnings: [] };
 
   if (req.system) {
     const systemText =
-      typeof req.system === "string" ? req.system : req.system.map((b) => b.text).join("\n");
+      typeof req.system === "string"
+        ? req.system
+        : req.system
+            .map((b, index) => {
+              warnForSystemBlockMetadata(b, ctx, `system[${index}]`);
+              return b.text;
+            })
+            .join("\n");
     messages.push({ role: "system", content: systemText });
   }
 
-  for (const msg of req.messages) {
-    messages.push(...messageToOpenAI(msg));
+  for (const [index, msg] of req.messages.entries()) {
+    messages.push(...messageToOpenAI(msg, ctx, index));
   }
 
   const openaiReq: OpenAIChatRequest = {
@@ -149,6 +208,25 @@ export function anthropicToOpenAI(req: MessagesRequest, model: string): OpenAICh
   if (req.temperature !== undefined) openaiReq.temperature = req.temperature;
   if (req.top_p !== undefined) openaiReq.top_p = req.top_p;
   if (req.stop_sequences?.length) openaiReq.stop = req.stop_sequences;
+  if (req.top_k !== undefined) {
+    warn(ctx, "top_k_dropped", "OpenAI Chat Completions has no top_k equivalent.", "top_k");
+  }
+  if (req.metadata !== undefined) {
+    warn(
+      ctx,
+      "metadata_dropped",
+      "Anthropic request metadata is not forwarded to OpenAI-compatible providers.",
+      "metadata",
+    );
+  }
+  if (req.thinking !== undefined) {
+    warn(
+      ctx,
+      "thinking_request_dropped",
+      "Anthropic request thinking configuration is not forwarded to OpenAI-compatible providers.",
+      "thinking",
+    );
+  }
 
   if (req.tools?.length) {
     openaiReq.tools = req.tools.map((t) => ({
@@ -158,12 +236,59 @@ export function anthropicToOpenAI(req: MessagesRequest, model: string): OpenAICh
 
     if (req.tool_choice) {
       if (req.tool_choice.type === "auto") openaiReq.tool_choice = "auto";
-      else if (req.tool_choice.type === "any") openaiReq.tool_choice = "required";
-      else if (req.tool_choice.type === "tool" && req.tool_choice.name) {
+      else if (req.tool_choice.type === "any") {
+        openaiReq.tool_choice = "required";
+        warn(
+          ctx,
+          "tool_choice_any_translated",
+          "Anthropic tool_choice any was translated to OpenAI required.",
+          "tool_choice",
+        );
+      } else if (req.tool_choice.type === "tool" && req.tool_choice.name) {
         openaiReq.tool_choice = { type: "function", function: { name: req.tool_choice.name } };
       }
     }
   }
 
-  return openaiReq;
+  return { request: openaiReq, warnings: dedupeWarnings(ctx.warnings) };
+}
+
+function warnForSystemBlockMetadata(
+  block: { type: "text"; text: string },
+  ctx: ConversionContext,
+  path: string,
+): void {
+  if (hasCacheControlLikeMetadata(block)) {
+    warn(
+      ctx,
+      "cache_control_metadata_dropped",
+      "Anthropic cache_control-like system block metadata is not forwarded to OpenAI-compatible providers.",
+      path,
+    );
+  }
+}
+
+function warnForBlockMetadata(block: ContentBlock, ctx: ConversionContext, path: string): void {
+  if (hasCacheControlLikeMetadata(block)) {
+    warn(
+      ctx,
+      "cache_control_metadata_dropped",
+      "Anthropic cache_control-like content block metadata is not forwarded to OpenAI-compatible providers.",
+      path,
+    );
+  }
+}
+
+function hasCacheControlLikeMetadata(value: unknown): boolean {
+  return !!value && typeof value === "object" && "cache_control" in value;
+}
+
+function dedupeWarnings(warnings: ConversionWarning[]): ConversionWarning[] {
+  const seen = new Set<string>();
+  return warnings.filter((warning) => {
+    const key = `${warning.code}:${warning.path ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

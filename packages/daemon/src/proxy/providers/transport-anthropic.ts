@@ -13,8 +13,9 @@ import {
   sseMessageStop,
   ssePing,
 } from "../../core/sse/writer.js";
+import type { RequestWarning } from "../../runtime/session-types.js";
 import { fetchProviderJson, mapProviderModels, postProviderStream } from "./api-client.js";
-import type { StreamResult } from "./base.js";
+import type { ProviderRequestOptions, StreamResult } from "./base.js";
 import { BaseProvider } from "./base.js";
 import { stripGatewayProviderPrefix } from "./model-prefix.js";
 
@@ -32,7 +33,11 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
     return null;
   }
 
-  async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
+  async streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       return { error: { status: 401, message: this.missingApiKeyMessage() } };
     }
@@ -46,11 +51,16 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
       ...this.extraHeaders(),
     };
     const resolvedModel = this.resolveModel(req.model);
+    const url = `${this.baseUrl()}/messages`;
+    let body = { ...req, model: resolvedModel, stream: true };
+    const warnings = anthropicCompatibilityWarnings(req, this.id) ?? [];
     let result = await postProviderStream({
-      url: `${this.baseUrl()}/messages`,
+      url,
       headers,
-      body: { ...req, model: resolvedModel, stream: true },
-      timeoutMs: this.requestTimeoutMs(),
+      body,
+      timeoutMs: this.requestTimeoutMs(options),
+      streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+      streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
     // Some models on OpenRouter (and similar providers) don't support tool_choice.
@@ -62,20 +72,38 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
       result.error.message.includes("tool_choice")
     ) {
       const { tool_choice: _dropped, ...reqWithoutToolChoice } = req;
-      result = await postProviderStream({
-        url: `${this.baseUrl()}/messages`,
-        headers,
-        body: { ...reqWithoutToolChoice, model: resolvedModel, stream: true },
-        timeoutMs: this.requestTimeoutMs(),
+      const retryBody = { ...reqWithoutToolChoice, model: resolvedModel, stream: true };
+      warnings.push({
+        code: "tool_choice_dropped_on_retry",
+        message: "tool_choice dropped on retry after provider rejected it.",
       });
+      result = await postProviderStream({
+        url,
+        headers,
+        body: retryBody,
+        timeoutMs: this.requestTimeoutMs(options),
+        streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+        streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
+      });
+      body = retryBody;
     }
 
-    if ("error" in result) return { error: result.error };
+    if ("error" in result) {
+      return {
+        error: result.error,
+        requestPreview: this.requestPreview("anthropic_messages", url, headers, body),
+        warnings,
+      };
+    }
 
     const messageId = `msg_${randomUUID().replace(/-/g, "")}`;
     const model = req.model;
     const stream = this.transformStream(result.body, messageId, model, inputTokens);
-    return { stream };
+    return {
+      stream,
+      requestPreview: this.requestPreview("anthropic_messages", url, headers, body),
+      warnings,
+    };
   }
 
   private transformStream(
@@ -190,4 +218,33 @@ export abstract class AnthropicMessagesTransport extends BaseProvider {
   protected extraHeaders(): Record<string, string> {
     return {};
   }
+}
+
+function anthropicCompatibilityWarnings(
+  req: MessagesRequest,
+  providerId: string,
+): RequestWarning[] | undefined {
+  const warnings: RequestWarning[] = [];
+  if (req.thinking) {
+    warnings.push({
+      code: "thinking_passthrough_unverified",
+      message: `Anthropic thinking configuration was sent to ${providerId}, but this provider may ignore or drop it.`,
+      path: "thinking",
+    });
+  }
+  if (hasThinkingBlocks(req)) {
+    warnings.push({
+      code: "thinking_block_passthrough_unverified",
+      message: `Anthropic thinking blocks were sent to ${providerId}, but this provider may ignore or drop them.`,
+      path: "messages",
+    });
+  }
+  return warnings.length > 0 ? warnings : undefined;
+}
+
+function hasThinkingBlocks(req: MessagesRequest): boolean {
+  return req.messages.some(
+    (message) =>
+      Array.isArray(message.content) && message.content.some((block) => block.type === "thinking"),
+  );
 }

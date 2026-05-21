@@ -3,12 +3,14 @@ import {
   Button,
   Card,
   Col,
+  Collapse,
   Flex,
   Form,
   Input,
   InputNumber,
   Modal,
   Row,
+  Segmented,
   Space,
   Switch,
   Typography,
@@ -33,62 +35,6 @@ interface ChainModalProps {
   onSave: (draft: DraftChain) => void;
 }
 
-interface StrategyCardProps {
-  selected: boolean;
-  onSelect: () => void;
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-}
-
-function StrategyCard({ selected, onSelect, icon, label, description }: StrategyCardProps) {
-  const { token } = theme.useToken();
-  return (
-    <Card
-      size="small"
-      role="button"
-      tabIndex={0}
-      aria-label={label}
-      aria-pressed={selected}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
-      style={{
-        flex: 1,
-        cursor: "pointer",
-        borderColor: selected ? token.colorPrimary : token.colorBorderSecondary,
-        background: selected ? token.colorPrimaryBg : token.colorBgContainer,
-        transition: "border-color 0.2s, background 0.2s",
-      }}
-      styles={{ body: { padding: token.paddingSM } }}
-    >
-      <Flex gap={token.paddingSM} align="center">
-        <span
-          style={{
-            fontSize: 20,
-            color: selected ? token.colorPrimary : token.colorTextSecondary,
-            transition: "color 0.2s",
-          }}
-        >
-          {icon}
-        </span>
-        <Flex vertical gap={2}>
-          <Text strong style={{ color: selected ? token.colorPrimary : token.colorText }}>
-            {label}
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12, lineHeight: "1.3" }}>
-            {description}
-          </Text>
-        </Flex>
-      </Flex>
-    </Card>
-  );
-}
-
 const ATTEMPTS_HINT: Record<ChainRoutingStrategy, string> = {
   waterfall: "Number of times the primary model is tried before falling through to the next.",
   round_robin:
@@ -97,9 +43,23 @@ const ATTEMPTS_HINT: Record<ChainRoutingStrategy, string> = {
 
 const CHAIN_ORDER_HINT: Record<ChainRoutingStrategy, string> = {
   waterfall: "Drag to reorder · tried top-to-bottom, falls through on failure",
-  round_robin:
-    "Order doesn't matter · the initial random pick can retry, then later random fallback picks get one attempt",
+  round_robin: "Order doesn't matter · fallbacks get 1 attempt each",
 };
+
+const DEFAULT_REQUEST_TIMEOUT_SECONDS = 60;
+const DEFAULT_FIRST_TOKEN_TIMEOUT_SECONDS = 30;
+const DEFAULT_TOTAL_STREAM_TIMEOUT_SECONDS = 60;
+
+function secondsOrNull(value?: number): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value / 1000) : null;
+}
+
+function millisecondsOrUndefined(value: number | string | null): number | undefined {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) && numeric > 0
+    ? Math.round(numeric * 1000)
+    : undefined;
+}
 
 export function ChainModal({
   open,
@@ -145,11 +105,11 @@ export function ChainModal({
       ]}
     >
       {draft && (
-        <Flex vertical gap={token.paddingLG}>
+        <Flex vertical gap={token.paddingMD}>
           <Form layout="vertical">
-            <Row gutter={token.padding}>
+            <Row gutter={token.paddingMD}>
               <Col flex="1">
-                <Form.Item label="Name" required>
+                <Form.Item label="Name" required style={{ marginBottom: 0 }}>
                   <Input
                     value={draft.name}
                     placeholder="Premium Rescue"
@@ -167,14 +127,16 @@ export function ChainModal({
                 <Form.Item
                   label="Slug"
                   required
+                  style={{ marginBottom: 0 }}
                   validateStatus={
                     existingSlugs.includes(normalizeSlug(draft.slug)) ? "error" : undefined
                   }
                   help={
                     existingSlugs.includes(normalizeSlug(draft.slug))
                       ? "Slug already exists"
-                      : "Letters, numbers, dash, underscore"
+                      : undefined
                   }
+                  tooltip="Letters, numbers, dash, underscore"
                 >
                   <Input
                     prefix="--"
@@ -185,63 +147,143 @@ export function ChainModal({
                 </Form.Item>
               </Col>
               <Col flex="none">
-                <Form.Item label="Enabled">
+                <Form.Item label="Enabled" style={{ marginBottom: 0 }}>
                   <Switch checked={draft.enabled} onChange={(enabled) => update({ enabled })} />
                 </Form.Item>
               </Col>
             </Row>
           </Form>
 
-          <Flex vertical gap={token.paddingSM}>
-            <Text strong>Routing strategy</Text>
-            <Row gutter={token.paddingSM}>
-              <Col span={12}>
-                <StrategyCard
-                  selected={draft.routingStrategy === "waterfall"}
-                  onSelect={() => update({ routingStrategy: "waterfall" })}
-                  icon={<BranchesOutlined />}
-                  label="Waterfall"
-                  description="Always starts with the primary model. Falls through to the next only when it fails."
-                />
+          <Form layout="vertical">
+            <Row gutter={token.paddingMD} align="top">
+              <Col span={14}>
+                <Form.Item label="Routing strategy" style={{ marginBottom: 0 }}>
+                  <Segmented
+                    block
+                    value={draft.routingStrategy}
+                    onChange={(val) => update({ routingStrategy: val as ChainRoutingStrategy })}
+                    options={[
+                      {
+                        label: (
+                          <Space>
+                            <BranchesOutlined /> Waterfall
+                          </Space>
+                        ),
+                        value: "waterfall",
+                      },
+                      {
+                        label: (
+                          <Space>
+                            <SyncOutlined /> Round Robin
+                          </Space>
+                        ),
+                        value: "round_robin",
+                      },
+                    ]}
+                  />
+                  <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 4 }}>
+                    {draft.routingStrategy === "waterfall"
+                      ? "Starts with primary model. Falls through on failure."
+                      : "Picks at random on each request, distributing load."}
+                  </Text>
+                </Form.Item>
               </Col>
-              <Col span={12}>
-                <StrategyCard
-                  selected={draft.routingStrategy === "round_robin"}
-                  onSelect={() => update({ routingStrategy: "round_robin" })}
-                  icon={<SyncOutlined />}
-                  label="Round Robin"
-                  description="Picks a model at random on each request, distributing load across the list."
-                />
+              <Col span={10}>
+                <Form.Item
+                  label="Primary attempts"
+                  tooltip={ATTEMPTS_HINT[draft.routingStrategy]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <InputNumber
+                    min={1}
+                    max={10}
+                    value={draft.primaryAttempts}
+                    onChange={(value) => update({ primaryAttempts: value ?? 2 })}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
               </Col>
             </Row>
-          </Flex>
+          </Form>
 
-          <Flex
-            align="center"
-            gap={token.paddingMD}
-            style={{
-              padding: `${token.paddingSM}px ${token.paddingMD}px`,
-              background: token.colorFillQuaternary,
-              borderRadius: token.borderRadius,
-              border: `1px solid ${token.colorBorderSecondary}`,
-            }}
-          >
-            <Flex vertical gap={0} style={{ flex: 1 }}>
-              <Text strong style={{ fontSize: 13 }}>
-                Primary model attempts (Máx. 10)
-              </Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {ATTEMPTS_HINT[draft.routingStrategy]}
-              </Text>
-            </Flex>
-            <InputNumber
-              min={1}
-              max={10}
-              value={draft.primaryAttempts}
-              onChange={(value) => update({ primaryAttempts: value ?? 2 })}
-              style={{ width: 72 }}
-            />
-          </Flex>
+          <Collapse
+            size="small"
+            ghost
+            expandIconPosition="end"
+            items={[
+              {
+                key: "advanced",
+                label: (
+                  <Flex vertical gap={0}>
+                    <Text strong>Advanced settings</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      Fallback timing for this chain. Leave empty to use the resilient defaults.
+                    </Text>
+                  </Flex>
+                ),
+                children: (
+                  <Form layout="vertical">
+                    <Row gutter={token.paddingSM}>
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label="Request timeout"
+                          tooltip={`Default ${DEFAULT_REQUEST_TIMEOUT_SECONDS}s. Time allowed for a provider to return response headers before this chain tries the next model.`}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <InputNumber
+                            min={1}
+                            addonAfter="s"
+                            placeholder={`${DEFAULT_REQUEST_TIMEOUT_SECONDS}`}
+                            value={secondsOrNull(draft.requestTimeoutMs)}
+                            onChange={(value) =>
+                              update({ requestTimeoutMs: millisecondsOrUndefined(value) })
+                            }
+                            style={{ width: "100%" }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label="First token timeout"
+                          tooltip={`Default ${DEFAULT_FIRST_TOKEN_TIMEOUT_SECONDS}s. Time allowed for useful Anthropic content before any answer is shown; if it expires, the next model is tried.`}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <InputNumber
+                            min={1}
+                            addonAfter="s"
+                            placeholder={`${DEFAULT_FIRST_TOKEN_TIMEOUT_SECONDS}`}
+                            value={secondsOrNull(draft.streamIdleTimeoutMs)}
+                            onChange={(value) =>
+                              update({ streamIdleTimeoutMs: millisecondsOrUndefined(value) })
+                            }
+                            style={{ width: "100%" }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label="Total stream timeout"
+                          tooltip={`Default ${DEFAULT_TOTAL_STREAM_TIMEOUT_SECONDS}s. Maximum time for one chain attempt; increase for large contexts or slow local models.`}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <InputNumber
+                            min={1}
+                            addonAfter="s"
+                            placeholder={`${DEFAULT_TOTAL_STREAM_TIMEOUT_SECONDS}`}
+                            value={secondsOrNull(draft.streamTotalTimeoutMs)}
+                            onChange={(value) =>
+                              update({ streamTotalTimeoutMs: millisecondsOrUndefined(value) })
+                            }
+                            style={{ width: "100%" }}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </Form>
+                ),
+              },
+            ]}
+          />
 
           <Card
             size="small"

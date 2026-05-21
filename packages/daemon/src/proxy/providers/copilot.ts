@@ -4,7 +4,7 @@ import type { Config, ProviderConfig } from "../../config/schema.js";
 import { anthropicToOpenAI } from "../../core/anthropic/conversion.js";
 import type { MessagesRequest, ModelInfo } from "../../core/anthropic/types.js";
 import { postProviderStream } from "./api-client.js";
-import { BaseProvider, type StreamResult } from "./base.js";
+import { BaseProvider, type ProviderRequestOptions, type StreamResult } from "./base.js";
 import {
   copilotEditorHeaders,
   exchangeForCopilotToken,
@@ -31,7 +31,11 @@ export class CopilotProvider extends BaseProvider {
     return "GitHub Copilot";
   }
 
-  async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
+  async streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult> {
     try {
       await this.ensureFreshCopilotToken();
     } catch (err) {
@@ -50,7 +54,9 @@ export class CopilotProvider extends BaseProvider {
         providerModel,
         endpoint: this.endpoint(),
         headers: this.copilotHeaders(),
-        timeoutMs: this.requestTimeoutMs(),
+        timeoutMs: this.requestTimeoutMs(options),
+        streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+        streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
       });
     }
 
@@ -60,7 +66,9 @@ export class CopilotProvider extends BaseProvider {
       url: `${this.endpoint()}/chat/completions`,
       headers: this.copilotHeaders(),
       body: openaiReq,
-      timeoutMs: this.requestTimeoutMs(),
+      timeoutMs: this.requestTimeoutMs(options),
+      streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+      streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
     if ("error" in result) return { error: result.error };

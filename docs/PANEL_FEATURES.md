@@ -251,8 +251,8 @@ Displays archived Claude Code sessions with detailed breakdowns.
 | `SessionsTable` | Expandable table of archived sessions. Each row expands to show request log details and includes export/delete actions. |
 | `SessionDetails` | Expanded row content: request log entries and metadata for a session. |
 | `SessionMetadataCards` | Shows session metadata: launch hint, provider, model, duration. |
-| `RequestLogTable` | Table of individual API requests within a session (model, provider, latency, status). |
-| `RequestDetails` | Detailed view of a single request log entry. |
+| `RequestLogTable` | Table of individual API requests within a session (model, provider, latency, status, response/preview availability, warnings). |
+| `RequestDetails` | Detailed view of a single request log entry, including the human-readable prompt, sanitized provider request preview, conversion warnings, and response preview. |
 | `ProvidersTable` | Per-provider aggregate stats within a session (or globally). |
 | `ModelsUsedTable` | Per-model aggregate stats within a session (or globally). |
 | `TableExpandButton` | Toggle to expand/collapse a session row. |
@@ -334,15 +334,15 @@ interface ParsedLogLine {
 
 ## Feature: Model Chain (`features/model-chain/`)
 
-Editor for **model fallback chains**. When the primary model fails (rate limit, error), the gateway falls back to the next model in the chain.
+Editor for **model fallback chains**. When the primary model fails (rate limit, error, empty/malformed stream, or pre-content stream idle), the gateway falls back to the next model in the chain.
 
 ### Components
 
 | Component | Purpose |
 |---|---|
-| `ModelChainPage` | Main page: list of chains with enable/disable toggles, edit/delete actions, and "New Chain" button. |
+| `ModelChainPage` | Main page: list of chains with enable/disable toggles, edit/delete actions, "Economy/Local" preset, and "New Chain" button. |
 | `ChainCard` | Card displaying a single chain with its models list, enable toggle, copy snippet button, and edit/delete actions. |
-| `ChainModal` | Modal for creating/editing a chain. Includes name, slug (auto-derived), enable toggle, and drag-and-drop model list. |
+| `ChainModal` | Modal for creating/editing a chain. Includes name, slug (auto-derived), enable toggle, routing strategy, primary attempts, advanced chain timeout settings, and drag-and-drop model list. |
 | `SortableModels` | Drag-and-drop list container using `@dnd-kit/sortable`. |
 | `SortableModelRow` | Individual draggable model row with provider + model label and delete button. |
 | `AddModelRow` | Form row to add a new model: provider dropdown + model dropdown (filtered by selected provider). |
@@ -352,7 +352,7 @@ Editor for **model fallback chains**. When the primary model fails (rate limit, 
 
 | Hook | Purpose |
 |---|---|
-| `useModelChainPage` | Fetches `GET /api/config` (model fallbacks) and `GET /api/routing/options`. Manages chain list state, `persist()`, `deleteChain()`, `toggleChainEnabled()`. |
+| `useModelChainPage` | Fetches `GET /api/config` (model fallbacks/provider state) and `GET /api/routing/options`. Manages chain list state, enabled providers, `persist()`, `deleteChain()`, `toggleChainEnabled()`. |
 | `useChainDraft` | Manages the chain edit modal: `openNew()`, `openEdit(chain)`, `saveDraft()`, `cancelEdit()`. Normalizes slugs via `normalizeSlug()`. |
 
 ### Services

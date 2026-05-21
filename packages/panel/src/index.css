@@ -39,3 +39,30 @@ body {
   > td {
   border-bottom: 1px solid #3e3e38;
 }
+
+/* Constrain all modals to viewport height and enable inner scrolling */
+.ant-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 100px);
+}
+.ant-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for modals to avoid overlap and look premium */
+.ant-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.ant-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ant-modal-body::-webkit-scrollbar-thumb {
+  background: #3e3e38;
+  border-radius: 3px;
+}
+.ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #52514a;
+}

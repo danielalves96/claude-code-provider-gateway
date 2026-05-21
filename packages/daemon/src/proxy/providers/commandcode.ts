@@ -17,7 +17,7 @@ import {
 } from "../../core/sse/writer.js";
 import { postProviderStream } from "./api-client.js";
 import type { StreamResult } from "./base.js";
-import { BaseProvider } from "./base.js";
+import { BaseProvider, type ProviderRequestOptions } from "./base.js";
 
 const COMMANDCODE_VERSION = "0.25.7";
 const DEFAULT_COMMANDCODE_ENDPOINT = "https://api.commandcode.ai/alpha/generate";
@@ -118,7 +118,11 @@ export class CommandCodeProvider extends BaseProvider {
     return "Command Code";
   }
 
-  async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
+  async streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult> {
     if (this.requiresApiKey() && !this.hasApiKey()) {
       return { error: { status: 401, message: this.missingApiKeyMessage() } };
     }
@@ -135,7 +139,9 @@ export class CommandCodeProvider extends BaseProvider {
         "x-session-id": randomUUID(),
       },
       body: await anthropicToCommandCode(req, providerModel),
-      timeoutMs: this.requestTimeoutMs(),
+      timeoutMs: this.requestTimeoutMs(options),
+      streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+      streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
     if ("error" in result) return { error: result.error };

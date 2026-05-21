@@ -1,8 +1,15 @@
-import type { Config, ModelFallbackConfig, ModelFallbackEntry } from "../../config/schema.js";
+import {
+  type Config,
+  defaultRequestTimeoutMs,
+  defaultStreamIdleTimeoutMs,
+  defaultStreamTotalTimeoutMs,
+  type ModelFallbackConfig,
+  type ModelFallbackEntry,
+} from "../../config/schema.js";
 import { countRequestTokens } from "../../core/anthropic/tokens.js";
 import type { MessagesRequest } from "../../core/anthropic/types.js";
 import { logger } from "../../observability/log.js";
-import type { TokenSaverStats } from "../../runtime/session-types.js";
+import type { RequestWarning, TokenSaverStats } from "../../runtime/session-types.js";
 import {
   getSessionConfig,
   getSessionPrimaryModel,
@@ -23,7 +30,11 @@ import type { ProxyRuntime } from "../runtime.js";
 import { injectCaveman } from "../token-savers/caveman.js";
 import { cloneMessagesRequest, compressMessages, formatRtkLog } from "../token-savers/rtk.js";
 import { serializePrompt } from "./prompt-serializer.js";
-import { streamResult, streamResultWithCapture } from "./stream-result.js";
+import {
+  probeStreamForUsefulAnthropicContent,
+  streamResult,
+  streamResultWithCapture,
+} from "./stream-result.js";
 
 export { shouldUseNativeClaudePassthrough } from "./native-claude-routing.js";
 
@@ -173,12 +184,15 @@ export class MessageService {
       config,
     );
     const inputTokens = countRequestTokens(providerReq);
-    const result = await provider.streamResponse(providerReq, inputTokens);
+    const result = await safeProviderStream(() =>
+      provider.streamResponse(providerReq, inputTokens),
+    );
     const latency = Date.now() - started;
 
     if (result.error) {
       const errType = providerErrorType(result.error.status);
       const status = providerErrorStatus(result.error.status);
+      logWarnings(providerId, providerModel, result.warnings);
       logger.error(
         "proxy",
         `✗ ${providerId}/${providerModel} HTTP ${result.error.status} (${latency}ms)`,
@@ -196,6 +210,8 @@ export class MessageService {
         latencyMs: latency,
         status: "error",
         error: `HTTP ${result.error.status}: ${result.error.message.slice(0, 200)}`,
+        requestPreview: result.requestPreview,
+        warnings: result.warnings,
       });
       return {
         kind: "error",
@@ -211,6 +227,7 @@ export class MessageService {
       "proxy",
       `→ ${providerId}/${providerModel} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
+    logWarnings(providerId, providerModel, result.warnings);
     recordRequest(providerId, latency, null);
     const prompt = serializePrompt(providerReq, isFirstSessionRequest(sessionId));
     const logEntryId = recordSessionRequest(sessionId, {
@@ -222,6 +239,8 @@ export class MessageService {
       status: "ok",
       error: null,
       prompt,
+      requestPreview: result.requestPreview,
+      warnings: result.warnings,
       tokenSavers: tokenSaverStats,
     });
     return streamResultWithCapture(result.stream, logEntryId);
@@ -238,15 +257,24 @@ export class MessageService {
       config,
     );
     const inputTokens = countRequestTokens(nativeReq);
-    const result = await streamAnthropicNative(nativeReq, nativeReq.model, undefined);
-    const latency = Date.now() - started;
     // Synthetic stats key so the dashboard can show native Claude usage separately
     // from configured third-party providers.
     const providerId = "anthropic_native";
+    const result = await safeProviderStream(() =>
+      streamAnthropicNative(
+        nativeReq,
+        nativeReq.model,
+        defaultStreamTotalTimeoutMs(providerId),
+        defaultStreamIdleTimeoutMs(providerId),
+        defaultStreamTotalTimeoutMs(providerId),
+      ),
+    );
+    const latency = Date.now() - started;
 
     if (result.error) {
       const errType = providerErrorType(result.error.status);
       const status = providerErrorStatus(result.error.status);
+      logWarnings(providerId, req.model, result.warnings);
       logger.error(
         "proxy",
         `✗ ${providerId}/${req.model} HTTP ${result.error.status} (${latency}ms)`,
@@ -264,6 +292,8 @@ export class MessageService {
         latencyMs: latency,
         status: "error",
         error: `HTTP ${result.error.status}: ${result.error.message.slice(0, 200)}`,
+        requestPreview: result.requestPreview,
+        warnings: result.warnings,
       });
       return {
         kind: "error",
@@ -290,6 +320,8 @@ export class MessageService {
       status: "ok",
       error: null,
       prompt,
+      requestPreview: result.requestPreview,
+      warnings: result.warnings,
       tokenSavers: tokenSaverStats,
     });
     return streamResultWithCapture(result.stream, logEntryId);
@@ -454,13 +486,20 @@ export class MessageService {
       getSessionConfig(sessionId) ?? this.runtime.currentConfig(),
     );
     const inputTokens = countRequestTokens(providerReq);
-    const result = await provider.streamResponse(providerReq, inputTokens);
+    const result = await safeProviderStream(() =>
+      provider.streamResponse(providerReq, inputTokens, {
+        requestTimeoutMs: fallback.requestTimeoutMs ?? defaultRequestTimeoutMs(providerId),
+        streamTotalTimeoutMs:
+          fallback.streamTotalTimeoutMs ?? defaultStreamTotalTimeoutMs(providerId),
+      }),
+    );
     const latency = Date.now() - started;
 
     if (result.error) {
       const errType = providerErrorType(result.error.status);
       const status = providerErrorStatus(result.error.status);
       const error = `HTTP ${result.error.status}: ${result.error.message.slice(0, 200)}`;
+      logWarnings(providerId, providerModel, result.warnings);
       logger.warn(
         "proxy",
         `↷ ${fallback.slug} ${index + 1}/${fallback.models.length} attempt ${attempt} failed: ${displayTarget} ${error}`,
@@ -474,6 +513,8 @@ export class MessageService {
         latencyMs: latency,
         status: "error",
         error,
+        requestPreview: result.requestPreview,
+        warnings: result.warnings,
       });
       return {
         kind: "error",
@@ -485,10 +526,65 @@ export class MessageService {
       };
     }
 
+    if (!result.stream) {
+      const message = `Model chain ${fallback.name}: ${displayTarget} returned an empty stream`;
+      logger.warn(
+        "proxy",
+        `↷ ${fallback.slug} ${index + 1}/${fallback.models.length} attempt ${attempt} failed: ${displayTarget} empty stream`,
+      );
+      recordRequest(providerId, latency, message);
+      recordSessionRequest(sessionId, {
+        requestedModel: req.model,
+        providerId,
+        providerModel,
+        inputTokens,
+        latencyMs: latency,
+        status: "error",
+        error: message,
+        requestPreview: result.requestPreview,
+        warnings: result.warnings,
+      });
+      return {
+        kind: "error",
+        status: 500,
+        body: anthropicError("api_error", message),
+      };
+    }
+
+    const idleTimeoutMs = streamIdleTimeoutMsFor(providerId, fallback);
+    const probe = await probeStreamForUsefulAnthropicContent(result.stream, idleTimeoutMs);
+    if (!probe.ok) {
+      const status: ErrorStatus = 500;
+      const errType = providerErrorType(status);
+      const message = `Model chain ${fallback.name}: ${displayTarget} stream produced no useful content: ${probe.reason}`;
+      logger.warn(
+        "proxy",
+        `↷ ${fallback.slug} ${index + 1}/${fallback.models.length} attempt ${attempt} failed: ${displayTarget} ${probe.reason}`,
+      );
+      recordRequest(providerId, latency, message);
+      recordSessionRequest(sessionId, {
+        requestedModel: req.model,
+        providerId,
+        providerModel,
+        inputTokens,
+        latencyMs: latency,
+        status: "error",
+        error: message,
+        requestPreview: result.requestPreview,
+        warnings: result.warnings,
+      });
+      return {
+        kind: "error",
+        status,
+        body: anthropicError(errType, message),
+      };
+    }
+
     logger.info(
       "proxy",
       `→ ${fallback.slug} used ${displayTarget} (${inputTokens} input tokens, ${latency}ms to first byte)`,
     );
+    logWarnings(providerId, providerModel, result.warnings);
     recordRequest(providerId, latency, null);
     if (getSessionPrimaryModel(sessionId)?.providerId !== "fallback") {
       setSessionPrimaryModel(sessionId, providerId, providerModel);
@@ -503,9 +599,11 @@ export class MessageService {
       status: "ok",
       error: null,
       prompt,
+      requestPreview: result.requestPreview,
+      warnings: result.warnings,
       tokenSavers: tokenSaverStats,
     });
-    return streamResultWithCapture(result.stream, logEntryId);
+    return streamResultWithCapture(probe.stream, logEntryId);
   }
 
   countTokens(req: MessagesRequest, sessionId?: string | null): number {
@@ -557,6 +655,41 @@ function shouldRetryFallbackResult(result: MessageServiceResult): boolean {
   return result.kind === "error" && (result.status === 429 || result.status === 500);
 }
 
+function streamIdleTimeoutMsFor(providerId: string, fallback: ModelFallbackConfig): number {
+  return fallback.streamIdleTimeoutMs ?? defaultStreamIdleTimeoutMs(providerId);
+}
+
+function logWarnings(
+  providerId: string,
+  providerModel: string,
+  warnings: RequestWarning[] | undefined,
+): void {
+  for (const warning of warnings ?? []) {
+    logger.warn("proxy", `⚠ ${providerId}/${providerModel} ${warning.code}: ${warning.message}`);
+  }
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function safeProviderStream<T extends { error?: { status: number; message: string } }>(
+  call: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await call();
+  } catch (err) {
+    return {
+      error: {
+        status: 502,
+        message: `Provider transport failed: ${formatTransportError(err)}`,
+      },
+    } as T;
+  }
+}
+
+function formatTransportError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-char strip
+  return message.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 1000);
 }

@@ -111,13 +111,14 @@ The next documentation step is a separate official docs site repository. Until t
 - **Full streaming** - provider responses stream back as Anthropic-style SSE events, so Claude Code still feels live.
 - **Model routing** - map Claude tiers like `opus`, `sonnet`, and `haiku` to different providers and models.
 - **All-providers mode** - aggregate enabled providers into one model catalog and choose by model in Claude Code.
-- **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, or runs out of credits.
+- **Model Chains** - create custom fallback chains from active provider models. A chain tries models in priority order, retries transient failures, and moves to the next model when an upstream provider fails, rate limits, idles before emitting useful content, or returns an empty/malformed stream.
 - **Built-in OAuth** - OpenAI Account uses PKCE OAuth. GitHub Copilot and Kilo Code use Device Flow. Cline uses browser authorization. Tokens refresh automatically where supported.
 - **Provider management UI** - search providers, filter active/inactive cards, add custom OpenAI/Anthropic-compatible providers, favorite and reorder frequently used providers, edit manual model lists, and hide noisy discovered models.
+- **Model Chain timeout controls** - tune request, first-token, and total stream limits per chain from Advanced Settings. Defaults are 30s to first useful token and 60s total stream.
 - **Token savers** - Optional RTK-style tool-result compression and Caveman terse-response mode from Settings.
 - **Outbound proxy support** - Configure an HTTP/HTTPS proxy in Settings so the daemon routes external requests (OAuth, provider API calls) through your network proxy. Required for users in regions where providers restrict direct access.
 - **Local model support** - Ollama, LM Studio, and llama.cpp run through the same Claude Code flow.
-- **Request history** - see model, provider, prompt, response preview, input tokens, latency, errors, and session totals.
+- **Request history** - see model, provider, human-readable prompt, sanitized provider request preview, response preview, warnings, input tokens, latency, errors, and session totals.
 - **Parallel terminal sessions** - launch multiple `ccpg --<provider>` terminals at once; each session keeps its own provider/model mode, primary model memory, heartbeat, and live request log.
 - **Encrypted secrets** - API keys, OAuth tokens, and gateway auth token are split out of config and stored with AES-256-GCM.
 - **No telemetry** - no cloud service, no database server, no analytics, no account.
@@ -129,11 +130,13 @@ Ever wonder what Claude Code is actually sending to the API?
 CCPG logs each request Claude Code sends through the gateway, including background calls that do not appear as normal chat messages. In the History UI you can inspect:
 
 - the requested model and routed provider model
-- the serialized prompt, including the first request's system prompt
+- the human-readable serialized prompt, including the first request's system prompt
+- the sanitized provider request preview after routing, token savers, and provider conversion
 - tool-use traffic that appears in the message stream
 - input token count
 - latency to first byte
 - provider errors
+- conversion warnings for provider-specific feature drops/translations
 - captured response text preview
 
 <p align="center">
@@ -190,11 +193,25 @@ Claude Code sees each chain as a single custom model:
 
 Internally, the daemon exposes the model as `anthropic/chain/<slug>`. When a
 request hits that chain, CCPG calls the first target model. If the provider
-returns an API error, rate limit, credit/quota failure, network failure, or any
-other non-successful response, CCPG retries that target and then moves to the
-next target in the chain. The session stays attached to the chain, so Claude
-Code background tier calls continue through the same chain instead of leaking
-back to the first provider.
+returns an API error, rate limit, credit/quota failure, network failure, or a
+200 response whose stream ends, idles, errors, or parses without useful
+Anthropic content before any answer content is emitted, CCPG retries that
+target and then moves to the next target in the chain. Once useful content has
+been emitted, CCPG keeps the stream attached to that provider and does not
+rewind partial answers. The session stays attached to the chain, so Claude Code
+background tier calls continue through the same chain instead of leaking back
+to the first provider.
+
+The Model Chain page also includes an **Economy/Local** preset. It builds a
+Haiku -> DeepSeek -> Ollama-style waterfall from the providers and models you
+already have enabled/configured, skipping unavailable entries instead of
+requiring Anthropic-native Claude.
+
+Each chain has optional **Advanced Settings** for fallback timing. Request
+timeout controls how long CCPG waits for response headers, first-token timeout
+controls how long a target may stall before useful Anthropic content, and total
+stream timeout caps one chain attempt. Empty fields use the defaults: 60s
+request, 30s first token, and 60s total stream.
 
 Launch modes:
 

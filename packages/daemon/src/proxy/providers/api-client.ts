@@ -8,6 +8,8 @@ interface ProviderFetchOptions {
 
 interface ProviderStreamOptions extends ProviderFetchOptions {
   body: unknown;
+  streamIdleTimeoutMs?: number;
+  streamTotalTimeoutMs?: number;
 }
 
 interface ProviderModel {
@@ -34,7 +36,7 @@ export async function postProviderStream(
     });
   } catch (err) {
     if (timeout.didAbort()) return { error: timeoutError() };
-    throw err;
+    return { error: networkError(err) };
   } finally {
     timeout.clear();
   }
@@ -43,7 +45,12 @@ export async function postProviderStream(
   if (!response.body)
     return { error: { status: 500, message: "Provider returned an empty response body" } };
 
-  return { body: response.body };
+  return {
+    body: withStreamTimeouts(response.body, {
+      idleTimeoutMs: options.streamIdleTimeoutMs,
+      totalTimeoutMs: options.streamTotalTimeoutMs,
+    }),
+  };
 }
 
 export async function fetchProviderJson<T>(options: ProviderFetchOptions): Promise<T> {
@@ -56,7 +63,8 @@ export async function fetchProviderJson<T>(options: ProviderFetchOptions): Promi
       const error = timeoutError();
       throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message}`);
     }
-    throw err;
+    const error = networkError(err);
+    throw new Error(`HTTP ${error.status} at ${options.url}: ${error.message}`);
   } finally {
     timeout.clear();
   }
@@ -82,7 +90,7 @@ export function mapProviderModels(
 
 async function readProviderError(response: Response): Promise<{ status: number; message: string }> {
   const message = await response.text().catch(() => "");
-  return { status: response.status, message };
+  return { status: response.status, message: sanitizeProviderMessage(message) };
 }
 
 function createFetchTimeout(timeoutMs: number | undefined): {
@@ -103,4 +111,104 @@ function createFetchTimeout(timeoutMs: number | undefined): {
 
 function timeoutError(): { status: number; message: string } {
   return { status: 504, message: "Provider request timed out" };
+}
+
+function networkError(err: unknown): { status: number; message: string } {
+  return { status: 502, message: `Provider network error: ${formatError(err)}` };
+}
+
+function formatError(err: unknown): string {
+  if (err instanceof Error) return sanitizeProviderMessage(err.message);
+  return sanitizeProviderMessage(String(err));
+}
+
+function sanitizeProviderMessage(message: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-char strip
+  return message.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 4000);
+}
+
+function withStreamTimeouts(
+  body: ReadableStream<Uint8Array>,
+  options: { idleTimeoutMs?: number; totalTimeoutMs?: number },
+): ReadableStream<Uint8Array> {
+  const { idleTimeoutMs, totalTimeoutMs } = options;
+  if (!idleTimeoutMs && !totalTimeoutMs) return body;
+
+  const reader = body.getReader();
+  let idleTimer: NodeJS.Timeout | null = null;
+  let totalTimer: NodeJS.Timeout | null = null;
+  let closed = false;
+
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      const fail = (message: string) => {
+        if (closed) return;
+        closed = true;
+        clearTimers();
+        reader.cancel().catch(() => {});
+        controller.error(new Error(message));
+      };
+
+      const resetIdleTimer = () => {
+        if (!idleTimeoutMs) return;
+        if (idleTimer) clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          fail(`Provider stream idle timeout after ${idleTimeoutMs}ms`);
+        }, idleTimeoutMs);
+      };
+
+      const clearTimers = () => {
+        if (idleTimer) {
+          clearTimeout(idleTimer);
+          idleTimer = null;
+        }
+        if (totalTimer) {
+          clearTimeout(totalTimer);
+          totalTimer = null;
+        }
+      };
+
+      if (totalTimeoutMs) {
+        totalTimer = setTimeout(() => {
+          fail(`Provider stream total timeout after ${totalTimeoutMs}ms`);
+        }, totalTimeoutMs);
+      }
+
+      const pump = async () => {
+        resetIdleTimer();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (closed) return;
+            resetIdleTimer();
+            if (done) {
+              closed = true;
+              clearTimers();
+              controller.close();
+              return;
+            }
+            controller.enqueue(value);
+          }
+        } catch (err) {
+          if (closed) return;
+          closed = true;
+          clearTimers();
+          controller.error(err);
+        }
+      };
+
+      pump().catch((err) => {
+        if (closed) return;
+        closed = true;
+        clearTimers();
+        controller.error(err);
+      });
+    },
+    cancel(reason) {
+      closed = true;
+      if (idleTimer) clearTimeout(idleTimer);
+      if (totalTimer) clearTimeout(totalTimer);
+      return reader.cancel(reason);
+    },
+  });
 }

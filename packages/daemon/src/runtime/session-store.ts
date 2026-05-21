@@ -4,8 +4,6 @@ import { appendPrivateFile, writePrivateFile } from "../core/files/private-file.
 import { normalizeSessionTotals } from "./session-stats.js";
 import type { SessionRecord } from "./session-types.js";
 
-const CURRENT_PATH = getCurrentSessionPath();
-const ARCHIVE_PATH = getSessionArchivePath();
 const MAX_SESSIONS = 200;
 
 export function ensureSessionDir(): void {
@@ -14,47 +12,50 @@ export function ensureSessionDir(): void {
 }
 
 export function currentSessionExists(): boolean {
-  return existsSync(CURRENT_PATH);
+  return existsSync(getCurrentSessionPath());
 }
 
 export function readCurrentSession(): SessionRecord {
-  return JSON.parse(readFileSync(CURRENT_PATH, "utf-8")) as SessionRecord;
+  return JSON.parse(readFileSync(getCurrentSessionPath(), "utf-8")) as SessionRecord;
 }
 
 export function readCurrentSessions(): SessionRecord[] {
-  const parsed = JSON.parse(readFileSync(CURRENT_PATH, "utf-8")) as SessionRecord | SessionRecord[];
+  const parsed = JSON.parse(readFileSync(getCurrentSessionPath(), "utf-8")) as
+    | SessionRecord
+    | SessionRecord[];
   return Array.isArray(parsed) ? parsed : [parsed];
 }
 
 export function writeCurrentSession(session: SessionRecord): void {
-  writePrivateFile(CURRENT_PATH, JSON.stringify(session));
+  writePrivateFile(getCurrentSessionPath(), JSON.stringify(session));
 }
 
 export function writeCurrentSessions(sessions: SessionRecord[]): void {
-  writePrivateFile(CURRENT_PATH, JSON.stringify(sessions));
+  writePrivateFile(getCurrentSessionPath(), JSON.stringify(sessions));
 }
 
 export function removeCurrentSession(): void {
   try {
-    unlinkSync(CURRENT_PATH);
+    unlinkSync(getCurrentSessionPath());
   } catch {}
 }
 
 export function archiveSession(session: SessionRecord): void {
   ensureSessionDir();
-  appendPrivateFile(ARCHIVE_PATH, `${JSON.stringify(session)}\n`);
+  appendPrivateFile(getSessionArchivePath(), `${JSON.stringify(session)}\n`);
   trimArchivedSessions();
 }
 
 export function clearArchivedSessions(): void {
   ensureSessionDir();
-  writePrivateFile(ARCHIVE_PATH, "");
+  writePrivateFile(getSessionArchivePath(), "");
 }
 
 export function deleteArchivedSession(id: string): boolean {
-  if (!existsSync(ARCHIVE_PATH)) return false;
+  const path = getSessionArchivePath();
+  if (!existsSync(path)) return false;
   try {
-    const lines = readFileSync(ARCHIVE_PATH, "utf-8").split("\n").filter(Boolean);
+    const lines = readFileSync(path, "utf-8").split("\n").filter(Boolean);
     const filtered = lines.filter((line) => {
       try {
         return (JSON.parse(line) as SessionRecord).id !== id;
@@ -63,7 +64,7 @@ export function deleteArchivedSession(id: string): boolean {
       }
     });
     if (filtered.length === lines.length) return false;
-    writePrivateFile(ARCHIVE_PATH, filtered.length ? `${filtered.join("\n")}\n` : "");
+    writePrivateFile(path, filtered.length ? `${filtered.join("\n")}\n` : "");
     return true;
   } catch {
     return false;
@@ -71,9 +72,10 @@ export function deleteArchivedSession(id: string): boolean {
 }
 
 export function listArchivedSessions(): SessionRecord[] {
-  if (!existsSync(ARCHIVE_PATH)) return [];
+  const path = getSessionArchivePath();
+  if (!existsSync(path)) return [];
   try {
-    const raw = readFileSync(ARCHIVE_PATH, "utf-8");
+    const raw = readFileSync(path, "utf-8");
     const seen = new Set<string>();
     return raw
       .split("\n")
@@ -93,9 +95,10 @@ export function listArchivedSessions(): SessionRecord[] {
 
 function trimArchivedSessions(): void {
   try {
-    const lines = readFileSync(ARCHIVE_PATH, "utf-8").split("\n").filter(Boolean);
+    const path = getSessionArchivePath();
+    const lines = readFileSync(path, "utf-8").split("\n").filter(Boolean);
     if (lines.length > MAX_SESSIONS) {
-      writePrivateFile(ARCHIVE_PATH, `${lines.slice(-MAX_SESSIONS).join("\n")}\n`);
+      writePrivateFile(path, `${lines.slice(-MAX_SESSIONS).join("\n")}\n`);
     }
   } catch {}
 }

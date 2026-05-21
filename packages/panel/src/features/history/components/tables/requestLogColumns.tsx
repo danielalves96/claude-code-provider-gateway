@@ -73,6 +73,18 @@ export function useRequestLogColumns(): TableColumnsType<RequestLogEntry> {
       render: (_, entry) => <YesNoTag active={!!entry.response} />,
     },
     {
+      title: "Preview",
+      key: "has_preview",
+      width: 85,
+      render: (_, entry) => <YesNoTag active={!!entry.requestPreview} />,
+    },
+    {
+      title: "Warnings",
+      key: "warnings",
+      width: 95,
+      render: (_, entry) => <WarningsCell entry={entry} />,
+    },
+    {
       title: "User Input",
       key: "has_user",
       width: 95,
@@ -86,6 +98,18 @@ export function useRequestLogColumns(): TableColumnsType<RequestLogEntry> {
       render: (value: string | null) => <ErrorText value={value} />,
     },
   ];
+}
+
+function WarningsCell({ entry }: { entry: RequestLogEntry }) {
+  const warnings = entry.warnings ?? [];
+  if (warnings.length === 0) return <EmptyCell />;
+  return (
+    <Tooltip title={warnings.map((warning) => warning.message).join("\n")}>
+      <Tag color="warning" bordered={false} style={{ fontFamily: "monospace", margin: 0 }}>
+        {warnings.length}
+      </Tag>
+    </Tooltip>
+  );
 }
 
 function ModelText({ value, color }: { value: string; color?: string }) {
