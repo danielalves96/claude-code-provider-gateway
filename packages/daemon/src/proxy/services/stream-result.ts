@@ -80,6 +80,9 @@ export async function probeStreamForUsefulAnthropicContent(
 
       const { done, value } = read.result;
       if (done) {
+        const drained = drainCompleteAnthropicPayloads(residual, true);
+        const finalResult = await probePayloads(drained.payloads, buffered, reader);
+        if (finalResult) return finalResult;
         return {
           ok: false,
           reason: "Provider stream ended without useful Anthropic content",
@@ -90,13 +93,8 @@ export async function probeStreamForUsefulAnthropicContent(
       buffered.push(value);
       const drained = drainCompleteAnthropicPayloads(residual + value);
       residual = drained.residual;
-      for (const payload of drained.payloads) {
-        const earlyError = findAnthropicStreamError(payload);
-        if (earlyError) return { ok: false, reason: earlyError, timedOut: false };
-        if (hasUsefulAnthropicContent(payload)) {
-          return { ok: true, stream: replayBufferedStream(buffered, reader) };
-        }
-      }
+      const probeResult = await probePayloads(drained.payloads, buffered, reader);
+      if (probeResult) return probeResult;
     }
   } catch (err) {
     return {
@@ -105,6 +103,24 @@ export async function probeStreamForUsefulAnthropicContent(
       timedOut: false,
     };
   }
+}
+
+async function probePayloads(
+  payloads: string[],
+  buffered: string[],
+  reader: ReadableStreamDefaultReader<string>,
+): Promise<UsefulStreamProbeResult | null> {
+  for (const payload of payloads) {
+    const earlyError = findAnthropicStreamError(payload);
+    if (earlyError) {
+      await reader.cancel(earlyError).catch(() => {});
+      return { ok: false, reason: earlyError, timedOut: false };
+    }
+    if (hasUsefulAnthropicContent(payload)) {
+      return { ok: true, stream: replayBufferedStream(buffered, reader) };
+    }
+  }
+  return null;
 }
 
 function updateCapturedResponse(logEntryId: string, getCapturedText: () => string): void {
@@ -189,7 +205,10 @@ function findAnthropicStreamError(chunk: string): string | null {
   return null;
 }
 
-function drainCompleteAnthropicPayloads(buffer: string): { payloads: string[]; residual: string } {
+function drainCompleteAnthropicPayloads(
+  buffer: string,
+  flushResidual = false,
+): { payloads: string[]; residual: string } {
   const payloads: string[] = [];
   let searchFrom = 0;
   let eventStart = 0;
@@ -208,10 +227,16 @@ function drainCompleteAnthropicPayloads(buffer: string): { payloads: string[]; r
   }
 
   if (lastEventEnd > 0) {
-    return { payloads, residual: buffer.slice(lastEventEnd) };
+    const residual = buffer.slice(lastEventEnd);
+    if (flushResidual) payloads.push(...parseSseEventData(residual));
+    return { payloads, residual: flushResidual ? "" : residual };
   }
 
   const trimmed = buffer.trim();
+  if (flushResidual) {
+    payloads.push(...parseSseEventData(buffer));
+    if (payloads.length > 0) return { payloads, residual: "" };
+  }
   if (!trimmed.startsWith("{")) return { payloads, residual: buffer };
   if (!parseJsonObject(trimmed)) return { payloads, residual: buffer };
   payloads.push(trimmed);
