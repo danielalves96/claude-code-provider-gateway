@@ -54,6 +54,54 @@ export function streamResultWithCapture(
   };
 }
 
+export type UsefulStreamProbeResult =
+  | { ok: true; stream: ReadableStream<string> }
+  | { ok: false; reason: string; timedOut: boolean };
+
+export async function probeStreamForUsefulAnthropicContent(
+  stream: ReadableStream<string>,
+  idleTimeoutMs: number,
+): Promise<UsefulStreamProbeResult> {
+  const reader = stream.getReader();
+  const buffered: string[] = [];
+
+  try {
+    while (true) {
+      const read = await readWithTimeout(reader, idleTimeoutMs);
+      if (read.timedOut) {
+        reader.cancel().catch(() => {});
+        return {
+          ok: false,
+          reason: `Provider stream idle timeout before useful content after ${idleTimeoutMs}ms`,
+          timedOut: true,
+        };
+      }
+
+      const { done, value } = read.result;
+      if (done) {
+        return {
+          ok: false,
+          reason: "Provider stream ended without useful Anthropic content",
+          timedOut: false,
+        };
+      }
+
+      buffered.push(value);
+      const earlyError = findAnthropicStreamError(value);
+      if (earlyError) return { ok: false, reason: earlyError, timedOut: false };
+      if (hasUsefulAnthropicContent(value)) {
+        return { ok: true, stream: replayBufferedStream(buffered, reader) };
+      }
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      reason: `Provider stream failed before useful content: ${formatStreamError(err)}`,
+      timedOut: false,
+    };
+  }
+}
+
 function updateCapturedResponse(logEntryId: string, getCapturedText: () => string): void {
   updateSessionRequestResponse(logEntryId, getCapturedText().slice(0, RESPONSE_CAPTURE_MAX));
 }
@@ -64,4 +112,116 @@ function emptyStreamError(): MessageServiceResult {
     status: 500,
     body: anthropicError("api_error", "Provider returned an empty stream"),
   };
+}
+
+async function readWithTimeout(
+  reader: ReadableStreamDefaultReader<string>,
+  timeoutMs: number,
+): Promise<
+  { timedOut: false; result: ReadableStreamReadResult<string> } | { timedOut: true; result?: never }
+> {
+  let timer: NodeJS.Timeout | null = null;
+  try {
+    return await Promise.race([
+      reader.read().then((result) => ({ timedOut: false as const, result })),
+      new Promise<{ timedOut: true }>((resolve) => {
+        timer = setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function replayBufferedStream(
+  buffered: string[],
+  reader: ReadableStreamDefaultReader<string>,
+): ReadableStream<string> {
+  let offset = 0;
+  return new ReadableStream<string>({
+    async pull(controller) {
+      if (offset < buffered.length) {
+        controller.enqueue(buffered[offset++]);
+        return;
+      }
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(value);
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}
+
+function hasUsefulAnthropicContent(chunk: string): boolean {
+  for (const data of parseSseDataLines(chunk)) {
+    const evt = parseJsonObject(data);
+    if (!evt) continue;
+    if (evt.type === "content_block_start" && isUsefulContentBlock(evt.content_block)) return true;
+    if (evt.type === "content_block_delta" && isUsefulDelta(evt.delta)) return true;
+  }
+  return false;
+}
+
+function findAnthropicStreamError(chunk: string): string | null {
+  for (const data of parseSseDataLines(chunk)) {
+    const evt = parseJsonObject(data);
+    if (!evt || evt.type !== "error") continue;
+    const error = evt.error as Record<string, unknown> | undefined;
+    const type = typeof error?.type === "string" ? error.type : "api_error";
+    const message =
+      typeof error?.message === "string" ? error.message : "Provider emitted a stream error";
+    return `${type}: ${message}`;
+  }
+  return null;
+}
+
+function parseSseDataLines(chunk: string): string[] {
+  const data: string[] = [];
+  for (const line of chunk.split("\n")) {
+    if (!line.startsWith("data: ")) continue;
+    const value = line.slice(6).trim();
+    if (value && value !== "[DONE]") data.push(value);
+  }
+  return data;
+}
+
+function parseJsonObject(value: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isUsefulContentBlock(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const block = value as Record<string, unknown>;
+  if (block.type === "tool_use") return true;
+  if (block.type === "text") return typeof block.text === "string" && block.text.length > 0;
+  if (block.type === "thinking") {
+    return typeof block.thinking === "string" && block.thinking.length > 0;
+  }
+  return false;
+}
+
+function isUsefulDelta(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const delta = value as Record<string, unknown>;
+  return ["text", "partial_json", "thinking"].some(
+    (key) => typeof delta[key] === "string" && (delta[key] as string).length > 0,
+  );
+}
+
+function formatStreamError(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }

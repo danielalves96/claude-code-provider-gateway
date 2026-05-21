@@ -198,7 +198,11 @@ export abstract class BaseProvider {
   abstract get id(): string;           // Provider identifier (e.g., "openrouter")
   abstract get label(): string;        // Human-readable name (e.g., "OpenRouter")
 
-  abstract streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult>;
+  abstract streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult>;
   abstract listModels(): Promise<ModelInfo[]>;
 }
 ```
@@ -214,7 +218,9 @@ export abstract class BaseProvider {
 | `requiresApiKey()` | Returns `true` by default |
 | `hasApiKey()` | Checks if `config.apiKey` is non-empty |
 | `missingApiKeyMessage()` | Human-readable message when no API key is configured |
-| `requestTimeoutMs()` | Returns `config.requestTimeoutMs` if set |
+| `requestTimeoutMs(options?)` | Uses per-call overrides first, then provider config, then the default request timeout |
+| `streamIdleTimeoutMs(options?)` | Uses per-call overrides first, then provider config; Model Chains handle first-token fallback probing separately |
+| `streamTotalTimeoutMs(options?)` | Uses per-call overrides first, then provider config |
 
 **Provided result type:**
 
@@ -542,7 +548,7 @@ The daemon ships with a built-in provider catalog and also supports user-created
 **`api-client.ts`**:
 - `postProviderStream()` — POST request returning a `ReadableStream<Uint8Array>`, used for streaming inference
 - `fetchProviderJson()` — GET request returning parsed JSON, used for model listing
-- Both support timeouts via `AbortController`
+- Both support request and stream timeouts via `AbortController`
 
 ## Session System
 

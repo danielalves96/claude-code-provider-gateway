@@ -1,12 +1,14 @@
-import { PlusOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Col, Empty, Flex, Row, theme } from "antd";
+import { PlusOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Col, Empty, Flex, Row, Tooltip, theme } from "antd";
 import { useState } from "react";
 import { PageHeader } from "../../../../shared/components/PageHeader.js";
+import type { ModelFallbackConfig } from "../../domain/types.js";
 import { normalizeSlug } from "../../domain/utils.js";
 import { useChainDraft } from "../../hooks/useChainDraft.js";
 import { useModelChainPage } from "../../hooks/useModelChainPage.js";
 import { ChainCard } from "../card/ChainCard.js";
 import { ChainModal } from "../modal/ChainModal.js";
+import { EconomyPresetModal } from "../modal/EconomyPresetModal.js";
 
 const CHAIN_ALERT_KEY = "ccpg_dismiss_chain_alert";
 
@@ -16,6 +18,7 @@ export default function ModelChainPage() {
     chains,
     options,
     providerSlugs,
+    enabledProviderIds,
     loaded,
     saving,
     persist,
@@ -28,6 +31,13 @@ export default function ModelChainPage() {
     providerSlugs,
   );
   const [showAlert, setShowAlert] = useState(() => !isChainAlertDismissed());
+  const [economyModalOpen, setEconomyModalOpen] = useState(false);
+  const economyExists = chains.some((chain) => chain.slug === "economy-local");
+
+  const applyEconomyPreset = async (chain: ModelFallbackConfig) => {
+    setEconomyModalOpen(false);
+    await persist([chain, ...chains.filter((c) => c.slug !== chain.slug)]);
+  };
 
   return (
     <Flex vertical gap={token.paddingLG} style={{ paddingBottom: token.paddingLG * 2 }}>
@@ -36,9 +46,22 @@ export default function ModelChainPage() {
           title="Model Chain"
           description="Create custom Claude-discoverable models that try providers in your priority order."
         />
-        <Button type="primary" icon={<PlusOutlined />} onClick={openNew}>
-          New chain
-        </Button>
+        <Flex gap={token.paddingXS} wrap>
+          {!economyExists && (
+            <Tooltip title="Create a cost-effective waterfall chain (Fast → Mid-tier → Local) from your available providers.">
+              <Button
+                icon={<ThunderboltOutlined />}
+                disabled={!loaded || saving}
+                onClick={() => setEconomyModalOpen(true)}
+              >
+                Economy/Local
+              </Button>
+            </Tooltip>
+          )}
+          <Button type="primary" icon={<PlusOutlined />} onClick={openNew}>
+            New chain
+          </Button>
+        </Flex>
       </Flex>
 
       {showAlert && (
@@ -93,6 +116,16 @@ export default function ModelChainPage() {
           ))}
         </Row>
       )}
+
+      <EconomyPresetModal
+        open={economyModalOpen}
+        options={options}
+        enabledProviderIds={enabledProviderIds}
+        chains={chains}
+        providerSlugs={providerSlugs}
+        onApply={applyEconomyPreset}
+        onCancel={() => setEconomyModalOpen(false)}
+      />
 
       <ChainModal
         open={editing !== null}

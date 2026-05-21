@@ -9,6 +9,7 @@ export function useModelChainPage() {
   const [chains, setChains] = useState<ModelFallbackConfig[]>([]);
   const [options, setOptions] = useState<RoutingOption[]>([]);
   const [providerSlugs, setProviderSlugs] = useState<string[]>([]);
+  const [enabledProviderIds, setEnabledProviderIds] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -20,6 +21,7 @@ export function useModelChainPage() {
         setChains(config.modelFallbacks ?? []);
         setOptions(opts);
         setProviderSlugs(getProviderSlugs(config.providers));
+        setEnabledProviderIds(getEnabledProviderIds(config.providers));
         setLoadError(null);
       })
       .catch((error) => {
@@ -73,6 +75,7 @@ export function useModelChainPage() {
     chains,
     options,
     providerSlugs,
+    enabledProviderIds,
     loaded,
     loadError,
     saving,
@@ -93,4 +96,12 @@ function getProviderSlugs(
       ]),
     ),
   ).filter(Boolean);
+}
+
+function getEnabledProviderIds(
+  providers: Awaited<ReturnType<typeof modelChainService.getConfig>>["providers"],
+) {
+  return Object.entries(providers ?? {})
+    .filter(([, provider]) => provider.enabled)
+    .map(([id]) => id);
 }

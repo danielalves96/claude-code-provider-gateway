@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchProviderJson } from "./api-client.js";
+import { fetchProviderJson, postProviderStream } from "./api-client.js";
 
 test("fetchProviderJson keeps timeout disabled by default", async () => {
   let signal: AbortSignal | undefined;
@@ -55,6 +55,56 @@ test("fetchProviderJson converts configured timeout into controlled error", asyn
       fetchProviderJson({ url: "https://example.test/models", headers: {}, timeoutMs: 1 }),
       /HTTP 504 at https:\/\/example\.test\/models: Provider request timed out/,
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("postProviderStream errors when total stream timeout is reached", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("data: {}\n\n"));
+        },
+      }),
+      { status: 200 },
+    );
+
+  try {
+    const result = await postProviderStream({
+      url: "https://example.test/messages",
+      headers: {},
+      body: {},
+      streamTotalTimeoutMs: 1,
+    });
+    assert.ok("body" in result);
+    const reader = result.body.getReader();
+    await reader.read();
+    await assert.rejects(reader.read(), /Provider stream total timeout/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("postProviderStream converts network failures into controlled provider errors", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new TypeError("connect ECONNREFUSED 127.0.0.1:1234");
+  };
+
+  try {
+    const result = await postProviderStream({
+      url: "http://127.0.0.1:1234/messages",
+      headers: {},
+      body: {},
+    });
+
+    assert.ok("error" in result);
+    assert.equal(result.error.status, 502);
+    assert.match(result.error.message, /Provider network error/);
+    assert.match(result.error.message, /ECONNREFUSED/);
   } finally {
     globalThis.fetch = originalFetch;
   }

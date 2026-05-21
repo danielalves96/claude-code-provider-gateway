@@ -3,7 +3,7 @@ import { saveConfig } from "../../config/index.js";
 import type { Config, ProviderConfig } from "../../config/schema.js";
 import type { MessagesRequest, ModelInfo } from "../../core/anthropic/types.js";
 import { postProviderStream } from "./api-client.js";
-import { BaseProvider, type StreamResult } from "./base.js";
+import { BaseProvider, type ProviderRequestOptions, type StreamResult } from "./base.js";
 import { stripGatewayProviderPrefix } from "./model-prefix.js";
 import { isOAuthReady, refreshAccessToken, shouldRefresh } from "./openai-account-auth.js";
 import { listOpenAIAccountModels, toModelInfo } from "./openai-account-catalog.js";
@@ -25,7 +25,11 @@ export class OpenAIAccountProvider extends BaseProvider {
     return "OpenAI Account";
   }
 
-  async streamResponse(req: MessagesRequest, inputTokens: number): Promise<StreamResult> {
+  async streamResponse(
+    req: MessagesRequest,
+    inputTokens: number,
+    options?: ProviderRequestOptions,
+  ): Promise<StreamResult> {
     try {
       await this.ensureFreshToken();
     } catch (err) {
@@ -37,7 +41,9 @@ export class OpenAIAccountProvider extends BaseProvider {
       url: `${this.baseUrl()}/codex/responses`,
       headers: this.codexHeaders(),
       body: await buildOpenAIAccountResponsesRequest(req, model),
-      timeoutMs: this.requestTimeoutMs(),
+      timeoutMs: this.requestTimeoutMs(options),
+      streamIdleTimeoutMs: this.streamIdleTimeoutMs(options),
+      streamTotalTimeoutMs: this.streamTotalTimeoutMs(options),
     });
 
     if ("error" in result) return { error: result.error };

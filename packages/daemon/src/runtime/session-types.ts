@@ -33,8 +33,24 @@ export interface SessionRequestLogEntry {
   status: "ok" | "error";
   error: string | null;
   prompt?: string;
+  requestPreview?: ProviderRequestPreview;
+  warnings?: RequestWarning[];
   response?: string;
   tokenSavers?: TokenSaverStats;
+}
+
+export interface ProviderRequestPreview {
+  transport: "anthropic_messages" | "openai_chat" | "anthropic_native";
+  method: "POST";
+  url: string;
+  headers: Record<string, string>;
+  body: unknown;
+}
+
+export interface RequestWarning {
+  code: string;
+  message: string;
+  path?: string;
 }
 
 export interface TokenSaverStats {

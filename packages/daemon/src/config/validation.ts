@@ -131,6 +131,9 @@ function normalizeModelFallbacks(
       enabled: raw.enabled !== false && models.length >= 2,
       routingStrategy: normalizeChainRoutingStrategy(raw.routingStrategy),
       primaryAttempts: normalizeChainPrimaryAttempts(raw.primaryAttempts),
+      requestTimeoutMs: optionalPositiveNumber(raw.requestTimeoutMs),
+      streamIdleTimeoutMs: optionalPositiveNumber(raw.streamIdleTimeoutMs),
+      streamTotalTimeoutMs: optionalPositiveNumber(raw.streamTotalTimeoutMs),
     });
   }
   return out;
@@ -198,6 +201,8 @@ function normalizeProviders(
         rateWindow: numberOrDefault(provider.rateWindow, fallback.rateWindow),
         maxConcurrency: numberOrDefault(provider.maxConcurrency, fallback.maxConcurrency),
         requestTimeoutMs: optionalPositiveNumber(provider.requestTimeoutMs),
+        streamIdleTimeoutMs: optionalPositiveNumber(provider.streamIdleTimeoutMs),
+        streamTotalTimeoutMs: optionalPositiveNumber(provider.streamTotalTimeoutMs),
         custom: normalizeCustomProvider(provider.custom, fallback.custom, id),
       };
       return out;

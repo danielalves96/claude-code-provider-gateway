@@ -7,6 +7,9 @@ export type DraftChain = Pick<ModelFallbackConfig, "id" | "name" | "slug" | "ena
   models: ModelFallbackConfig["models"];
   routingStrategy: NonNullable<ModelFallbackConfig["routingStrategy"]>;
   primaryAttempts: NonNullable<ModelFallbackConfig["primaryAttempts"]>;
+  requestTimeoutMs?: ModelFallbackConfig["requestTimeoutMs"];
+  streamIdleTimeoutMs?: ModelFallbackConfig["streamIdleTimeoutMs"];
+  streamTotalTimeoutMs?: ModelFallbackConfig["streamTotalTimeoutMs"];
 };
 
 export const emptyDraft = (): DraftChain => ({
