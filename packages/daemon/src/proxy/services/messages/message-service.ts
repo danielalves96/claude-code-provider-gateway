@@ -1,6 +1,7 @@
 import { countRequestTokens } from "../../../core/anthropic/tokens.js";
 import type { MessagesRequest } from "../../../core/anthropic/types.js";
 import { logger } from "../../../observability/log.js";
+import { recordRequest } from "../../../runtime/provider-stats.js";
 import {
   getSessionConfig,
   getSessionPrimaryModel,
@@ -8,24 +9,27 @@ import {
   recordSessionRequest,
   setSessionPrimaryModel,
 } from "../../../runtime/sessions/index.js";
-import { recordRequest } from "../../../runtime/provider-stats.js";
-import { anthropicError, providerErrorStatus, providerErrorType } from "../../core/index.js";
+import {
+  anthropicError,
+  providerErrorStatus,
+  providerErrorType,
+  tryOptimize,
+} from "../../core/index.js";
 import { resolveModel } from "../../model-router.js";
-import { tryOptimize } from "../../core/index.js";
 import { getAnthropicCredentialsStatus } from "../../providers/index.js";
 import type { ProxyRuntime } from "../../runtime.js";
 import { cloneMessagesRequest } from "../../token-savers/index.js";
 import { streamFallback } from "../fallback/fallback-stream.js";
 import { shouldUseNativeClaudePassthrough } from "../native/native-claude-routing.js";
 import { streamNativeClaude } from "../native/native-stream.js";
-import { limitedProviderStream, logWarnings } from "../streaming/provider-stream.js";
 import { serializePrompt } from "../shared/prompt-serializer.js";
-import { streamResult, streamResultWithCapture } from "../streaming/stream-result.js";
 import { applyTokenSavers } from "../shared/token-saver-pipeline.js";
 import type { MessageServiceResult } from "../shared/types.js";
+import { limitedProviderStream, logWarnings } from "../streaming/provider-stream.js";
+import { streamResult, streamResultWithCapture } from "../streaming/stream-result.js";
 
-export type { MessageServiceResult } from "../shared/types.js";
 export { shouldUseNativeClaudePassthrough } from "../native/native-claude-routing.js";
+export type { MessageServiceResult } from "../shared/types.js";
 
 export class MessageService {
   constructor(private readonly runtime: ProxyRuntime) {}
@@ -67,7 +71,14 @@ export class MessageService {
     const resolved = resolveModel(req.model, config);
     if (resolved.source === "fallback") {
       setSessionPrimaryModel(sessionId, "fallback", resolved.fallback.slug);
-      return await streamFallback(this.runtime, req, resolved.fallback, started, sessionId, abortSignal);
+      return await streamFallback(
+        this.runtime,
+        req,
+        resolved.fallback,
+        started,
+        sessionId,
+        abortSignal,
+      );
     }
 
     let { providerId, providerModel } = resolved;
@@ -93,7 +104,14 @@ export class MessageService {
               candidate.models.length > 0,
           );
           if (fallback) {
-            return await streamFallback(this.runtime, req, fallback, started, sessionId, abortSignal);
+            return await streamFallback(
+              this.runtime,
+              req,
+              fallback,
+              started,
+              sessionId,
+              abortSignal,
+            );
           }
           const message = `Model chain "${primary.providerModel}" is not enabled or configured.`;
           logger.error("proxy", `✗ ${req.model} → fallback/${primary.providerModel} unavailable`);

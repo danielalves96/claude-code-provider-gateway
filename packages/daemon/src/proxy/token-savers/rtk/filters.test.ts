@@ -51,12 +51,9 @@ test("autoDetectFilter detects grep output", () => {
 });
 
 test("autoDetectFilter detects find output (path-like lines)", () => {
-  const input = [
-    "./src/foo.ts",
-    "./src/bar.ts",
-    "./src/baz/index.ts",
-    "./tests/foo.test.ts",
-  ].join("\n");
+  const input = ["./src/foo.ts", "./src/bar.ts", "./src/baz/index.ts", "./tests/foo.test.ts"].join(
+    "\n",
+  );
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);
   assert.equal(filter?.filterName, "find");
@@ -120,7 +117,8 @@ test("git-diff filter truncates large hunks", () => {
 // --- git-status filter ---
 
 test("git-status filter summarizes staged files", () => {
-  const input = "On branch main\nChanges to be committed:\n  modified:   src/foo.ts\n  new file:   src/bar.ts\n";
+  const input =
+    "On branch main\nChanges to be committed:\n  modified:   src/foo.ts\n  new file:   src/bar.ts\n";
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);
   const result = filter!(input);
@@ -142,7 +140,9 @@ test("git-status filter handles porcelain format", () => {
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);
   const result = filter!(input);
-  assert.ok(result.includes("staged.ts") || result.includes("Staged") || result.includes("Modified"));
+  assert.ok(
+    result.includes("staged.ts") || result.includes("Staged") || result.includes("Modified"),
+  );
 });
 
 test("git-status filter shows untracked files", () => {
@@ -156,11 +156,7 @@ test("git-status filter shows untracked files", () => {
 // --- grep filter ---
 
 test("grep filter groups matches by file", () => {
-  const input = [
-    "src/a.ts:10:foo bar",
-    "src/a.ts:20:baz qux",
-    "src/b.ts:5:hello",
-  ].join("\n");
+  const input = ["src/a.ts:10:foo bar", "src/a.ts:20:baz qux", "src/b.ts:5:hello"].join("\n");
 
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);
@@ -191,11 +187,7 @@ test("grep filter returns input unchanged when no matches found", () => {
 // --- find filter ---
 
 test("find filter groups files by directory", () => {
-  const input = [
-    "./src/a.ts",
-    "./src/b.ts",
-    "./tests/a.test.ts",
-  ].join("\n");
+  const input = ["./src/a.ts", "./src/b.ts", "./tests/a.test.ts"].join("\n");
 
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);
@@ -258,7 +250,13 @@ test("smart-truncate returns unchanged content below threshold", () => {
 // --- dedup-log filter ---
 
 test("autoDetectFilter detects dedup-log for repeated lines", () => {
-  const lines = ["Error: connection refused", "Error: connection refused", "Error: connection refused", "Retrying...", "Retrying..."];
+  const lines = [
+    "Error: connection refused",
+    "Error: connection refused",
+    "Error: connection refused",
+    "Retrying...",
+    "Retrying...",
+  ];
   const input = lines.join("\n");
   const filter = autoDetectFilter(input);
   assert.ok(filter !== null);

@@ -12,11 +12,15 @@ import {
   sseMessageStart,
   sseMessageStop,
 } from "../../../core/sse/writer.js";
-import { endAllSessions, listCurrentSessions, startSession } from "../../../runtime/sessions/index.js";
+import {
+  endAllSessions,
+  listCurrentSessions,
+  startSession,
+} from "../../../runtime/sessions/index.js";
 import type { ProviderRequestOptions, StreamResult } from "../../providers/index.js";
 import { ProxyRuntime } from "../../runtime.js";
-import { MessageService, shouldUseNativeClaudePassthrough } from "./message-service.js";
 import { resetProviderLimitsForTest } from "../streaming/provider-limiter.js";
+import { MessageService, shouldUseNativeClaudePassthrough } from "./message-service.js";
 
 afterEach(() => {
   endAllSessions();

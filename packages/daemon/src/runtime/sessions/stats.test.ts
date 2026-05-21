@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sessionTotals, normalizeSessionTotals, applyRequestToSessionStats } from "./stats.js";
+import { applyRequestToSessionStats, normalizeSessionTotals, sessionTotals } from "./stats.js";
 import type { SessionRecord, SessionRequestLogEntry } from "./types.js";
 
 function makeEntry(overrides?: Partial<SessionRequestLogEntry>): SessionRequestLogEntry {
@@ -41,8 +41,28 @@ function makeSession(overrides?: Partial<SessionRecord>): SessionRecord {
 test("sessionTotals computes totals from modelStats", () => {
   const session = makeSession({
     modelStats: {
-      "claude-sonnet-4-6": { requests: 5, errors: 2, inputTokens: 500, totalLatencyMs: 1000, avgLatencyMs: 200, lastActivityAt: null, lastProviderId: null, lastProviderModel: null, lastError: null },
-      "gpt-4o": { requests: 3, errors: 0, inputTokens: 300, totalLatencyMs: 600, avgLatencyMs: 200, lastActivityAt: null, lastProviderId: null, lastProviderModel: null, lastError: null },
+      "claude-sonnet-4-6": {
+        requests: 5,
+        errors: 2,
+        inputTokens: 500,
+        totalLatencyMs: 1000,
+        avgLatencyMs: 200,
+        lastActivityAt: null,
+        lastProviderId: null,
+        lastProviderModel: null,
+        lastError: null,
+      },
+      "gpt-4o": {
+        requests: 3,
+        errors: 0,
+        inputTokens: 300,
+        totalLatencyMs: 600,
+        avgLatencyMs: 200,
+        lastActivityAt: null,
+        lastProviderId: null,
+        lastProviderModel: null,
+        lastError: null,
+      },
     },
   });
 
@@ -68,7 +88,14 @@ test("sessionTotals falls back to requestLog when modelStats is empty", () => {
 test("sessionTotals falls back to providerStats when both modelStats and requestLog are empty", () => {
   const session = makeSession({
     providerStats: {
-      nvidia_nim: { requests: 4, errors: 2, avgLatencyMs: 100, totalLatencyMs: 400, lastActivityAt: null, lastError: null },
+      nvidia_nim: {
+        requests: 4,
+        errors: 2,
+        avgLatencyMs: 100,
+        totalLatencyMs: 400,
+        lastActivityAt: null,
+        lastError: null,
+      },
     },
   });
 
@@ -107,7 +134,10 @@ test("applyRequestToSessionStats appends to requestLog", () => {
 
 test("applyRequestToSessionStats updates modelStats", () => {
   const session = makeSession();
-  applyRequestToSessionStats(session, makeEntry({ requestedModel: "claude-sonnet", inputTokens: 200, latencyMs: 300 }));
+  applyRequestToSessionStats(
+    session,
+    makeEntry({ requestedModel: "claude-sonnet", inputTokens: 200, latencyMs: 300 }),
+  );
 
   const modelStat = session.modelStats["claude-sonnet"];
   assert.ok(modelStat);
@@ -121,8 +151,14 @@ test("applyRequestToSessionStats updates modelStats", () => {
 
 test("applyRequestToSessionStats accumulates modelStats", () => {
   const session = makeSession();
-  applyRequestToSessionStats(session, makeEntry({ requestedModel: "claude-sonnet", inputTokens: 200, latencyMs: 300 }));
-  applyRequestToSessionStats(session, makeEntry({ requestedModel: "claude-sonnet", inputTokens: 100, latencyMs: 100 }));
+  applyRequestToSessionStats(
+    session,
+    makeEntry({ requestedModel: "claude-sonnet", inputTokens: 200, latencyMs: 300 }),
+  );
+  applyRequestToSessionStats(
+    session,
+    makeEntry({ requestedModel: "claude-sonnet", inputTokens: 100, latencyMs: 100 }),
+  );
 
   const modelStat = session.modelStats["claude-sonnet"];
   assert.equal(modelStat.requests, 2);
@@ -133,7 +169,10 @@ test("applyRequestToSessionStats accumulates modelStats", () => {
 
 test("applyRequestToSessionStats updates providerStats", () => {
   const session = makeSession();
-  applyRequestToSessionStats(session, makeEntry({ providerId: "copilot", providerModel: "gpt-4o", latencyMs: 500 }));
+  applyRequestToSessionStats(
+    session,
+    makeEntry({ providerId: "copilot", providerModel: "gpt-4o", latencyMs: 500 }),
+  );
 
   const providerStat = session.providerStats.copilot;
   assert.ok(providerStat);

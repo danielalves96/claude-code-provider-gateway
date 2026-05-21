@@ -1,6 +1,5 @@
 import type { Server } from "node:http";
-import type { PanelRuntime } from "../../runtime.js";
-import type { OAuthFlow } from "../../runtime.js";
+import type { OAuthFlow, PanelRuntime } from "../../runtime.js";
 
 export function cleanupOAuthFlows(runtime: PanelRuntime): void {
   for (const [state, flow] of runtime.oauthFlows) {

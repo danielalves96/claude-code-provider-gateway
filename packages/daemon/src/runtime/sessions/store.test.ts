@@ -64,7 +64,9 @@ test("currentSessionExists returns true after writeCurrentSession", async () => 
 });
 
 test("removeCurrentSession removes the session file", async () => {
-  const { writeCurrentSession, currentSessionExists, removeCurrentSession } = await import("./store.js");
+  const { writeCurrentSession, currentSessionExists, removeCurrentSession } = await import(
+    "./store.js"
+  );
   writeCurrentSession(makeSession());
   assert.equal(currentSessionExists(), true);
   removeCurrentSession();
@@ -120,7 +122,9 @@ test("listArchivedSessions returns sessions in reverse order", async () => {
 });
 
 test("deleteArchivedSession removes a session by id", async () => {
-  const { archiveSession, deleteArchivedSession, listArchivedSessions } = await import("./store.js");
+  const { archiveSession, deleteArchivedSession, listArchivedSessions } = await import(
+    "./store.js"
+  );
   archiveSession(makeSession({ id: "to_delete" }));
   archiveSession(makeSession({ id: "to_keep" }));
   const deleted = deleteArchivedSession("to_delete");
@@ -143,7 +147,9 @@ test("deleteArchivedSession returns false when archive file does not exist", asy
 });
 
 test("clearArchivedSessions empties the archive", async () => {
-  const { archiveSession, clearArchivedSessions, listArchivedSessions } = await import("./store.js");
+  const { archiveSession, clearArchivedSessions, listArchivedSessions } = await import(
+    "./store.js"
+  );
   archiveSession(makeSession({ id: "s1" }));
   archiveSession(makeSession({ id: "s2" }));
   clearArchivedSessions();

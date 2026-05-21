@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { MessagesRequest } from "./types.js";
 import { countRequestTokens } from "./tokens.js";
+import type { MessagesRequest } from "./types.js";
 
 function makeReq(overrides?: Partial<MessagesRequest>): MessagesRequest {
   return {
@@ -56,7 +56,10 @@ test("countRequestTokens counts text blocks in content arrays", () => {
   });
   // Both should produce similar token counts (array adds structure overhead handled the same)
   const diff = Math.abs(countRequestTokens(string) - countRequestTokens(array));
-  assert.ok(diff < 10, `Token counts should be close: ${countRequestTokens(string)} vs ${countRequestTokens(array)}`);
+  assert.ok(
+    diff < 10,
+    `Token counts should be close: ${countRequestTokens(string)} vs ${countRequestTokens(array)}`,
+  );
 });
 
 test("countRequestTokens counts tool_use blocks", () => {
@@ -64,9 +67,7 @@ test("countRequestTokens counts tool_use blocks", () => {
     messages: [
       {
         role: "assistant",
-        content: [
-          { type: "tool_use", id: "t1", name: "bash", input: { command: "ls" } },
-        ],
+        content: [{ type: "tool_use", id: "t1", name: "bash", input: { command: "ls" } }],
       },
     ],
   });
@@ -79,9 +80,7 @@ test("countRequestTokens counts thinking blocks", () => {
     messages: [
       {
         role: "assistant",
-        content: [
-          { type: "thinking", thinking: "Let me think about this step by step." },
-        ],
+        content: [{ type: "thinking", thinking: "Let me think about this step by step." }],
       },
     ],
   });
@@ -94,9 +93,7 @@ test("countRequestTokens counts tool_result with string content", () => {
     messages: [
       {
         role: "user",
-        content: [
-          { type: "tool_result", tool_use_id: "t1", content: "command output here" },
-        ],
+        content: [{ type: "tool_result", tool_use_id: "t1", content: "command output here" }],
       },
     ],
   });
@@ -107,13 +104,19 @@ test("countRequestTokens counts tool_result with string content", () => {
 test("countRequestTokens counts tools definition", () => {
   const without = makeReq();
   const with_tools = makeReq({
-    tools: [{ name: "bash", description: "run bash", input_schema: { type: "object", properties: {} } }],
+    tools: [
+      { name: "bash", description: "run bash", input_schema: { type: "object", properties: {} } },
+    ],
   });
   assert.ok(countRequestTokens(with_tools) > countRequestTokens(without));
 });
 
 test("countRequestTokens increases with longer messages", () => {
   const short = makeReq({ messages: [{ role: "user", content: "hi" }] });
-  const long = makeReq({ messages: [{ role: "user", content: "hello, this is a longer message that should produce more tokens" }] });
+  const long = makeReq({
+    messages: [
+      { role: "user", content: "hello, this is a longer message that should produce more tokens" },
+    ],
+  });
   assert.ok(countRequestTokens(long) > countRequestTokens(short));
 });

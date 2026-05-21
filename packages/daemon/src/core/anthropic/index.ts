@@ -11,8 +11,8 @@ export {
 export { countRequestTokens } from "./tokens.js";
 export type {
   ContentBlock,
-  CountTokensResponse,
   CountTokensRequest,
+  CountTokensResponse,
   DocumentContent,
   ImageContent,
   Message,

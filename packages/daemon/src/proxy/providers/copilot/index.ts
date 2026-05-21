@@ -5,6 +5,7 @@ import { anthropicToOpenAI } from "../../../core/anthropic/conversion.js";
 import type { MessagesRequest, ModelInfo } from "../../../core/anthropic/types.js";
 import { postProviderStream } from "../shared/api-client.js";
 import { BaseProvider, type ProviderRequestOptions, type StreamResult } from "../shared/base.js";
+import { stripGatewayProviderPrefix } from "../shared/model-prefix.js";
 import {
   copilotEditorHeaders,
   exchangeForCopilotToken,
@@ -14,7 +15,6 @@ import {
 import { listCopilotModels, toCopilotModelInfo } from "./catalog.js";
 import { transformCopilotChatStream } from "./chat-stream.js";
 import { streamCopilotNativeAnthropic } from "./native-anthropic.js";
-import { stripGatewayProviderPrefix } from "../shared/model-prefix.js";
 
 export class CopilotProvider extends BaseProvider {
   constructor(

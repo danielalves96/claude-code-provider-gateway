@@ -42,7 +42,10 @@ test("sseMessageStart produces message_start event with correct structure", () =
   const out = sseMessageStart("msg_123", "claude-sonnet-4-6", 50);
   const { event, data } = parseEventLine(out);
   assert.equal(event, "message_start");
-  const d = data as { type: string; message: { id: string; model: string; usage: { input_tokens: number } } };
+  const d = data as {
+    type: string;
+    message: { id: string; model: string; usage: { input_tokens: number } };
+  };
   assert.equal(d.type, "message_start");
   assert.equal(d.message.id, "msg_123");
   assert.equal(d.message.model, "claude-sonnet-4-6");
@@ -110,7 +113,7 @@ test("sseError produces error event with correct structure", () => {
 test("SSE_HEADERS contains required headers", () => {
   assert.equal(SSE_HEADERS["Content-Type"], "text/event-stream");
   assert.equal(SSE_HEADERS["Cache-Control"], "no-cache");
-  assert.equal(SSE_HEADERS["Connection"], "keep-alive");
+  assert.equal(SSE_HEADERS.Connection, "keep-alive");
 });
 
 test("teeWithCapture forwards stream chunks and captures text_delta content", async () => {

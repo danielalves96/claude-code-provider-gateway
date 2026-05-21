@@ -1,12 +1,11 @@
-import { type ModelFallbackConfig } from "../../../config/schema.js";
+import type { ModelFallbackConfig } from "../../../config/schema.js";
 import type { MessagesRequest } from "../../../core/anthropic/types.js";
-import { anthropicError } from "../../core/index.js";
 import type { ErrorStatus } from "../../core/index.js";
+import { anthropicError, type providerErrorType } from "../../core/index.js";
 import type { ProxyRuntime } from "../../runtime.js";
-import { providerErrorType } from "../../core/index.js";
-import { tryFallbackTarget } from "./fallback-target.js";
-import { sleep } from "../streaming/provider-stream.js";
 import type { MessageServiceResult } from "../shared/types.js";
+import { sleep } from "../streaming/provider-stream.js";
+import { tryFallbackTarget } from "./fallback-target.js";
 
 const DEFAULT_PRIMARY_ATTEMPTS = 2;
 

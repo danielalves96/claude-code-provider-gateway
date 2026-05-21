@@ -1,8 +1,8 @@
 import type { BuiltInProviderId, Config, ProviderConfig } from "../../config/schema.js";
 import { PROVIDER_LABELS } from "../../config/schema.js";
+import { fetchProviderJson, mapProviderModels } from "./shared/api-client.js";
 import type { BaseProvider } from "./shared/index.js";
 import { OAuthStubProvider } from "./shared/index.js";
-import { fetchProviderJson, mapProviderModels } from "./shared/api-client.js";
 import { AnthropicMessagesTransport, OpenAIChatTransport } from "./transports/index.js";
 
 type ProviderConstructor = new (config: ProviderConfig, rootConfig: Config) => BaseProvider;
@@ -42,7 +42,12 @@ export function createOpenAIProvider(
         headers: { Authorization: this.authHeader(), ...this.extraHeaders() },
         timeoutMs: this.requestTimeoutMs(),
       });
-      return mergeDiscoveredAndConfiguredModels(this.id, this.label, json.data ?? [], this.config.models);
+      return mergeDiscoveredAndConfiguredModels(
+        this.id,
+        this.label,
+        json.data ?? [],
+        this.config.models,
+      );
     }
 
     protected override extraHeaders(): Record<string, string> {
@@ -82,7 +87,12 @@ export function createAnthropicProvider(
         headers: { ...this.authHeaders(), ...this.extraHeaders() },
         timeoutMs: this.requestTimeoutMs(),
       });
-      return mergeDiscoveredAndConfiguredModels(this.id, this.label, json.data ?? [], this.config.models);
+      return mergeDiscoveredAndConfiguredModels(
+        this.id,
+        this.label,
+        json.data ?? [],
+        this.config.models,
+      );
     }
 
     protected override authHeaders(): Record<string, string> {

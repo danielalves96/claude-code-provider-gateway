@@ -1,10 +1,10 @@
 import type { BuiltInProviderId, Config, ProviderConfig } from "../../config/schema.js";
-import type { BaseProvider } from "./shared/index.js";
 import {
   createAnthropicProvider,
   createOAuthStubProvider,
   createOpenAIProvider,
 } from "./provider-factory.js";
+import type { BaseProvider } from "./shared/index.js";
 
 type ProviderConstructor = new (config: ProviderConfig, rootConfig: Config) => BaseProvider;
 

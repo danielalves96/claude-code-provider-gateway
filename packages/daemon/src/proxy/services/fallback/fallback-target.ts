@@ -8,6 +8,7 @@ import {
 import { countRequestTokens } from "../../../core/anthropic/tokens.js";
 import type { MessagesRequest } from "../../../core/anthropic/types.js";
 import { logger } from "../../../observability/log.js";
+import { recordRequest } from "../../../runtime/provider-stats.js";
 import {
   getSessionConfig,
   getSessionPrimaryModel,
@@ -15,17 +16,16 @@ import {
   recordSessionRequest,
   setSessionPrimaryModel,
 } from "../../../runtime/sessions/index.js";
-import { recordRequest } from "../../../runtime/provider-stats.js";
-import { anthropicError, providerErrorStatus, providerErrorType } from "../../core/index.js";
 import type { ErrorStatus } from "../../core/index.js";
+import { anthropicError, providerErrorStatus, providerErrorType } from "../../core/index.js";
 import type { ProxyRuntime } from "../../runtime.js";
 import { cloneMessagesRequest } from "../../token-savers/index.js";
 import { serializePrompt } from "../shared/prompt-serializer.js";
+import { applyTokenSavers } from "../shared/token-saver-pipeline.js";
+import type { MessageServiceResult } from "../shared/types.js";
 import { limitedProviderStream, logWarnings } from "../streaming/provider-stream.js";
 import { probeStreamForUsefulAnthropicContent } from "../streaming/stream-probe.js";
 import { streamResultWithCapture } from "../streaming/stream-result.js";
-import { applyTokenSavers } from "../shared/token-saver-pipeline.js";
-import type { MessageServiceResult } from "../shared/types.js";
 
 export async function tryFallbackTarget(
   runtime: ProxyRuntime,

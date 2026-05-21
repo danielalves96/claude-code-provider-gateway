@@ -5,14 +5,14 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   DEFAULT_STREAM_IDLE_TIMEOUT_MS,
   DEFAULT_STREAM_TOTAL_TIMEOUT_MS,
+  defaultRequestTimeoutMs,
+  defaultStreamIdleTimeoutMs,
+  defaultStreamTotalTimeoutMs,
   LOCAL_PROVIDER_IDS,
   OAUTH_PROVIDER_IDS,
   PROVIDER_DEFAULTS,
   PROVIDER_IDS,
   PROVIDER_LABELS,
-  defaultRequestTimeoutMs,
-  defaultStreamIdleTimeoutMs,
-  defaultStreamTotalTimeoutMs,
 } from "./schema.js";
 
 test("PROVIDER_IDS is a non-empty readonly array", () => {

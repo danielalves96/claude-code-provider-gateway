@@ -6,11 +6,7 @@
 import { randomBytes } from "node:crypto";
 import type { Config, ProviderId } from "../../config/schema.js";
 import { logger } from "../../observability/log.js";
-import {
-  applyRequestToSessionStats,
-  normalizeSessionTotals,
-  sessionTotals,
-} from "./stats.js";
+import { applyRequestToSessionStats, normalizeSessionTotals, sessionTotals } from "./stats.js";
 import {
   archiveSession,
   clearArchivedSessions as clearArchive,

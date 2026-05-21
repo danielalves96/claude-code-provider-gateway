@@ -2,13 +2,13 @@ import { saveConfig } from "../../../config/index.js";
 import type { Config, ProviderConfig } from "../../../config/schema.js";
 import type { ModelInfo } from "../../../core/anthropic/types.js";
 import { fetchProviderJson, mapProviderModels } from "../shared/api-client.js";
+import { OpenAIChatTransport } from "../transports/openai.js";
 import {
   buildClineHeaders,
   isClineLoggedIn,
   refreshClineAccessToken,
   shouldRefreshClineToken,
 } from "./auth.js";
-import { OpenAIChatTransport } from "../transports/openai.js";
 
 const FALLBACK_CLINE_MODELS = [
   { id: "anthropic/claude-opus-4.7", name: "Claude Opus 4.7" },

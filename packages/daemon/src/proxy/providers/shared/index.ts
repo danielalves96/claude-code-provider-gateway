@@ -1,13 +1,13 @@
 export {
   fetchProviderJson,
   mapProviderModels,
-  postProviderStream,
   type ProviderStreamResponse,
+  postProviderStream,
 } from "./api-client.js";
 export {
   BaseProvider,
-  redactHeaders,
   type ProviderRequestOptions,
+  redactHeaders,
   type StreamResult,
 } from "./base.js";
 export { stripGatewayProviderPrefix } from "./model-prefix.js";
