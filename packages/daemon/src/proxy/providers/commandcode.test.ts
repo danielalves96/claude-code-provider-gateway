@@ -454,12 +454,15 @@ function streamFromLines(events: Array<Record<string, unknown>>): ReadableStream
 }
 
 function errorAfterLines(events: Array<Record<string, unknown>>): ReadableStream<Uint8Array> {
+  const queue = events.map((e) => encoder.encode(`${JSON.stringify(e)}\n`));
+  let index = 0;
   return new ReadableStream<Uint8Array>({
-    start(controller) {
-      for (const event of events) {
-        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+    pull(controller) {
+      if (index < queue.length) {
+        controller.enqueue(queue[index++]);
+      } else {
+        controller.error(new Error("upstream broke"));
       }
-      controller.error(new Error("upstream broke"));
     },
   });
 }

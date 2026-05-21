@@ -90,7 +90,7 @@ export function ProviderConfigContent({
       onRequestChange={(url) => handlers.onRequestChangeUrl(provider.id, url)}
     />
   );
-  const runtimeLimitsSection = ready && (
+  const runtimeLimitsSection = (
     <RuntimeLimitsSection
       rateLimit={provider.rateLimit}
       rateWindow={provider.rateWindow}

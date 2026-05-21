@@ -116,37 +116,6 @@ test("normalizeConfig falls back for invalid runtime values", () => {
   assert.equal(normalized.providers.nvidia_nim.streamTotalTimeoutMs, undefined);
 });
 
-test("normalizeConfig migrates legacy built-in provider limit defaults to disabled", () => {
-  const defaults = buildDefaultConfig();
-  const config = {
-    ...defaults,
-    providers: {
-      ...defaults.providers,
-      nvidia_nim: {
-        ...defaults.providers.nvidia_nim,
-        rateLimit: 40,
-        rateWindow: 60,
-        maxConcurrency: 5,
-      },
-      openrouter: {
-        ...defaults.providers.openrouter,
-        rateLimit: 30,
-        rateWindow: 60,
-        maxConcurrency: 5,
-      },
-    },
-  };
-
-  const normalized = normalizeConfig(config, defaults);
-
-  assert.equal(normalized.providers.nvidia_nim.rateLimit, 0);
-  assert.equal(normalized.providers.nvidia_nim.rateWindow, 0);
-  assert.equal(normalized.providers.nvidia_nim.maxConcurrency, 0);
-  assert.equal(normalized.providers.openrouter.rateLimit, 30);
-  assert.equal(normalized.providers.openrouter.rateWindow, 60);
-  assert.equal(normalized.providers.openrouter.maxConcurrency, 5);
-});
-
 test("normalizeConfig preserves valid token saver settings", () => {
   const defaults = buildDefaultConfig();
   const config = {

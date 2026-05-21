@@ -189,7 +189,7 @@ function normalizeProviders(
     (out, id) => {
       const provider = providers[id];
       const fallback = defaults[id] ?? defaultCustomProviderConfig(provider, id);
-      const runtimeLimits = normalizeProviderRuntimeLimits(provider, fallback, id);
+      const runtimeLimits = normalizeProviderRuntimeLimits(provider, fallback);
       out[id] = {
         enabled: booleanOrDefault(provider.enabled, fallback.enabled),
         apiKey: optionalString(provider.apiKey),
@@ -215,14 +215,10 @@ function normalizeProviders(
 function normalizeProviderRuntimeLimits(
   provider: ProviderConfig,
   fallback: ProviderConfig,
-  id: string,
 ): Pick<ProviderConfig, "rateLimit" | "rateWindow" | "maxConcurrency"> {
   const rateLimit = numberOrDefault(provider.rateLimit, fallback.rateLimit);
   const rateWindow = numberOrDefault(provider.rateWindow, fallback.rateWindow);
   const maxConcurrency = numberOrDefault(provider.maxConcurrency, fallback.maxConcurrency);
-  if (PROVIDER_ID_SET.has(id) && rateLimit === 40 && rateWindow === 60 && maxConcurrency === 5) {
-    return { rateLimit: 0, rateWindow: 0, maxConcurrency: 0 };
-  }
   return { rateLimit, rateWindow, maxConcurrency };
 }
 
