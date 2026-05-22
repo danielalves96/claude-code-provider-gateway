@@ -29,6 +29,7 @@ const API_KEY_LINKS: Record<string, string> = {
   perplexity: "https://www.perplexity.ai/account/api/keys",
   siliconflow: "https://cloud.siliconflow.cn/account/ak",
   together: "https://api.together.ai/settings/api-keys",
+  tuning_engines: "https://app.tuningengines.com/inference/keys",
   volcengine_ark: "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
   xai: "https://console.x.ai/team/api-keys",
   xiaomi_mimo: "https://platform.mimodel.ai/",

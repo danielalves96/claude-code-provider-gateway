@@ -30,6 +30,7 @@ export const DECLARATIVE_PROVIDER_MAP = {
   cerebras: createOpenAIProvider("cerebras"),
   together: createOpenAIProvider("together"),
   fireworks: createOpenAIProvider("fireworks"),
+  tuning_engines: createOpenAIProvider("tuning_engines"),
   glm: createAnthropicProvider("glm", { authHeaderStyle: "x-api-key" }),
   siliconflow: createOpenAIProvider("siliconflow"),
   hyperbolic: createOpenAIProvider("hyperbolic"),
