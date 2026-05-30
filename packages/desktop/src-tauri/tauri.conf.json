@@ -35,9 +35,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": [
-      "binaries/claude-code-provider-gateway-daemon"
-    ]
+    "externalBin": ["binaries/claude-code-provider-gateway-daemon"]
   },
   "plugins": {}
 }
