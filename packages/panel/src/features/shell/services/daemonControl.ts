@@ -24,6 +24,12 @@ async function tauriInvoke<T>(cmd: string): Promise<T> {
   return invoke<T>(cmd);
 }
 
+export interface NativeDaemonStatus {
+  running: boolean;
+  pid: number | null;
+  lastError: string | null;
+}
+
 export const daemonControl = {
   async stop(): Promise<void> {
     if (runtime.isTauri() && !runtime.usesExternalDevDaemon()) {
@@ -39,6 +45,18 @@ export const daemonControl = {
       return;
     }
     throw new Error("Daemon offline. In dev mode, restart via `bun dev:desk`.");
+  },
+
+  // What the supervisor knows about the sidecar. Asked only when HTTP is
+  // unreachable: the webview reports that as a bare "Load failed", which says
+  // nothing about *why* the daemon isn't answering.
+  async nativeStatus(): Promise<NativeDaemonStatus | null> {
+    if (!runtime.isTauri() || runtime.usesExternalDevDaemon()) return null;
+    try {
+      return await tauriInvoke<NativeDaemonStatus>("daemon_status");
+    } catch {
+      return null;
+    }
   },
 
   canStartFromPanel(): boolean {

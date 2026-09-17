@@ -6,11 +6,31 @@ import type { SessionRecord } from "../runtime/sessions/types.js";
 
 const require = createRequire(import.meta.url);
 
-const DatabaseSync = (
-  typeof (globalThis as { Bun?: unknown }).Bun !== "undefined"
-    ? require("bun:sqlite").Database
-    : require("node:sqlite").DatabaseSync
-) as typeof import("node:sqlite").DatabaseSync;
+// Resolved lazily, never at module load. This module is reachable from the
+// startup import graph (config -> storage), but `bun build --compile`
+// standalone binaries (how the daemon sidecar ships) don't include
+// node:sqlite as a built-in on every Bun version. Requiring it eagerly
+// killed the desktop app on launch even though desktop is file-backed and
+// never opens a database. See issue #29.
+let sqliteModuleCtor: typeof import("node:sqlite").DatabaseSync | null = null;
+
+function loadDatabaseSyncCtor(): typeof import("node:sqlite").DatabaseSync {
+  if (sqliteModuleCtor) return sqliteModuleCtor;
+  try {
+    sqliteModuleCtor =
+      typeof (globalThis as { Bun?: unknown }).Bun !== "undefined"
+        ? (require("bun:sqlite").Database as typeof import("node:sqlite").DatabaseSync)
+        : (require("node:sqlite").DatabaseSync as typeof import("node:sqlite").DatabaseSync);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `SQLite storage backend is unavailable: this runtime has no usable sqlite module (${reason}). ` +
+        "Use Node.js >= 22.5 or Bun >= 1.4, or unset CCPG_STORAGE_BACKEND and CCPG_SQLITE_PATH " +
+        "to fall back to file storage.",
+    );
+  }
+  return sqliteModuleCtor;
+}
 
 const DEFAULT_SQLITE_PATH = "/data/ccpg.sqlite";
 const CONFIG_KEY = "config";
@@ -28,6 +48,7 @@ export function getSqlitePath(): string {
 
 export function getSqliteDatabase(): DatabaseSyncInstance {
   if (database) return database;
+  const DatabaseSync = loadDatabaseSyncCtor();
   const path = getSqlitePath();
   mkdirSync(dirname(path), { recursive: true });
   database = new DatabaseSync(path);

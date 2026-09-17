@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { usePolling } from "../../../shared/hooks/usePolling.js";
 import type { LaunchItem, QuickLaunch } from "../domain/types.js";
 import { dashboardService } from "../services/dashboardService.js";
+
+const RETRY_MS = 3000;
 
 export function useLaunchCommands() {
   const [launch, setLaunch] = useState<QuickLaunch | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     dashboardService
       .getQuickLaunch()
       .then((value) => {
@@ -17,6 +20,10 @@ export function useLaunchCommands() {
         setError(err instanceof Error ? err : new Error("Quick Launch failed"));
       });
   }, []);
+
+  // A single mount-time fetch left this card stuck on "Load failed" forever
+  // whenever the daemon wasn't serving yet. Retry until it answers, then stop.
+  usePolling(load, RETRY_MS, launch === null);
 
   const items: LaunchItem[] = useMemo(() => {
     if (!launch) return [];

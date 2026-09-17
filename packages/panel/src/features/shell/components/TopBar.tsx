@@ -21,9 +21,16 @@ export function TopBar() {
       }}
     >
       <Flex justify="space-between" align="center" style={{ height: "100%" }}>
-        <Flex align="center" gap={token.paddingSM}>
+        <Flex align="center" gap={token.paddingSM} style={{ minWidth: 0 }}>
           <Badge status={STATE_BADGE[control.state]} />
           <Text strong>{STATE_LABEL[control.state]}</Text>
+          {control.error && (
+            <Tooltip title={control.error}>
+              <Text type="danger" ellipsis style={{ maxWidth: 520 }}>
+                {control.error}
+              </Text>
+            </Tooltip>
+          )}
         </Flex>
         <ControlButton
           isRunning={control.isRunning}
