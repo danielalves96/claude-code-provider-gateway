@@ -3,6 +3,27 @@
 > Practical fixes for the CCPG desktop app, shell command, providers, OAuth,
 > Model Chains, logs, and source builds.
 
+## macOS Says The App "Is Damaged And Can't Be Opened"
+
+Symptoms:
+
+- After installing on macOS, opening the app shows *"'Claude Code Provider
+  Gateway' is damaged and can't be opened. You should move it to the Trash."*
+- The file downloaded and installed without any error.
+
+This is macOS Gatekeeper blocking the app, not actual file corruption. The
+desktop build isn't notarized with an Apple Developer ID, so any copy
+downloaded via a browser gets the `com.apple.quarantine` extended attribute,
+and Gatekeeper refuses to open it on Apple Silicon.
+
+This is a workaround, not a real fix — a proper fix requires the maintainer
+to notarize releases with an Apple Developer ID. Run this once after moving
+the app to Applications:
+
+```bash
+xattr -cr "/Applications/Claude Code Provider Gateway.app"
+```
+
 ## Claude Code Is Not Routing Through CCPG
 
 Symptoms:

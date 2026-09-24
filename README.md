@@ -325,14 +325,9 @@ Download the latest desktop build from:
 Then:
 
 > [!NOTE]
-> **macOS:** if you see *"... is damaged and can't be opened"* after installing, this is
-> macOS Gatekeeper blocking the app because it isn't notarized with an Apple Developer ID —
-> the file itself is fine. This is a workaround, not a real fix; run it once after moving the
-> app to Applications:
->
-> ```bash
-> xattr -cr "/Applications/Claude Code Provider Gateway.app"
-> ```
+> **macOS:** if you see *"... is damaged and can't be opened"* after installing, see
+> [Troubleshooting](docs/TROUBLESHOOTING.md#macos-says-the-app-is-damaged-and-cant-be-opened)
+> for the cause and a workaround.
 
 1. Open the app.
 2. Add or log into at least one provider.
