@@ -5,7 +5,12 @@ import type { DatabaseSync as DatabaseSyncInstance } from "node:sqlite";
 import type { SessionRecord } from "../runtime/sessions/types.js";
 
 const require = createRequire(import.meta.url);
-const { DatabaseSync } = require("node:sqlite") as typeof import("node:sqlite");
+
+const DatabaseSync = (
+  typeof (globalThis as { Bun?: unknown }).Bun !== "undefined"
+    ? require("bun:sqlite").Database
+    : require("node:sqlite").DatabaseSync
+) as typeof import("node:sqlite").DatabaseSync;
 
 const DEFAULT_SQLITE_PATH = "/data/ccpg.sqlite";
 const CONFIG_KEY = "config";
