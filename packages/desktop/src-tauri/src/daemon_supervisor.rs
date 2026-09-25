@@ -151,8 +151,9 @@ impl DaemonSupervisor {
             // The watcher clears `child` on exit, so this means it died.
             if self.state.child.lock().await.is_none() {
                 let reason = self.state.diag.lock().await.last_error.clone();
-                return Err(anyhow!(reason
-                    .unwrap_or_else(|| "daemon exited during startup".to_string())));
+                return Err(anyhow!(
+                    reason.unwrap_or_else(|| "daemon exited during startup".to_string())
+                ));
             }
 
             if Instant::now() >= deadline {
