@@ -20,7 +20,7 @@ interface UseGatewayControlOptions {
 }
 
 export function useGatewayControl({ message }: UseGatewayControlOptions) {
-  const { state, refresh, pause, resume } = useDaemonStatus();
+  const { state, error, refresh, pause, resume } = useDaemonStatus();
   const [busy, setBusy] = useState(false);
   const lifecycleLocked = useRef(false);
 
@@ -54,9 +54,11 @@ export function useGatewayControl({ message }: UseGatewayControlOptions) {
     lifecycleLocked.current = true;
     setBusy(true);
     try {
+      // start() now resolves only once the daemon is actually serving, so
+      // this is a truthful success and the refresh needs no grace delay.
       await daemonControl.start();
       message.success("Gateway started");
-      setTimeout(() => void refresh(), 500);
+      void refresh();
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Failed to start gateway");
     } finally {
@@ -67,6 +69,7 @@ export function useGatewayControl({ message }: UseGatewayControlOptions) {
 
   return {
     state,
+    error,
     busy,
     isRunning: state === "running",
     canStartFromPanel: daemonControl.canStartFromPanel(),
