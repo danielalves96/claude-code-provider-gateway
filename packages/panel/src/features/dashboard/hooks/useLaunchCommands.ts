@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { usePolling } from "../../../shared/hooks/usePolling.js";
 import type { LaunchItem, QuickLaunch } from "../domain/types.js";
 import { dashboardService } from "../services/dashboardService.js";
@@ -8,8 +8,14 @@ const RETRY_MS = 3000;
 export function useLaunchCommands() {
   const [launch, setLaunch] = useState<QuickLaunch | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const inFlight = useRef(false);
 
   const load = useCallback(() => {
+    // Skip while a request is still pending so a slow response can't land
+    // after a newer one and flip state backwards (e.g. a late failure
+    // restoring `error` after `launch` already loaded).
+    if (inFlight.current) return;
+    inFlight.current = true;
     dashboardService
       .getQuickLaunch()
       .then((value) => {
@@ -18,6 +24,9 @@ export function useLaunchCommands() {
       })
       .catch((err) => {
         setError(err instanceof Error ? err : new Error("Quick Launch failed"));
+      })
+      .finally(() => {
+        inFlight.current = false;
       });
   }, []);
 

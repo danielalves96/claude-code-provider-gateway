@@ -25,9 +25,6 @@ const READY_POLL: Duration = Duration::from_millis(100);
 struct Diagnostics {
     stderr: VecDeque<String>,
     last_error: Option<String>,
-    /// Set while *we* are the ones tearing the daemon down, so a deliberate
-    /// stop is not reported to the user as a crash.
-    expecting_stop: bool,
 }
 
 #[derive(Default)]
@@ -81,7 +78,6 @@ impl DaemonSupervisor {
             let mut diag = self.state.diag.lock().await;
             diag.stderr.clear();
             diag.last_error = None;
-            diag.expecting_stop = false;
         }
 
         let sidecar = app
@@ -169,7 +165,6 @@ impl DaemonSupervisor {
                     // Claim the error slot before the kill so `reap` keeps
                     // this more specific reason.
                     diag.last_error = Some(message.clone());
-                    diag.expecting_stop = true;
                     message
                 };
 
@@ -192,11 +187,7 @@ impl DaemonSupervisor {
             return Ok(());
         };
 
-        {
-            let mut diag = self.state.diag.lock().await;
-            diag.expecting_stop = true;
-            diag.last_error = None;
-        }
+        self.state.diag.lock().await.last_error = None;
 
         child.kill().map_err(|e| anyhow!("kill failed: {e}"))?;
         Ok(())
@@ -215,21 +206,18 @@ impl DaemonSupervisor {
 
 /// Drops the handle of an exited process and records why it went away.
 async fn reap(state: &SupervisorState, pid: u32, code: Option<i32>) {
-    {
-        // Only clear the handle if it is still *this* process: a slow
-        // Terminated event must not evict a newer child.
-        let mut guard = state.child.lock().await;
-        if guard.as_ref().map(|c| c.pid()) == Some(pid) {
-            guard.take();
-        }
-    }
-
-    let mut diag = state.diag.lock().await;
-
-    if diag.expecting_stop {
-        diag.expecting_stop = false;
+    // Only act if the handle is still *this* process. `stop` and the
+    // readiness timeout take the handle first and own their diagnostics;
+    // a late event from an old child must not touch the current state.
+    let mut guard = state.child.lock().await;
+    if guard.as_ref().map(|c| c.pid()) != Some(pid) {
         return;
     }
+    // Record the reason before `child` is observably cleared, so
+    // `await_ready` never sees the exit without it.
+    let mut diag = state.diag.lock().await;
+    guard.take();
+
     // A more specific reason (spawn error, readiness timeout) wins.
     if diag.last_error.is_some() {
         return;

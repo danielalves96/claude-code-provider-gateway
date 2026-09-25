@@ -25,8 +25,8 @@ function loadDatabaseSyncCtor(): typeof import("node:sqlite").DatabaseSync {
     const reason = err instanceof Error ? err.message : String(err);
     throw new Error(
       `SQLite storage backend is unavailable: this runtime has no usable sqlite module (${reason}). ` +
-        "Use Node.js >= 22.5 or Bun >= 1.4, or unset CCPG_STORAGE_BACKEND and CCPG_SQLITE_PATH " +
-        "to fall back to file storage.",
+        "Use Node.js >= 22.13 (or 22.5-22.12 with --experimental-sqlite) or Bun >= 1.4, or unset " +
+        "CCPG_STORAGE_BACKEND and CCPG_SQLITE_PATH to fall back to file storage.",
     );
   }
   return sqliteModuleCtor;
