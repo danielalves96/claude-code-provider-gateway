@@ -96,6 +96,23 @@ Creation flow:
 
 Custom provider details intentionally allow editing only Base URL, API key, enabled state, manual/disabled models, and deletion. Name, slug, and logo are immutable after creation; delete and recreate the provider to change them.
 
+### Example: a self-hosted gateway (Bifrost)
+
+[Bifrost](https://github.com/maximhq/bifrost) is an open-source AI gateway with an
+Anthropic-compatible endpoint, so it works as a custom Anthropic-compatible provider.
+This is useful when a team already routes model traffic through a shared gateway.
+
+| Field | Value |
+|---|---|
+| Base URL | `http://your-bifrost-host:8080/anthropic/v1` |
+| API key | A Bifrost virtual key (`sk-bf-...`) |
+
+**Test Connection** reads the model list from `/anthropic/v1/models`. Claude model
+names such as `claude-sonnet-4-6` go to Anthropic. Use `provider/model` names, for
+example `openai/gpt-5.5` or `vertex/claude-sonnet-4-6`, to reach other providers
+configured in Bifrost. If Bifrost returns `403`, the virtual key does not allow
+that provider or model.
+
 Uploaded logos are stored locally in
 `~/.config/claude-code-provider-gateway/provider-logos/` (or the Windows
 `%APPDATA%` equivalent). API keys are stored in `secrets.enc.json`, not
