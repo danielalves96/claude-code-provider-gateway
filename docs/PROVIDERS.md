@@ -127,9 +127,12 @@ as a custom Anthropic-compatible provider without translation.
 
 **Test Connection** reads the model list from `/v1/models`. Model ids use the
 `vendor/model` form, for example `moonshotai/kimi-k3.1-pro`, `z-ai/glm-5.3` or
-`deepseek/deepseek-v4.1-flash`. Accounts are prepaid, so a `402` means the balance
-or the key's spend limit cannot cover the request. A `404` means the model id is not
-on the list.
+`deepseek/deepseek-v4.1-flash`. Accounts are prepaid, so a `402` from UberLLM means
+the balance or the key's spend limit cannot cover the request. The gateway answers
+the client with `500` for that error, and the request log shows `HTTP 402`. A `404`
+whose message says `Provider "<id>" is not enabled or configured.` comes from the
+gateway, not UberLLM: enable or configure the provider. Any other `404` means the
+model id is not on the list.
 
 Uploaded logos are stored locally in
 `~/.config/claude-code-provider-gateway/provider-logos/` (or the Windows
