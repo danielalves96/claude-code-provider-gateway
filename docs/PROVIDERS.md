@@ -113,6 +113,24 @@ example `openai/gpt-5.5` or `vertex/claude-sonnet-4-6`, to reach other providers
 configured in Bifrost. If Bifrost returns `403`, the virtual key does not allow
 that provider or model.
 
+### Example: a hosted marketplace (UberLLM)
+
+[UberLLM](https://uberllm.dev) is a hosted marketplace for model API calls. It does
+not run models itself: each request is sent to a third-party seller's provider that
+serves the requested model. It exposes an Anthropic-compatible endpoint, so it works
+as a custom Anthropic-compatible provider without translation.
+
+| Field | Value |
+|---|---|
+| Base URL | `https://api.uberllm.dev/v1` |
+| API key | An UberLLM key (`ull_...`) from the dashboard |
+
+**Test Connection** reads the model list from `/v1/models`. Model ids use the
+`vendor/model` form, for example `moonshotai/kimi-k3.1-pro`, `z-ai/glm-5.3` or
+`deepseek/deepseek-v4.1-flash`. Accounts are prepaid, so a `402` means the balance
+or the key's spend limit cannot cover the request. A `404` means the model id is not
+on the list.
+
 Uploaded logos are stored locally in
 `~/.config/claude-code-provider-gateway/provider-logos/` (or the Windows
 `%APPDATA%` equivalent). API keys are stored in `secrets.enc.json`, not
