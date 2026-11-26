@@ -134,6 +134,25 @@ whose message says `Provider "<id>" is not enabled or configured.` comes from th
 gateway, not UberLLM: enable or configure the provider. Any other `404` means the
 model id is not on the list.
 
+### Example: a hosted multi-model API (QCode.cc)
+
+[QCode.cc](https://qcode.cc) is a hosted, paid API service (no free tier) that serves
+Claude together with GLM, Kimi, DeepSeek and Qwen models on an Anthropic Messages
+endpoint. It works as a custom Anthropic-compatible provider without translation.
+
+| Field | Value |
+|---|---|
+| Base URL | `https://api.qcode.cc/api/v1` |
+| API key | A QCode.cc API key from the dashboard |
+
+**Test Connection** reads the model list from `/api/v1/models`, for example
+`claude-sonnet-5-5`, `claude-haiku-5-5`, `glm-5.3` or `kimi-k3.1-pro`. That list
+also includes GPT ids such as `gpt-6.2-sol`, but QCode serves GPT models only on its
+OpenAI-compatible endpoint. Mark them as disabled models on this provider. To use them,
+add a second, OpenAI-compatible custom provider with Base URL
+`https://api.qcode.cc/openai/v1` and the same key. See QCode's
+[endpoint documentation](https://docs.qcode.cc/en/docs/getting-started/endpoints-and-api-paths).
+
 Uploaded logos are stored locally in
 `~/.config/claude-code-provider-gateway/provider-logos/` (or the Windows
 `%APPDATA%` equivalent). API keys are stored in `secrets.enc.json`, not

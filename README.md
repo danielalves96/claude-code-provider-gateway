@@ -282,7 +282,7 @@ chain.
 | Minimax, Minimax China | API key | Anthropic-compatible endpoints. |
 | OpenCode Go, Xiaomi MiMo, Xiaomi MiMo Token Plan, Cohere, Blackbox AI, HuggingFace Router, Ollama Cloud | API key | Additional hosted model catalogs. |
 | Command Code | API key | Custom provider transport that converts AI SDK v5 NDJSON streams into Anthropic SSE. |
-| Custom OpenAI/Anthropic compatible | API key | Add self-hosted or third-party compatible endpoints from the Providers tab with a custom slug, base URL, optional PNG/WebP logo, and manual models when discovery is unavailable. See the [Bifrost example](docs/PROVIDERS.md#example-a-self-hosted-gateway-bifrost) for a self-hosted gateway and the [UberLLM example](docs/PROVIDERS.md#example-a-hosted-marketplace-uberllm) for a hosted marketplace. |
+| Custom OpenAI/Anthropic compatible | API key | Add self-hosted or third-party compatible endpoints from the Providers tab with a custom slug, base URL, optional PNG/WebP logo, and manual models when discovery is unavailable. See the [Bifrost example](docs/PROVIDERS.md#example-a-self-hosted-gateway-bifrost) for a self-hosted gateway, the [UberLLM example](docs/PROVIDERS.md#example-a-hosted-marketplace-uberllm) for a hosted marketplace, and the [QCode.cc example](docs/PROVIDERS.md#example-a-hosted-multi-model-api-qcodecc) for a hosted multi-model API. |
 
 ### Local
 
